@@ -1,0 +1,34 @@
+## TEAM INFO
+TEAM: Detroit Steam Hammers
+BALLPARK:
+MANAGER:
+LOGO:
+
+ERA: modern
+LOCATION: Detroit
+MASCOT: Train
+TEAM PRIORITY: Staring Pitching
+TEAM MAKEUP: Mostly Prospects
+YEARS IN LEAGUE: 11
+MOST RECENT CHAMPIONSHIP: 7
+FANBASE: Loyal
+
+## BALLPARK INFO (make own file)
+FILE: /home/seth/Deadball-Game/src/testfiles/railyard.dbb
+
+## MANAGER INFO
+NAME: Fastball Mike
+POSITION: Pitcher
+LEAGUE: Majors
+RETIRED: 22
+PERSONALITY: Sincere
+DARING: 12
+MOTTO: Score more runs than the other guy.
+
+## OWNER INFO
+BACKGROUND: Venture Capitalist
+PERSONALITY: Boastful
+
+## ROSTER
+/home/seth/Deadball-Game/src/testfiles/sample_player.dbp
+/home/seth/Deadball-Game/src/testfiles/sample2.dbp

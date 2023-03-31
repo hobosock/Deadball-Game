@@ -61,7 +61,7 @@ mod tests {
     }
 
     #[test]
-    fn load_roster_file() {
+    fn load_player_file() {
         let player_file_path =
             "/home/seth/Deadball-Game/src/testfiles/sample_player.dbp".to_string();
         let contents = fs::read_to_string(player_file_path).unwrap();
@@ -97,5 +97,83 @@ mod tests {
         assert!(matches!("Bruh".to_string(), test_nick2));
         assert!(matches!(vec![InjuryLocation::Shoulder], test_loc2));
         assert!(matches!(vec![InjurySeverity::Minor], test_sev2));
+    }
+
+    #[test]
+    fn write_player_file() {
+        let test_player = Player {
+            first_name: "Seth".to_string(),
+            last_name: "Loveall".to_string(),
+            nickname: "Seth Loveall".to_string(),
+            position: Position::Shortstop,
+            handedness: Handedness::Right,
+            batter_target: 32,
+            on_base_target: 40,
+            pitch_die: -8,
+            traits: vec![
+                Traits::ContactHitter,
+                Traits::PowerHitter,
+                Traits::GreatDefender,
+            ],
+            injury_location: vec![
+                InjuryLocation::Shoulder,
+                InjuryLocation::Wrist,
+                InjuryLocation::Hamstring,
+            ],
+            injury_severity: vec![
+                InjurySeverity::Uninjured,
+                InjurySeverity::Minor,
+                InjurySeverity::Superficial,
+            ],
+        };
+        let filename = "/home/seth/Deadball-Game/src/testfiles/write_test.dbp";
+        let write_result = write_player(test_player, filename);
+
+        let contents = fs::read_to_string(filename).unwrap();
+        let test_player = load_player(contents);
+        let test_first = test_player.first_name;
+        let test_last = test_player.last_name;
+        let test_nick = test_player.nickname;
+        let test_pos = test_player.position;
+        let test_hand = test_player.handedness;
+        let test_bt = test_player.batter_target;
+        let test_obt = test_player.on_base_target;
+        let test_pd = test_player.pitch_die;
+        let test_trait = test_player.traits;
+        let test_loc = test_player.injury_location;
+        let test_sev = test_player.injury_severity;
+
+        assert!(matches!("Seth".to_string(), test_first));
+        assert!(matches!("Loveall".to_string(), test_last));
+        assert!(matches!("Seth Loveall".to_string(), test_nick));
+        assert!(matches!(Position::Shortstop, test_pos));
+        assert!(matches!(Handedness::Right, test_hand));
+        assert_eq!(32, test_bt);
+        assert_eq!(40, test_obt);
+        assert_eq!(-8, test_pd);
+        assert!(matches!(
+            vec![
+                Traits::ContactHitter,
+                Traits::PowerHitter,
+                Traits::GreatDefender
+            ],
+            test_trait
+        ));
+        assert!(matches!(
+            vec![
+                InjuryLocation::Shoulder,
+                InjuryLocation::Wrist,
+                InjuryLocation::Hamstring
+            ],
+            test_loc
+        ));
+        assert!(matches!(
+            vec![
+                InjurySeverity::Uninjured,
+                InjurySeverity::Minor,
+                InjurySeverity::Superficial
+            ],
+            test_sev
+        ));
     }
 }

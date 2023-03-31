@@ -104,6 +104,8 @@ pub struct Player {
 /*========================================================
 FUNCTION DEFINITIONS
 ========================================================*/
+
+// loads a *.DBP file and converts to Player struct
 pub fn load_player(contents: String) -> Player {
     // initialize player data
     let mut read_first_name = String::new();
@@ -285,4 +287,96 @@ pub fn load_player(contents: String) -> Player {
     };
 
     player_data
+}
+
+// writes a Player struct to a *.DBP file
+pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> {
+    let mut file_text = String::new();
+    file_text.push_str("First Name: ");
+    file_text.push_str(&data.first_name);
+    file_text.push_str("\nLast Name: ");
+    file_text.push_str(&data.last_name);
+    file_text.push_str("\nNickname: ");
+    file_text.push_str(&data.nickname);
+    file_text.push_str("\nPosition: ");
+    match data.position {
+        Position::None => file_text.push_str("None"),
+        Position::Bench => file_text.push_str("Bench"),
+        Position::Pitcher => file_text.push_str("P"),
+        Position::Catcher => file_text.push_str("C"),
+        Position::Firstbase => file_text.push_str("1B"),
+        Position::Shortstop => file_text.push_str("SS"),
+        Position::Thirdbase => file_text.push_str("3B"),
+        Position::Leftfield => file_text.push_str("LF"),
+        Position::Secondbase => file_text.push_str("2B"),
+        Position::Rightfield => file_text.push_str("RF"),
+        Position::Centerfield => file_text.push_str("CF"),
+    }
+    file_text.push_str("\nHandedness: ");
+    match data.handedness {
+        Handedness::None => file_text.push_str("None"),
+        Handedness::Left => file_text.push_str("L"),
+        Handedness::Right => file_text.push_str("R"),
+        Handedness::Switch => file_text.push_str("S"),
+    }
+    file_text.push_str("\nBatter Target: ");
+    file_text.push_str(&data.batter_target.to_string());
+    file_text.push_str("\nOn Base Target: ");
+    file_text.push_str(&data.on_base_target.to_string());
+    file_text.push_str("\nPitch Die: ");
+    file_text.push_str(&data.pitch_die.to_string());
+    file_text.push_str("\nTraits:");
+    for i in 0..data.traits.len() {
+        match data.traits[i] {
+            Traits::None => file_text.push_str(" None,"),
+            Traits::Wild => file_text.push_str(" CN-,"),
+            Traits::WeakHitter => file_text.push_str(" P-,"),
+            Traits::SlowRunner => file_text.push_str(" S-,"),
+            Traits::PowerHitter => file_text.push_str(" P+,"),
+            Traits::ToughPlayer => file_text.push_str(" T+,"),
+            Traits::FreeSwinger => file_text.push_str(" C-,"),
+            Traits::SpeedyRunner => file_text.push_str(" S+,"),
+            Traits::PoorDefender => file_text.push_str(" D-,"),
+            Traits::GreatStamina => file_text.push_str(" ST+,"),
+            Traits::ContactHitter => file_text.push_str(" C+,"),
+            Traits::GreatDefender => file_text.push_str(" D+,"),
+            Traits::ControlPitcher => file_text.push_str(" CN+,"),
+            Traits::ExtraWeakHitter => file_text.push_str(" P--,"),
+            Traits::StrikeoutArtist => file_text.push_str(" K+,"),
+            Traits::ElitePowerHitter => file_text.push_str(" P++,"),
+            Traits::GroundballMachine => file_text.push_str(" GB+,"),
+        }
+    }
+    file_text.push_str("\nInjury Location:");
+    for j in 0..data.injury_location.len() {
+        match data.injury_location[j] {
+            InjuryLocation::Knee => file_text.push_str(" Knee,"),
+            InjuryLocation::Hip => file_text.push_str(" Hip,"),
+            InjuryLocation::Head => file_text.push_str(" Head,"),
+            InjuryLocation::Hand => file_text.push_str(" Hand,"),
+            InjuryLocation::Back => file_text.push_str(" Back,"),
+            InjuryLocation::Foot => file_text.push_str(" Foot,"),
+            InjuryLocation::None => file_text.push_str(" None,"),
+            InjuryLocation::Elbow => file_text.push_str(" Elbow,"),
+            InjuryLocation::Wrist => file_text.push_str(" Wrist,"),
+            InjuryLocation::Ankle => file_text.push_str(" Ankle,"),
+            InjuryLocation::Forearm => file_text.push_str(" Forearm,"),
+            InjuryLocation::Oblique => file_text.push_str(" Oblique,"),
+            InjuryLocation::Shoulder => file_text.push_str(" Shoulder,"),
+            InjuryLocation::Hamstring => file_text.push_str(" Hamstring,"),
+        }
+    }
+    file_text.push_str("\nInjury Severity:");
+    for k in 0..data.injury_severity.len() {
+        match data.injury_severity[k] {
+            InjurySeverity::Major => file_text.push_str(" Major,"),
+            InjurySeverity::Minor => file_text.push_str(" Minor,"),
+            InjurySeverity::Uninjured => file_text.push_str(" Uninjured,"),
+            InjurySeverity::Superficial => file_text.push_str(" Superficial,"),
+            InjurySeverity::Catastrophic => file_text.push_str(" Catastrophic,"),
+        }
+    }
+
+    let write_result = fs::write(filename, &file_text);
+    write_result
 }
