@@ -27,7 +27,7 @@ mod tests {
     use std::fs;
 
     //use crate::core::gameFunctions::atBatResults;
-    use crate::{characters::players::*, core::game_functions::*};
+    use crate::{characters::players::*, characters::teams::*, core::game_functions::*};
 
     use super::*;
 
@@ -174,6 +174,73 @@ mod tests {
                 InjurySeverity::Superficial
             ],
             test_sev
+        ));
+    }
+
+    #[test]
+    fn test_load_team() {
+        let team_file_path =
+            "/home/seth/Deadball-Game/src/testfiles/detroit_steam_hammers.dbt".to_string();
+        let contents = fs::read_to_string(team_file_path).unwrap();
+
+        let test_team = load_team(contents);
+        let test_name = test_team.name;
+        let test_ballpark = test_team.ballpark;
+        let test_manager = test_team.manager;
+        let test_logo = test_team.logo;
+        let test_era = test_team.era;
+        let test_location = test_team.location;
+        let test_mascot = test_team.mascot;
+        let test_priority = test_team.priority;
+        let test_makeup = test_team.makeup;
+        let test_years = test_team.years;
+        let test_championship = test_team.championship;
+        let test_fanbase = test_team.fanbase;
+        let test_manager_position = test_team.manager_position;
+        let test_manager_league = test_team.manager_league;
+        let test_retired = test_team.retired;
+        let test_personality = test_team.personality;
+        let test_daring = test_team.daring;
+        let test_motto = test_team.motto;
+        let test_owner_background = test_team.owner_background;
+        let test_owner_personality = test_team.owner_personality;
+        let test_roster = test_team.roster;
+
+        assert!(matches!("Detroit Steam Hammers".to_string(), test_name));
+        assert!(matches!(
+            "/home/seth/Deadball-Game/src/testfiles/railyard.dbb".to_string(),
+            test_ballpark
+        ));
+        assert!(matches!("none".to_string(), test_logo));
+        assert!(matches!(Era::Modern, test_era));
+        assert!(matches!(Location::Metropolis, test_location));
+        assert!(matches!("Train".to_string(), test_mascot));
+        assert!(matches!(Priority::StartingPitching, test_priority));
+        assert!(matches!(Makeup::MostlyProspects, test_makeup));
+        assert_eq!(11, test_years);
+        assert_eq!(7, test_championship);
+        assert!(matches!(Fanbase::Loyal, test_fanbase));
+        assert!(matches!("Fastball Mike".to_string(), test_manager));
+        assert!(matches!(Position::Pitcher, test_manager_position));
+        assert!(matches!(ManagerLeague::Major, test_manager_league));
+        assert_eq!(22, test_retired);
+        assert!(matches!("Sincere".to_string(), test_personality));
+        assert_eq!(12, test_daring);
+        assert!(matches!(
+            "Score more runs than the other guy.".to_string(),
+            test_motto
+        ));
+        assert!(matches!(
+            "Venture Capitalist".to_string(),
+            test_owner_background
+        ));
+        assert!(matches!("Boastful".to_string(), test_owner_personality));
+        assert!(matches!(
+            vec![
+                "/home/seth/Deadball-Game/src/testfiles/sample_player.dbp".to_string(),
+                "/home/seth/Deadball-Game/src/testfiles/sample2.dbp".to_string(),
+            ],
+            test_roster
         ));
     }
 }

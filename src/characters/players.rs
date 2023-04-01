@@ -123,6 +123,7 @@ pub fn load_player(contents: String) -> Player {
     // sort data into player struct
     let stats: Vec<&str> = contents.split("\n").collect();
     for i in 0..stats.len() - 1 {
+        // last line is usually just a new line character
         let statline: Vec<&str> = stats[i].split(":").collect();
         if statline[0].trim().eq("First Name") {
             read_first_name = statline[1].trim().to_string();
