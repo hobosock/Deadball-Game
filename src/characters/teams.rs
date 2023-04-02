@@ -465,3 +465,49 @@ pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
     let write_result = fs::write(filename, &file_text);
     write_result
 }
+
+pub fn load_park_modern(contents: String) -> BallparkModern {
+    // initialize fields
+    let mut name = String::new();
+    let mut location = String::new();
+    let mut park_type = StadiumTypeModern::None;
+    let mut capacity: i32 = 0;
+    let mut turf = Turf::None;
+    let mut roof = Roof::None;
+    let mut condition = Condition::None;
+    let mut quirks = Quirks::None;
+
+    let park_data = BallparkModern {
+        name: name,
+        location: location,
+        park_type: park_type,
+        capacity: capacity,
+        turf: turf,
+        roof: roof,
+        condition: condition,
+        quirks: quirks,
+    };
+
+    park_data
+}
+
+pub fn load_park_ancient(contents: String) -> BallparkAncient {
+    // initialize fields
+    let mut name = String::new();
+    let mut location = String::new();
+    let mut park_type = StadiumTypeAncient::None;
+    let mut capacity: i32 = 0;
+    let mut condition = Condition::None;
+    let mut quirks = Quirks::None;
+
+    let park_data = BallparkAncient {
+        name: name,
+        location: location,
+        park_type: park_type,
+        capacity: capacity,
+        condition: condition,
+        quirks: quirks,
+    };
+
+    park_data
+}
