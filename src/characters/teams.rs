@@ -1,6 +1,7 @@
 /*==========================================
 MODULE INCLUSIONS
 ==========================================*/
+use std::fs;
 use text_colorizer::*;
 
 use super::players::Position;
@@ -363,4 +364,104 @@ pub fn load_team(contents: String) -> Team {
     };
 
     team_data
+}
+
+// write team file *.DBT
+pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
+    let mut file_text = String::new();
+    file_text.push_str("TEAM: ");
+    file_text.push_str(&data.name);
+    file_text.push_str("\nBALLPARK: ");
+    file_text.push_str(&data.ballpark);
+    file_text.push_str("\nLOGO: ");
+    file_text.push_str(&data.logo);
+    file_text.push_str("\nERA: ");
+    match data.era {
+        Era::None => file_text.push_str("None"),
+        Era::Modern => file_text.push_str("Modern"),
+        Era::Ancient => file_text.push_str("Ancient"),
+    }
+    file_text.push_str("\nLocation: ");
+    match data.location {
+        Location::None => file_text.push_str("None"),
+        Location::SmallTown => file_text.push_str("Small Town"),
+        Location::SmallCity => file_text.push_str("Small City"),
+        Location::Metropolis => file_text.push_str("Metropolis"),
+        Location::MiddleOfNowhere => file_text.push_str("Middle Of Nowhere"),
+        Location::MediumSizedCity => file_text.push_str("Medium Sized City"),
+    }
+    file_text.push_str("\nMASCOT: ");
+    file_text.push_str(&data.mascot);
+    file_text.push_str("\nTEAM PRIORITY: ");
+    match data.priority {
+        Priority::None => file_text.push_str("None"),
+        Priority::Power => file_text.push_str("Power"),
+        Priority::Speed => file_text.push_str("Speed"),
+        Priority::Average => file_text.push_str("Average"),
+        Priority::Bullpen => file_text.push_str("Bullpen"),
+        Priority::Defense => file_text.push_str("Defense"),
+        Priority::StartingPitching => file_text.push_str("StartingPitching"),
+    }
+    file_text.push_str("\nTEAM MAKEUP: ");
+    match data.makeup {
+        Makeup::None => file_text.push_str("None"),
+        Makeup::Balanced => file_text.push_str("Balanced"),
+        Makeup::MostlyVeterans => file_text.push_str("Mostly Veterans"),
+        Makeup::MostlyProspects => file_text.push_str("Mostly Prospects"),
+    }
+    file_text.push_str("\nYEARS IN LEAGUE: ");
+    file_text.push_str(&data.years.to_string());
+    file_text.push_str("\nMOST RECENT CHAMPIONSHIP: ");
+    file_text.push_str(&data.championship.to_string());
+    file_text.push_str("\nFANBASE: ");
+    match data.fanbase {
+        Fanbase::None => file_text.push_str("None"),
+        Fanbase::Loyal => file_text.push_str("Loyal"),
+        Fanbase::Obsessive => file_text.push_str("Obsessive"),
+        Fanbase::Nonexistent => file_text.push_str("Non-existent"),
+        Fanbase::Indifferent => file_text.push_str("Indifferent"),
+        Fanbase::FairWeather => file_text.push_str("Fair Weather"),
+    }
+    file_text.push_str("/n/n## MANAGER INFO\nMANAGER: ");
+    file_text.push_str(&data.manager);
+    file_text.push_str("\nPOSITION: ");
+    match data.manager_position {
+        Position::None => file_text.push_str("None"),
+        Position::Bench => file_text.push_str("Bench"),
+        Position::Pitcher => file_text.push_str("P"),
+        Position::Catcher => file_text.push_str("C"),
+        Position::Firstbase => file_text.push_str("1B"),
+        Position::Shortstop => file_text.push_str("2B"),
+        Position::Thirdbase => file_text.push_str("3B"),
+        Position::Leftfield => file_text.push_str("LF"),
+        Position::Secondbase => file_text.push_str("2B"),
+        Position::Rightfield => file_text.push_str("RF"),
+        Position::Centerfield => file_text.push_str("CF"),
+    }
+    file_text.push_str("\nLEAGUE: ");
+    match data.manager_league {
+        ManagerLeague::None => file_text.push_str("None"),
+        ManagerLeague::Major => file_text.push_str("Majors"),
+        ManagerLeague::Minor => file_text.push_str("Minors"),
+    }
+    file_text.push_str("\nRETIRED: ");
+    file_text.push_str(&data.retired.to_string());
+    file_text.push_str("\nPERSONALITY: ");
+    file_text.push_str(&data.personality);
+    file_text.push_str("\nDARING: ");
+    file_text.push_str(&data.daring.to_string());
+    file_text.push_str("\nMOTTO: ");
+    file_text.push_str(&data.motto);
+    file_text.push_str("\n\n## OWNER INFO\nBACKGROUND: ");
+    file_text.push_str(&data.owner_background);
+    file_text.push_str("\nOWNER PERSONALITY: ");
+    file_text.push_str(&data.owner_personality);
+    file_text.push_str("\n\n## ROSTER");
+    for i in 0..data.roster.len() {
+        file_text.push_str("\nPLAYER: ");
+        file_text.push_str(&data.roster[i]);
+    }
+
+    let write_result = fs::write(filename, &file_text);
+    write_result
 }

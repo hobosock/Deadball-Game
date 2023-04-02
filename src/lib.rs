@@ -243,4 +243,96 @@ mod tests {
             test_roster
         ));
     }
+
+    #[test]
+    fn test_write_team() {
+        let test_team = Team {
+            name: "Test Team".to_string(),
+            ballpark: "Test Ballpark".to_string(),
+            manager: "Test Manager".to_string(),
+            logo: "Test Logo".to_string(),
+            era: Era::Modern,
+            location: Location::Metropolis,
+            mascot: "Test Mascot".to_string(),
+            priority: Priority::Power,
+            makeup: Makeup::Balanced,
+            years: 10i32,
+            championship: 10i32,
+            fanbase: Fanbase::Loyal,
+            manager_position: Position::Pitcher,
+            manager_league: ManagerLeague::Major,
+            retired: 10i32,
+            personality: "Test Personality".to_string(),
+            daring: 10i32,
+            motto: "Test Motto".to_string(),
+            owner_background: "Test Background".to_string(),
+            owner_personality: "Test Personality".to_string(),
+            roster: vec![
+                "test1".to_string(),
+                "test2".to_string(),
+                "test3".to_string(),
+            ],
+        };
+
+        let filename = "/home/seth/Deadball-Game/src/testfiles/write_team_test.dbt";
+        let write_result = write_team(test_team, filename);
+
+        let contents = fs::read_to_string(filename).unwrap();
+        let read_team = load_team(contents);
+        let test_name = read_team.name;
+        let test_ballpark = read_team.ballpark;
+        let test_manager = read_team.manager;
+        let test_logo = read_team.logo;
+        let test_era = read_team.era;
+        let test_location = read_team.location;
+        let test_mascot = read_team.mascot;
+        let test_priority = read_team.priority;
+        let test_makeup = read_team.makeup;
+        let test_years = read_team.years;
+        let test_championship = read_team.championship;
+        let test_fanbase = read_team.fanbase;
+        let test_manager_position = read_team.manager_position;
+        let test_manager_league = read_team.manager_league;
+        let test_retired = read_team.retired;
+        let test_personality = read_team.personality;
+        let test_daring = read_team.daring;
+        let test_motto = read_team.motto;
+        let test_owner_background = read_team.owner_background;
+        let test_owner_personality = read_team.owner_personality;
+
+        assert!(matches!("Test Team".to_string(), test_name));
+        assert!(matches!("Test Ballpark".to_string(), test_ballpark));
+        assert!(matches!("Test Manager".to_string(), test_ballpark));
+        assert!(matches!("Test Logo".to_string(), test_manager));
+        assert!(matches!(Era::Modern, test_era));
+        assert!(matches!(Location::Metropolis, test_location));
+        assert!(matches!("Test Mascot".to_string(), test_mascot));
+        assert!(matches!(Priority::Power, test_priority));
+        assert!(matches!(Makeup::Balanced, test_makeup));
+        assert_eq!(10i32, test_years);
+        assert_eq!(10i32, test_championship);
+        assert!(matches!(Fanbase::Loyal, test_fanbase));
+        assert!(matches!(Position::Pitcher, test_manager_position));
+        assert!(matches!(ManagerLeague::Major, test_manager_league));
+        assert_eq!(10i32, test_retired);
+        assert!(matches!("Test Personality".to_string(), test_personality));
+        assert_eq!(10i32, test_daring);
+        assert!(matches!("Test Motto".to_string(), test_motto));
+        assert!(matches!(
+            "Test Background".to_string(),
+            test_owner_background
+        ));
+        assert!(matches!(
+            "Test Personality".to_string(),
+            test_owner_personality
+        ));
+        assert!(matches!(
+            vec![
+                "test1".to_string(),
+                "test2".to_string(),
+                "test3".to_string()
+            ],
+            test_roster
+        ));
+    }
 }
