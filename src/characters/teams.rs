@@ -150,22 +150,22 @@ pub struct Team {
 
 pub struct BallparkModern {
     pub name: String,
-    pub location: String,
+    pub location: Location,
     pub park_type: StadiumTypeModern,
     pub capacity: i32,
     pub turf: Turf,
     pub roof: Roof,
     pub condition: Condition,
-    pub quirks: Quirks,
+    pub quirks: Vec<Quirks>,
 }
 
 pub struct BallparkAncient {
     pub name: String,
-    pub location: String,
+    pub location: Location,
     pub park_type: StadiumTypeAncient,
     pub capacity: i32,
     pub condition: Condition,
-    pub quirks: Quirks,
+    pub quirks: Vec<Quirks>,
 }
 
 /*==========================================
@@ -469,13 +469,107 @@ pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
 pub fn load_park_modern(contents: String) -> BallparkModern {
     // initialize fields
     let mut name = String::new();
-    let mut location = String::new();
+    let mut location = Location::None;
     let mut park_type = StadiumTypeModern::None;
     let mut capacity: i32 = 0;
     let mut turf = Turf::None;
     let mut roof = Roof::None;
     let mut condition = Condition::None;
-    let mut quirks = Quirks::None;
+    let mut quirks = vec![Quirks::None];
+
+    let rows: Vec<&str> = contents.split("\n").collect();
+    for i in 0..rows.len() - 1 {
+        // last line is usually just a new line character
+        let rowline: Vec<&str> = rows[i].split(":").collect();
+        if rowline[0].trim().eq("NAME") {
+            name = rowline[1].trim().to_string();
+        } else if rowline[0].trim().eq("LOCATION") {
+            if rowline[1].trim().eq("Middle Of Nowhere") {
+                location = Location::MiddleOfNowhere;
+            } else if rowline[1].trim().eq("Small Town") {
+                location = Location::SmallTown;
+            } else if rowline[1].trim().eq("Small City") {
+                location = Location::SmallCity;
+            } else if rowline[1].trim().eq("Medium Sized City") {
+                location = Location::MediumSizedCity;
+            } else if rowline[1].trim().eq("Metropolis") {
+                location = Location::Metropolis;
+            }
+        } else if rowline[0].trim().eq("TYPE") {
+            if rowline[1].trim().eq("Jewel Box") {
+                park_type = StadiumTypeModern::JewelBox;
+            } else if rowline[1].trim().eq("Baseball Palace") {
+                park_type = StadiumTypeModern::BaseballPalace;
+            } else if rowline[1].trim().eq("Space Age") {
+                park_type = StadiumTypeModern::SpaceAge;
+            } else if rowline[1].trim().eq("Concrete Donut") {
+                park_type = StadiumTypeModern::ConcreteDonut;
+            } else if rowline[1].trim().eq("Retro") {
+                park_type = StadiumTypeModern::Retro;
+            }
+        } else if rowline[0].trim().eq("CAPACITY") {
+            let capacity_result = rowline[1].trim().parse();
+            match capacity_result {
+                Ok(cap) => capacity = cap,
+                Err(_err) => println!("{}", "Failed to convert 'capacity' number.".red().bold()),
+            }
+        } else if rowline[0].trim().eq("TURF") {
+            if rowline[1].trim().eq("Good") {
+                turf = Turf::Good;
+            } else if rowline[1].trim().eq("Ragged") {
+                turf = Turf::Ragged;
+            } else if rowline[1].trim().eq("Artificial") {
+                turf = Turf::Artificial;
+            }
+        } else if rowline[0].trim().eq("ROOF") {
+            if rowline[1].trim().eq("No Roof") {
+                roof = Roof::NoRoof;
+            } else if rowline[1].trim().eq("Permanent Roof") {
+                roof = Roof::PermanentRoof;
+            } else if rowline[1].trim().eq("Retractable Roof") {
+                roof = Roof::RetractableRoof;
+            }
+        } else if rowline[0].trim().eq("CONDITION") {
+            if rowline[1].trim().eq("Well Worn") {
+                condition = Condition::WellWorn;
+            } else if rowline[1].trim().eq("Decrepit") {
+                condition = Condition::Decrepit;
+            } else if rowline[1].trim().eq("Sparkling") {
+                condition = Condition::Sparkling;
+            } else if rowline[1].trim().eq("Falling Apart") {
+                condition = Condition::FallingApart;
+            }
+        } else if rowline[0].trim().eq("QUIRKS") {
+            let quirk_string: Vec<&str> = rowline[1].split(",").collect();
+            for i in 0..quirk_string.len() {
+                if quirk_string[i].trim().eq("Cozy Outfield") {
+                    quirks.push(Quirks::CozyOutfield);
+                } else if quirk_string[i].trim().eq("Expansive Outfield") {
+                    quirks.push(Quirks::ExpansiveOutfield);
+                } else if quirk_string[i].trim().eq("Short Left") {
+                    quirks.push(Quirks::ShortLeft);
+                } else if quirk_string[i].trim().eq("Short Right") {
+                    quirks.push(Quirks::ShortRight);
+                } else if quirk_string[i].trim().eq("Odd Left") {
+                    quirks.push(Quirks::OddLeft);
+                } else if quirk_string[i].trim().eq("Odd Center") {
+                    quirks.push(Quirks::OddCenter);
+                } else if quirk_string[i].trim().eq("Odd Right") {
+                    quirks.push(Quirks::OddRight);
+                } else if quirk_string[i].trim().eq("Fast Infield") {
+                    quirks.push(Quirks::FastInfield);
+                } else if quirk_string[i].trim().eq("Slow Infield") {
+                    quirks.push(Quirks::SlowInfield);
+                } else if quirk_string[i].trim().eq("High Mound") {
+                    quirks.push(Quirks::HighMound);
+                } else if quirk_string[i].trim().eq("Beautiful") {
+                    quirks.push(Quirks::Beautiful);
+                } else if quirk_string[i].trim().eq("Hideous") {
+                    quirks.push(Quirks::Hideous);
+                }
+            }
+        }
+    }
 
     let park_data = BallparkModern {
         name: name,
@@ -494,11 +588,84 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
 pub fn load_park_ancient(contents: String) -> BallparkAncient {
     // initialize fields
     let mut name = String::new();
-    let mut location = String::new();
+    let mut location = Location::None;
     let mut park_type = StadiumTypeAncient::None;
     let mut capacity: i32 = 0;
     let mut condition = Condition::None;
-    let mut quirks = Quirks::None;
+    let mut quirks = vec![Quirks::None];
+
+    let rows: Vec<&str> = contents.split("\n").collect();
+    for i in 0..rows.len() - 1 {
+        let rowline: Vec<&str> = rows[i].split(":").collect();
+        if rowline[0].trim().eq("NAME") {
+            name = rowline[1].trim().to_string();
+        } else if rowline[0].trim().eq("LOCATION") {
+            if rowline[1].trim().eq("Middle Of Nowhere") {
+                location = Location::MiddleOfNowhere;
+            } else if rowline[1].trim().eq("Small Town") {
+                location = Location::SmallTown;
+            } else if rowline[1].trim().eq("Small City") {
+                location = Location::SmallCity;
+            } else if rowline[1].trim().eq("Medium Sized City") {
+                location = Location::MediumSizedCity;
+            } else if rowline[1].trim().eq("Metropolis") {
+                location = Location::Metropolis;
+            }
+        } else if rowline[0].trim().eq("TYPE") {
+            if rowline[1].trim().eq("Jewel Box") {
+                park_type = StadiumTypeAncient::JewelBox;
+            } else if rowline[1].trim().eq("Baseball Palace") {
+                park_type = StadiumTypeAncient::BaseballPalace;
+            } else if rowline[1].trim().eq("Wood Frame Pavilion") {
+                park_type = StadiumTypeAncient::WoodFramePavilion;
+            }
+        } else if rowline[0].trim().eq("CAPACITY") {
+            let capacity_result = rowline[1].trim().parse();
+            match capacity_result {
+                Ok(cap) => capacity = cap,
+                Err(_err) => println!("{}", "Failed to convert 'capacity' number.".red().bold()),
+            }
+        } else if rowline[0].trim().eq("CONDITION") {
+            if rowline[1].trim().eq("Well Worn") {
+                condition = Condition::WellWorn;
+            } else if rowline[1].trim().eq("Decrepit") {
+                condition = Condition::Decrepit;
+            } else if rowline[1].trim().eq("Sparkling") {
+                condition = Condition::Sparkling;
+            } else if rowline[1].trim().eq("Falling Apart") {
+                condition = Condition::FallingApart;
+            }
+        } else if rowline[0].trim().eq("QUIRKS") {
+            let quirk_string: Vec<&str> = rowline[1].split(",").collect();
+            for i in 0..quirk_string.len() {
+                if quirk_string[1].trim().eq("Cozy Outfield") {
+                    quirks.push(Quirks::CozyOutfield);
+                } else if quirk_string[i].trim().eq("Expansive Outfield") {
+                    quirks.push(Quirks::ExpansiveOutfield);
+                } else if quirk_string[i].trim().eq("Short Left") {
+                    quirks.push(Quirks::ShortLeft);
+                } else if quirk_string[i].trim().eq("Short Right") {
+                    quirks.push(Quirks::ShortRight);
+                } else if quirk_string[i].trim().eq("Odd Left") {
+                    quirks.push(Quirks::OddLeft);
+                } else if quirk_string[i].trim().eq("Odd Center") {
+                    quirks.push(Quirks::OddCenter);
+                } else if quirk_string[i].trim().eq("Odd Right") {
+                    quirks.push(Quirks::OddRight);
+                } else if quirk_string[i].trim().eq("Fast Infield") {
+                    quirks.push(Quirks::FastInfield);
+                } else if quirk_string[i].trim().eq("Slow Infield") {
+                    quirks.push(Quirks::SlowInfield);
+                } else if quirk_string[i].trim().eq("High Mound") {
+                    quirks.push(Quirks::HighMound);
+                } else if quirk_string[i].trim().eq("Beautiful") {
+                    quirks.push(Quirks::Beautiful);
+                } else if quirk_string[i].trim().eq("Hideous") {
+                    quirks.push(Quirks::Hideous);
+                }
+            }
+        }
+    }
 
     let park_data = BallparkAncient {
         name: name,

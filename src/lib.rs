@@ -62,8 +62,7 @@ mod tests {
 
     #[test]
     fn load_player_file() {
-        let player_file_path =
-            "/home/seth/Deadball-Game/src/testfiles/sample_player.dbp".to_string();
+        let player_file_path = "src/testfiles/sample_player.dbp".to_string();
         let contents = fs::read_to_string(player_file_path).unwrap();
         let test_player = load_player(contents);
         let test_name = test_player.first_name;
@@ -88,7 +87,7 @@ mod tests {
         assert!(matches!(vec![InjuryLocation::None], test_loc));
         assert!(matches!(vec![InjurySeverity::Uninjured], test_sev));
 
-        let player2_file_path = "/home/seth/Deadball-Game/src/testfiles/sample2.dbp".to_string();
+        let player2_file_path = "src/testfiles/sample2.dbp".to_string();
         let contents2 = fs::read_to_string(player2_file_path).unwrap();
         let test_player2 = load_player(contents2);
         let test_nick2 = test_player2.nickname;
@@ -126,7 +125,7 @@ mod tests {
                 InjurySeverity::Superficial,
             ],
         };
-        let filename = "/home/seth/Deadball-Game/src/testfiles/write_test.dbp";
+        let filename = "src/testfiles/write_test.dbp";
         let write_result = write_player(test_player, filename);
 
         let contents = fs::read_to_string(filename).unwrap();
@@ -179,8 +178,7 @@ mod tests {
 
     #[test]
     fn test_load_team() {
-        let team_file_path =
-            "/home/seth/Deadball-Game/src/testfiles/detroit_steam_hammers.dbt".to_string();
+        let team_file_path = "src/testfiles/detroit_steam_hammers.dbt".to_string();
         let contents = fs::read_to_string(team_file_path).unwrap();
 
         let test_team = load_team(contents);
@@ -208,7 +206,7 @@ mod tests {
 
         assert!(matches!("Detroit Steam Hammers".to_string(), test_name));
         assert!(matches!(
-            "/home/seth/Deadball-Game/src/testfiles/railyard.dbb".to_string(),
+            "src/testfiles/railyard.dbb".to_string(),
             test_ballpark
         ));
         assert!(matches!("none".to_string(), test_logo));
@@ -237,8 +235,8 @@ mod tests {
         assert!(matches!("Boastful".to_string(), test_owner_personality));
         assert!(matches!(
             vec![
-                "/home/seth/Deadball-Game/src/testfiles/sample_player.dbp".to_string(),
-                "/home/seth/Deadball-Game/src/testfiles/sample2.dbp".to_string(),
+                "src/testfiles/sample_player.dbp".to_string(),
+                "src/testfiles/sample2.dbp".to_string(),
             ],
             test_roster
         ));
@@ -274,7 +272,7 @@ mod tests {
             ],
         };
 
-        let filename = "/home/seth/Deadball-Game/src/testfiles/write_team_test.dbt";
+        let filename = "src/testfiles/write_team_test.dbt";
         let write_result = write_team(test_team, filename);
 
         let contents = fs::read_to_string(filename).unwrap();
@@ -334,5 +332,59 @@ mod tests {
             ],
             test_roster
         ));
+    }
+
+    #[test]
+    fn test_load_park() {
+        let park_file_path = "src/testfiles/railyard.dbb".to_string();
+        let contents = fs::read_to_string(park_file_path).unwrap();
+
+        let test_park_modern = load_park_modern(contents);
+        let modern_name = test_park_modern.name;
+        let modern_location = test_park_modern.location;
+        let modern_type = test_park_modern.park_type;
+        let modern_capacity = test_park_modern.capacity;
+        let modern_turf = test_park_modern.turf;
+        let modern_roof = test_park_modern.roof;
+        let modern_condition = test_park_modern.condition;
+        let modern_quirks = test_park_modern.quirks;
+
+        assert!(matches!("The Railyard".to_string(), modern_name));
+        assert!(matches!(Location::Metropolis, modern_location));
+        assert!(matches!(StadiumTypeModern::Retro, modern_type));
+        assert_eq!(43000i32, modern_capacity);
+        assert!(matches!(Turf::Good, modern_turf));
+        assert!(matches!(Roof::PermanentRoof, modern_roof));
+        assert!(matches!(Condition::Decrepit, modern_condition));
+        assert!(matches!(vec![Quirks::ExpansiveOutfield], modern_quirks));
+
+        let ancient_file_path = "src/testfiles/mayfair_park.dbb".to_string();
+        let ancient_contents = fs::read_to_string(ancient_file_path).unwrap();
+
+        let test_park_ancient = load_park_ancient(ancient_contents);
+        let ancient_name = test_park_ancient.name;
+        let ancient_location = test_park_ancient.location;
+        let ancient_type = test_park_ancient.park_type;
+        let ancient_capacity = test_park_ancient.capacity;
+        let ancient_condition = test_park_ancient.condition;
+        let ancient_quirks = test_park_ancient.quirks;
+
+        assert!(matches!("Mayfair Park".to_string(), ancient_name));
+        assert!(matches!(Location::SmallCity, ancient_location));
+        assert!(matches!(
+            StadiumTypeAncient::WoodFramePavilion,
+            ancient_type
+        ));
+        assert_eq!(25000i32, ancient_capacity);
+        assert!(matches!(Condition::WellWorn, ancient_condition));
+        assert!(matches!(
+            vec![Quirks::ShortRight, Quirks::Beautiful],
+            ancient_quirks
+        ));
+    }
+
+    #[test]
+    fn test_write_park() {
+        //
     }
 }
