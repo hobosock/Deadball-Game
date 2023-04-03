@@ -7,6 +7,9 @@ CONFIGURE RUSTC WARNINGS
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
+use text_colorizer::*;
+
+use crate::characters::teams::*;
 
 /*========================================================
 ENUM DEFINITIONS
@@ -23,9 +26,54 @@ pub enum AtBatResults {
     MegaOut,
 }
 
+pub enum InningTB {
+    Top,
+    Bottom,
+}
+
+pub enum Outs {
+    One,
+    Two,
+    Three,
+    None,
+}
+
+// each number is base binary (1 is runner on, 0 is no runner)
+pub enum RunnersOn {
+    Runner000,
+    Runner100,
+    Runner010,
+    Runner001,
+    Runner110,
+    Runner101,
+    Runner011,
+    Runner111,
+}
+
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
+pub struct GameModern {
+    pub home: Team,
+    pub away: Team,
+    pub ballpark: BallparkModern,
+}
+pub struct GameState {
+    pub inning: u32,
+    pub inning_half: InningTB,
+    pub outs: Outs,
+    pub runners: RunnersOn,
+    pub batting_team1: u32,
+    pub batting_team2: u32,
+    pub pitched_team1: u32,
+    pub pitched_team2: u32,
+    pub runs_team1: u32,
+    pub runs_team2: u32,
+    pub hits_team1: u32,
+    pub hits_team2: u32,
+    pub errors_team1: u32,
+    pub errors_team2: u32,
+}
 
 /*========================================================
 FUNCTION DEFINITIONS
@@ -56,5 +104,21 @@ pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatR
     }
 
     at_bat_result
+}
+
+pub fn create_modern_game (home: Team, away: Team, ballpark: BallparkModern) -> Result<GameModern, E> {
+    // check teams and park for complete information
+    if home.roster.len() < 9 {
+        println!("{}", "Home team does not have a complete roster".red().bold());
+    }
+    if away.roster.len() < 9 {
+        println!("{}", "Away team does not have a complete roster".red().bold());
+    }
+    // need to check eras
+}
+
+pub fn modern_game_flow(game: GameModern, state: GameState) {
+    // check inning
+    // check score
 }
 
