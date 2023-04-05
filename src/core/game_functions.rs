@@ -50,15 +50,22 @@ pub enum RunnersOn {
     Runner111,
 }
 
+pub enum GameStatus {
+    NotStarted,
+    Ongoing,
+    Over,
+}
+
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
-pub struct GameModern {
-    pub home: Team,
-    pub away: Team,
-    pub ballpark: BallparkModern,
+pub struct GameModern<'a> {
+    pub home: &'a Team,
+    pub away: &'a Team,
+    pub ballpark: &'a BallparkModern,
 }
 pub struct GameState {
+    pub status: GameStatus,
     pub inning: u32,
     pub inning_half: InningTB,
     pub outs: Outs,
@@ -73,6 +80,13 @@ pub struct GameState {
     pub hits_team2: u32,
     pub errors_team1: u32,
     pub errors_team2: u32,
+}
+
+//======== CUSTOM ERRORS =================================
+#[derive(Debug, Clone)]
+pub struct TeamError {
+    pub message: String,
+    pub team: String,
 }
 
 /*========================================================
@@ -106,19 +120,69 @@ pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatR
     at_bat_result
 }
 
-pub fn create_modern_game (home: Team, away: Team, ballpark: BallparkModern) -> Result<GameModern, E> {
+pub fn create_modern_game<'a>(
+    home: &'a Team,
+    away: &'a Team,
+    ballpark: &'a BallparkModern,
+) -> Result<GameModern<'a>, TeamError> {
     // check teams and park for complete information
     if home.roster.len() < 9 {
-        println!("{}", "Home team does not have a complete roster".red().bold());
+        println!(
+            "{}",
+            "Home team does not have a complete roster".red().bold()
+        );
+        return Err(TeamError {
+            message: "Home team does not have a complete roster".to_string(),
+            team: home.name.clone(),
+        });
     }
     if away.roster.len() < 9 {
-        println!("{}", "Away team does not have a complete roster".red().bold());
+        println!(
+            "{}",
+            "Away team does not have a complete roster".red().bold()
+        );
+        return Err(TeamError {
+            message: "Away team does not have a complete roster".to_string(),
+            team: away.name.clone(),
+        });
     }
-    // need to check eras
+    match home.era {
+        Era::Modern => (),
+        _ => {
+            return Err(TeamError {
+                message: "Home team is not for the modern era".to_string(),
+                team: home.name.clone(),
+            })
+        }
+    }
+    match away.era {
+        Era::Modern => (),
+        _ => {
+            return Err(TeamError {
+                message: "Away team is not for the modern era".to_string(),
+                team: away.name.clone(),
+            })
+        }
+    }
+
+    let game = GameModern {
+        home: home,
+        away: away,
+        ballpark: ballpark,
+    };
+    return Ok(game);
 }
 
-pub fn modern_game_flow(game: GameModern, state: GameState) {
+pub fn modern_game_flow(game: &GameModern, state: &mut GameState) {
+    // ONCE PER GAME
+    // ONCE PER INNING HALF
     // check inning
     // check score
+    // check number of innings pitched
+    // ONCE PER AT BAT
+    // check number of outs
+    // user input???
+    // check at bat position
+    // simulate at bat
+    // update game state
 }
-

@@ -387,4 +387,118 @@ mod tests {
     fn test_write_park() {
         //
     }
+
+    #[test]
+    fn test_create_modern_game() {
+        let mut team1 = Team {
+            name: "Test 1".to_string(),
+            ballpark: "test".to_string(),
+            manager: "test".to_string(),
+            logo: "test".to_string(),
+            era: Era::Modern,
+            location: Location::SmallTown,
+            mascot: "test".to_string(),
+            priority: Priority::Power,
+            makeup: Makeup::Balanced,
+            years: 1i32,
+            championship: 1i32,
+            fanbase: Fanbase::Loyal,
+            manager_position: Position::Shortstop,
+            manager_league: ManagerLeague::Major,
+            retired: 1i32,
+            personality: "test".to_string(),
+            daring: 1i32,
+            motto: "test".to_string(),
+            owner_background: "test".to_string(),
+            owner_personality: "test".to_string(),
+            roster: vec!["test".to_string(), "test".to_string(), "test".to_string()],
+        };
+
+        let mut team2 = Team {
+            name: "Test 2".to_string(),
+            ballpark: "test".to_string(),
+            manager: "test".to_string(),
+            logo: "test".to_string(),
+            era: Era::Ancient,
+            location: Location::SmallTown,
+            mascot: "test".to_string(),
+            priority: Priority::Power,
+            makeup: Makeup::Balanced,
+            years: 1i32,
+            championship: 1i32,
+            fanbase: Fanbase::Loyal,
+            manager_position: Position::Shortstop,
+            manager_league: ManagerLeague::Major,
+            retired: 1i32,
+            personality: "test".to_string(),
+            daring: 1i32,
+            motto: "test".to_string(),
+            owner_background: "test".to_string(),
+            owner_personality: "test".to_string(),
+            roster: vec![
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+            ],
+        };
+
+        let ballpark = BallparkModern {
+            name: "test".to_string(),
+            location: Location::SmallTown,
+            park_type: StadiumTypeModern::Retro,
+            capacity: 1i32,
+            turf: Turf::Good,
+            roof: Roof::None,
+            condition: Condition::WellWorn,
+            quirks: vec![Quirks::OddLeft],
+        };
+
+        let test_result = create_modern_game(&team1, &team2, &ballpark);
+        assert!(matches!(
+            Err::<GameModern, core::game_functions::TeamError>(TeamError {
+                message: "Home team does not have a complete roster".to_string(),
+                team: "Test 1".to_string()
+            }),
+            test_result
+        ));
+
+        team1.roster = vec![
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+        ];
+
+        let test_result2 = create_modern_game(&team1, &team2, &ballpark);
+        assert!(matches!(
+            Err::<GameModern, core::game_functions::TeamError>(TeamError {
+                message: "Away team is not for the modern era".to_string(),
+                team: "Test 2".to_string()
+            }),
+            test_result2
+        ));
+
+        team2.era = Era::Modern;
+
+        let test_result3 = create_modern_game(&team1, &team2, &ballpark).unwrap();
+        assert!(matches!(
+            GameModern {
+                home: &team1,
+                away: &team2,
+                ballpark: &ballpark,
+            },
+            test_result3
+        ));
+    }
 }
