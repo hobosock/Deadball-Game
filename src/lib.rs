@@ -77,6 +77,8 @@ mod tests {
         let test_sev = test_player.injury_severity;
 
         assert!(matches!("Seth".to_string(), test_name));
+        let temp = test_name.clone();
+        assert!(matches!("Seth".to_string(), temp));
         assert!(matches!("Loveall".to_string(), test_last));
         assert!(matches!(Position::Shortstop, test_pos));
         assert!(matches!(Handedness::Right, test_hand));
@@ -517,5 +519,16 @@ mod tests {
             },
             test_result3
         ));
+    }
+
+    #[test]
+    fn test_load_roster() {
+        let filename = "src/testfiles/detroit_steam_hammers.dbt";
+        let contents = fs::read_to_string(filename).unwrap();
+        let read_team = load_team(contents);
+        let test_roster = &read_team.roster;
+        let test_bench = &read_team.bench;
+        let test_pitcher = &read_team.pitcher;
+        let test_bullpen = &read_team.bullpen;
     }
 }

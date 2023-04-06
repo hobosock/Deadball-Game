@@ -4,7 +4,7 @@ MODULE INCLUSIONS
 use std::fs;
 use text_colorizer::*;
 
-use super::players::Position;
+use super::players::{load_player, Player, Position};
 
 /*==========================================
 ENUM DEFINITIONS
@@ -205,7 +205,7 @@ pub fn load_team(contents: String) -> Team {
 
     // sort text into relevant fields
     let rows: Vec<&str> = contents.split("\n").collect();
-    for i in 0..rows.len() - 1 {
+    for i in 0..rows.len() {
         // last line is usually just a new line character
         let rowline: Vec<&str> = rows[i].split(":").collect();
         if rowline[0].trim().eq("TEAM") {
@@ -704,4 +704,54 @@ pub fn load_park_ancient(contents: String) -> BallparkAncient {
     };
 
     park_data
+}
+
+pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<Player>) {
+    let mut roster = Vec::new();
+    let mut bench = Vec::new();
+    let mut pitcher = Vec::new();
+    let mut bullpen = Vec::new();
+
+    for i in 0..team.roster.len() {
+        let read_results = fs::read_to_string(&team.roster[i]);
+        match read_results {
+            Ok(content) => roster.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &team.roster[i]
+            ),
+        }
+    }
+    for i in 0..team.bench.len() {
+        let read_results = fs::read_to_string(&team.bench[i]);
+        match read_results {
+            Ok(content) => bench.push(load_player(content)),
+            Err(_err) => println!("{}: {}", "failed to load file".red().bold(), &team.bench[i]),
+        }
+    }
+    for i in 0..team.pitcher.len() {
+        let read_results = fs::read_to_string(&team.pitcher[i]);
+        match read_results {
+            Ok(content) => pitcher.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &team.pitcher[i]
+            ),
+        }
+    }
+    for i in 0..team.bullpen.len() {
+        let read_results = fs::read_to_string(&team.bullpen[i]);
+        match read_results {
+            Ok(content) => bullpen.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &team.bullpen[i]
+            ),
+        }
+    }
+
+    return (roster, bench, pitcher, bullpen);
 }
