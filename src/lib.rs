@@ -270,6 +270,9 @@ mod tests {
                 "test2".to_string(),
                 "test3".to_string(),
             ],
+            bench: vec!["test4".to_string()],
+            pitcher: vec!["test5".to_string()],
+            bullpen: vec!["test6".to_string()],
         };
 
         let filename = "src/testfiles/write_team_test.dbt";
@@ -297,6 +300,10 @@ mod tests {
         let test_motto = read_team.motto;
         let test_owner_background = read_team.owner_background;
         let test_owner_personality = read_team.owner_personality;
+        let test_roster = read_team.roster;
+        let test_bench = read_team.bench;
+        let test_pitcher = read_team.pitcher;
+        let test_bullpen = read_team.bullpen;
 
         assert!(matches!("Test Team".to_string(), test_name));
         assert!(matches!("Test Ballpark".to_string(), test_ballpark));
@@ -332,6 +339,10 @@ mod tests {
             ],
             test_roster
         ));
+        assert!(matches!(vec!["test4".to_string()], test_bench));
+        assert!(matches!(vec!["test5".to_string()], test_pitcher));
+        let temp = &test_bullpen[0].trim();
+        assert!(matches!("test6".to_string(), temp));
     }
 
     #[test]
@@ -412,6 +423,9 @@ mod tests {
             owner_background: "test".to_string(),
             owner_personality: "test".to_string(),
             roster: vec!["test".to_string(), "test".to_string(), "test".to_string()],
+            bench: vec!["test".to_string()],
+            pitcher: vec!["test".to_string()],
+            bullpen: vec!["test".to_string()],
         };
 
         let mut team2 = Team {
@@ -446,6 +460,9 @@ mod tests {
                 "test".to_string(),
                 "test".to_string(),
             ],
+            bench: vec!["test".to_string()],
+            pitcher: vec!["test".to_string()],
+            bullpen: vec!["test".to_string()],
         };
 
         let ballpark = BallparkModern {

@@ -185,4 +185,25 @@ pub fn modern_game_flow(game: &GameModern, state: &mut GameState) {
     // check at bat position
     // simulate at bat
     // update game state
+
+    loop {
+        // check top of the 9th at a different place
+        if state.inning > 9 {
+            // check score
+            if state.runs_team1 != state.runs_team2 {
+                state.status = GameStatus::Over;
+            }
+        }
+        match state.status {
+            GameStatus::NotStarted => {
+                // maybe time for the player to make roster adjustments?
+                state.status = GameStatus::Ongoing;
+            }
+            GameStatus::Ongoing => match state.inning_half {
+                InningTB::Top => {}
+                InningTB::Bottom => {}
+            },
+            GameStatus::Over => {}
+        }
+    }
 }

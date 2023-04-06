@@ -28,3 +28,9 @@ OWNER PERSONALITY: Boastful
 ## ROSTER
 PLAYER: /home/seth/Deadball-Game/src/testfiles/sample_player.dbp
 PLAYER: /home/seth/Deadball-Game/src/testfiles/sample2.dbp
+
+BENCH: sample_bench.dbp
+
+PITCHER: sample_pitcher.dbp
+
+BULLPEN: sample_bullpen.dbp
