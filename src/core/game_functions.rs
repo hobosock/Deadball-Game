@@ -9,7 +9,7 @@ MODULE INCLUSIONS
 ========================================================*/
 use text_colorizer::*;
 
-use crate::characters::teams::*;
+use crate::characters::{players::*, teams::*};
 
 /*========================================================
 ENUM DEFINITIONS
@@ -62,6 +62,8 @@ STRUCT DEFINITIONS
 pub struct GameModern<'a> {
     pub home: &'a Team,
     pub away: &'a Team,
+    pub home_active: &'a ActiveTeam,
+    pub away_active: &'a ActiveTeam,
     pub ballpark: &'a BallparkModern,
 }
 pub struct GameState {
@@ -72,6 +74,8 @@ pub struct GameState {
     pub runners: RunnersOn,
     pub batting_team1: u32,
     pub batting_team2: u32,
+    pub current_pitcher_team1: Player,
+    pub current_pitcher_team2: Player,
     pub pitched_team1: u32,
     pub pitched_team2: u32,
     pub runs_team1: u32,
@@ -80,6 +84,18 @@ pub struct GameState {
     pub hits_team2: u32,
     pub errors_team1: u32,
     pub errors_team2: u32,
+}
+
+// stores Player structures for teams current in a game
+pub struct ActiveTeam {
+    pub home_roster: Vec<Player>,
+    pub away_roster: Vec<Player>,
+    pub home_bench: Vec<Player>,
+    pub away_bench: Vec<Player>,
+    pub home_pitching: Vec<Player>,
+    pub away_pitching: Vec<Player>,
+    pub home_bullpen: Vec<Player>,
+    pub away_bullpen: Vec<Player>,
 }
 
 //======== CUSTOM ERRORS =================================
@@ -164,7 +180,22 @@ pub fn create_modern_game<'a>(
             })
         }
     }
-
+    // initialize structs and then push
+    let mut home_active = ActiveTeam {
+        roster: vec![],
+        bench: vec![],
+        pitcher: vec![],
+        bullpen: vec![],
+    }
+    // try to load all the players, return error if it fails
+    for i in 0..home.roster.len() {
+        // file read bits
+        let read_results = fs::read_to_string(&home.roster[i]);
+        match read_results {
+            Ok(content) => bench.push(load_player(content)),
+            Err(_err) => println!("{}: {}", "failed to load file".red().bold(), &team.bench[i]),
+        }
+    }
     let game = GameModern {
         home: home,
         away: away,
@@ -174,17 +205,19 @@ pub fn create_modern_game<'a>(
 }
 
 pub fn modern_game_flow(game: &GameModern, state: &mut GameState) {
-    // ONCE PER GAME
-    // ONCE PER INNING HALF
-    // check inning
-    // check score
-    // check number of innings pitched
-    // ONCE PER AT BAT
-    // check number of outs
-    // user input???
-    // check at bat position
-    // simulate at bat
-    // update game state
+    let home_team = game.home; // home = team 1
+    let away_team = game.away; // away = team 2
+                               // ONCE PER GAME
+                               // ONCE PER INNING HALF
+                               // check inning
+                               // check score
+                               // check number of innings pitched
+                               // ONCE PER AT BAT
+                               // check number of outs
+                               // user input???
+                               // check at bat position
+                               // simulate at bat
+                               // update game state
 
     loop {
         // check top of the 9th at a different place
@@ -197,6 +230,9 @@ pub fn modern_game_flow(game: &GameModern, state: &mut GameState) {
         match state.status {
             GameStatus::NotStarted => {
                 // maybe time for the player to make roster adjustments?
+                // just set first pitcher as active pitcher for now
+                state.current_pitcher_team1 = load_player(home_team.pitcher[0]);
+                state.current_pitcher_team2 = load_player(away_team.pitcher[0]);
                 state.status = GameStatus::Ongoing;
             }
             GameStatus::Ongoing => match state.inning_half {
