@@ -7,9 +7,12 @@ CONFIGURE RUSTC WARNINGS
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
+use std::fs;
 use text_colorizer::*;
 
 use crate::characters::{players::*, teams::*};
+
+use super::roll;
 
 /*========================================================
 ENUM DEFINITIONS
@@ -56,17 +59,90 @@ pub enum GameStatus {
     Over,
 }
 
+// 2d10
+pub enum Oddity {
+    FanInterference,
+    AnimalOnField,
+    RainDelay,
+    FielderAppearsInjured,
+    PitcherAppearsInjured,
+    Tootblan,
+    PickOff,
+    CallBlownAtFirst,
+    CallBlownAtHomePlate,
+    HitByPitch,
+    WildPitch,
+    PitcherDistracted,
+    DroppedThirdStrike,
+    PassedBall,
+    CurrentBatterAppearsInjured,
+    PreviousBatterAppearsInjured,
+    PitcherError,
+    Balk,
+    CatcherInterference,
+}
+
+// d20
+pub enum HitTable {
+    Single,
+    SingleDef1B,
+    SingleDef2B,
+    SingleDef3B,
+    SingleDefSS,
+    SingleRunnersAdv,
+    DoubleDefLF,
+    DoubleDefCF,
+    DoubleDefRF,
+    DoubleRunnerAdv,
+    HomeRun,
+}
+
+// last digit of swing result
+pub enum OutType {
+    K,
+    G3,
+    G4,
+    G5,
+    G6,
+    F7,
+    F8,
+    F9,
+}
+
+// Bunting (d6), needs to be handled with base situation
+
+// d8 to steal second, d8-1 to steal third
+pub enum Stealing {
+    RunnerOut,
+    RunnerSafe,
+}
+
+// d12
+pub enum Defense {
+    Error,
+    NoChange,
+    DoubleToSingle,
+    HitToOut,
+}
+
+pub enum Animal {
+    Bird,
+    Rodent,
+    Cat,
+    Streaker,
+}
+
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
 pub struct GameModern<'a> {
     pub home: &'a Team,
     pub away: &'a Team,
-    pub home_active: &'a ActiveTeam,
-    pub away_active: &'a ActiveTeam,
+    pub home_active: ActiveTeam,
+    pub away_active: ActiveTeam,
     pub ballpark: &'a BallparkModern,
 }
-pub struct GameState {
+pub struct GameState<'a> {
     pub status: GameStatus,
     pub inning: u32,
     pub inning_half: InningTB,
@@ -74,8 +150,8 @@ pub struct GameState {
     pub runners: RunnersOn,
     pub batting_team1: u32,
     pub batting_team2: u32,
-    pub current_pitcher_team1: Player,
-    pub current_pitcher_team2: Player,
+    pub current_pitcher_team1: &'a Player,
+    pub current_pitcher_team2: &'a Player,
     pub pitched_team1: u32,
     pub pitched_team2: u32,
     pub runs_team1: u32,
@@ -84,18 +160,6 @@ pub struct GameState {
     pub hits_team2: u32,
     pub errors_team1: u32,
     pub errors_team2: u32,
-}
-
-// stores Player structures for teams current in a game
-pub struct ActiveTeam {
-    pub home_roster: Vec<Player>,
-    pub away_roster: Vec<Player>,
-    pub home_bench: Vec<Player>,
-    pub away_bench: Vec<Player>,
-    pub home_pitching: Vec<Player>,
-    pub away_pitching: Vec<Player>,
-    pub home_bullpen: Vec<Player>,
-    pub away_bullpen: Vec<Player>,
 }
 
 //======== CUSTOM ERRORS =================================
@@ -184,40 +248,124 @@ pub fn create_modern_game<'a>(
     let mut home_active = ActiveTeam {
         roster: vec![],
         bench: vec![],
-        pitcher: vec![],
+        pitching: vec![],
         bullpen: vec![],
-    }
+    };
     // try to load all the players, return error if it fails
     for i in 0..home.roster.len() {
-        // file read bits
         let read_results = fs::read_to_string(&home.roster[i]);
         match read_results {
-            Ok(content) => bench.push(load_player(content)),
-            Err(_err) => println!("{}: {}", "failed to load file".red().bold(), &team.bench[i]),
+            Ok(content) => home_active.roster.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &home.roster[i]
+            ),
         }
     }
+    for i in 0..home.bench.len() {
+        let read_results = fs::read_to_string(&home.bench[i]);
+        match read_results {
+            Ok(content) => home_active.bench.push(load_player(content)),
+            Err(_err) => println!("{}: {}", "failed to load file".red().bold(), &home.bench[i]),
+        }
+    }
+    for i in 0..home.pitcher.len() {
+        let read_results = fs::read_to_string(&home.pitcher[i]);
+        match read_results {
+            Ok(content) => home_active.pitching.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &home.pitcher[i]
+            ),
+        }
+    }
+    for i in 0..home.bullpen.len() {
+        let read_results = fs::read_to_string(&home.bullpen[i]);
+        match read_results {
+            Ok(content) => home_active.bullpen.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &home.bullpen[i]
+            ),
+        }
+    }
+
+    let mut away_active = ActiveTeam {
+        roster: vec![],
+        bench: vec![],
+        pitching: vec![],
+        bullpen: vec![],
+    };
+    for i in 0..away.roster.len() {
+        let read_results = fs::read_to_string(&away.roster[i]);
+        match read_results {
+            Ok(content) => away_active.roster.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &away.roster[i]
+            ),
+        }
+    }
+    for i in 0..away.bench.len() {
+        let read_results = fs::read_to_string(&away.bench[i]);
+        match read_results {
+            Ok(content) => away_active.bench.push(load_player(content)),
+            Err(_err) => println!("{}: {}", "failed to load file".red().bold(), &away.bench[i]),
+        }
+    }
+    for i in 0..away.pitcher.len() {
+        let read_results = fs::read_to_string(&away.pitcher[i]);
+        match read_results {
+            Ok(content) => away_active.pitching.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &away.pitcher[i]
+            ),
+        }
+    }
+    for i in 0..away.bullpen.len() {
+        let read_results = fs::read_to_string(&away.bullpen[i]);
+        match read_results {
+            Ok(content) => away_active.bullpen.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &away.bullpen[i]
+            ),
+        }
+    }
+
     let game = GameModern {
         home: home,
         away: away,
         ballpark: ballpark,
+        home_active: home_active,
+        away_active: away_active,
     };
     return Ok(game);
 }
 
-pub fn modern_game_flow(game: &GameModern, state: &mut GameState) {
-    let home_team = game.home; // home = team 1
-    let away_team = game.away; // away = team 2
-                               // ONCE PER GAME
-                               // ONCE PER INNING HALF
-                               // check inning
-                               // check score
-                               // check number of innings pitched
-                               // ONCE PER AT BAT
-                               // check number of outs
-                               // user input???
-                               // check at bat position
-                               // simulate at bat
-                               // update game state
+pub fn modern_game_flow<'a>(game: &'a GameModern, state: &'a mut GameState<'a>) {
+    let home_team_info = game.home; // home = team 1
+    let away_team_info = game.away; // away = team 2
+                                    // ONCE PER GAME
+                                    // ONCE PER INNING HALF
+                                    // check inning
+                                    // check score
+                                    // check number of innings pitched
+                                    // ONCE PER AT BAT
+                                    // check number of outs
+                                    // user input???
+                                    // check at bat position
+                                    // simulate at bat
+                                    // update game state
+    let home_team = &game.home_active;
+    let away_team = &game.away_active;
 
     loop {
         // check top of the 9th at a different place
@@ -231,15 +379,169 @@ pub fn modern_game_flow(game: &GameModern, state: &mut GameState) {
             GameStatus::NotStarted => {
                 // maybe time for the player to make roster adjustments?
                 // just set first pitcher as active pitcher for now
-                state.current_pitcher_team1 = load_player(home_team.pitcher[0]);
-                state.current_pitcher_team2 = load_player(away_team.pitcher[0]);
+                state.current_pitcher_team1 = &home_team.pitching[0];
+                state.current_pitcher_team2 = &away_team.pitching[0];
                 state.status = GameStatus::Ongoing;
             }
             GameStatus::Ongoing => match state.inning_half {
-                InningTB::Top => {}
+                InningTB::Top => {
+                    match state.outs {
+                        Outs::Three => {
+                            state.inning_half = InningTB::Bottom;
+                            state.outs = Outs::None;
+                        }
+                        _ => {
+                            // inning function
+                        }
+                    }
+                }
                 InningTB::Bottom => {}
             },
             GameStatus::Over => {}
         }
     }
+}
+
+pub fn modern_inning_flow<'a>(game: &'a GameModern, state: &'a mut GameState<'a>) {
+    loop {
+        match state.inning_half {
+            InningTB::Top => {}
+            InningTB::Bottom => {
+                match state.outs {
+                    Outs::Three => return,
+                    _ => {
+                        // get active batter
+                        // get at bat Result
+                        // update score/runners/Outs
+                        let pd = state.current_pitcher_team2.pitch_die;
+                        let mut pitch_result: i32;
+                        if pd > 0 {
+                            pitch_result = roll(pd);
+                        } else {
+                            pitch_result = -1 * roll(pd.abs());
+                        }
+                        pitch_result += roll(100);
+                        let swing_result = at_bat(
+                            game.home_active.roster[state.batting_team1 as usize].batter_target,
+                            game.home_active.roster[state.batting_team1 as usize].on_base_target,
+                            pitch_result,
+                        );
+                        if state.batting_team1 == 9 {
+                            state.batting_team1 = 1;
+                        } else {
+                            state.batting_team1 += 1;
+                        }
+
+                        match swing_result {
+                            AtBatResults::Oddity => {
+                                let oddity_result = roll(10) + roll(10);
+                                oddity(&oddity_result, &pitch_result, game, state);
+                            }
+                            AtBatResults::CriticalHit => {
+                                // make hit roll, bump up a level
+                                let hit_result = roll(20);
+                                let crit_result = crit_hit(&hit_result, game, state);
+                            }
+                            AtBatResults::Hit => {}
+                            AtBatResults::Walk => {}
+                            AtBatResults::PossibleError => {}
+                            AtBatResults::ProductiveOut1 => {}
+                            AtBatResults::ProductiveOut2 => {}
+                            AtBatResults::Out => {}
+                            AtBatResults::MegaOut => {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+pub fn oddity<'b>(
+    oddity_result: &i32,
+    pitch_result: &i32,
+    game: &'b GameModern,
+    state: &'b mut GameState<'b>,
+) {
+    match state.inning_half {
+        InningTB::Top => {}
+        InningTB::Bottom => {
+            if *oddity_result == 2 {
+                if pitch_result % 2 == 1 {
+                    // fan catches sure out, at bat continues
+                    state.batting_team1 -= 1;
+                } else {
+                    // home run overturned, batter out
+                    match state.outs {
+                        Outs::None => state.outs = Outs::One,
+                        Outs::One => state.outs = Outs::Two,
+                        Outs::Two => state.outs = Outs::Three,
+                        Outs::Three => state.outs = Outs::Three,
+                    }
+                }
+            } else if *oddity_result == 3 {
+                // animal on the field
+                // animal function here
+                println!("{}", "Animal on the field!".bold().yellow());
+            } else if *oddity_result == 4 {
+                // rain delay
+                println!("{}", "Rain delay.".bold().cyan());
+                // rain delay function
+            } else if *oddity_result == 5 {
+                // player injured
+                // player injured function
+            } else if *oddity_result == 6 {
+                // pitcher appears injured
+                // player injured function
+            } else if *oddity_result == 7 {
+                // TOOTBLAN
+            } else if *oddity_result == 8 {
+                // pick off
+            } else if *oddity_result == 9 {
+                // call blown at first
+            } else if *oddity_result == 10 {
+                // call blown at home
+            } else if *oddity_result == 11 {
+                // hit by pitch
+            } else if *oddity_result == 12 {
+                // wild pitch
+            } else if *oddity_result == 13 {
+                // pitcher distracted
+            } else if *oddity_result == 14 {
+                // dropped third strike
+            } else if *oddity_result == 15 {
+                // passed ball
+            } else if *oddity_result == 16 {
+                // current batter appears injured
+            } else if *oddity_result == 17 {
+                // previous batter appears injured
+            } else if *oddity_result == 18 {
+                // pitcher error
+            } else if *oddity_result == 19 {
+                // balk
+            } else if *oddity_result == 20 {
+                // catcher interference
+            }
+        }
+    }
+}
+
+pub fn crit_hit<'a>(hit_result: &i32, game: &'a GameModern, state: &'a mut GameState) -> i32 {
+    // based on 2E Deadball quick reference hit table
+    let mut crit_result: i32 = *hit_result;
+    if *hit_result >= 1 && *hit_result <= 2 {
+        crit_result = 18;
+    } else if *hit_result >= 7 && *hit_result <= 9 {
+        crit_result = 18;
+    } else if *hit_result >= 5 && *hit_result <= 6 {
+        crit_result = 15;
+    } else if *hit_result == 3 {
+        crit_result = 17;
+    } else if *hit_result == 4 {
+        crit_result = 16;
+    } else if *hit_result >= 15 && *hit_result <= 18 {
+        crit_result = 19;
+    }
+
+    return crit_result;
 }

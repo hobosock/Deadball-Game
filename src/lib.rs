@@ -516,6 +516,8 @@ mod tests {
                 home: &team1,
                 away: &team2,
                 ballpark: &ballpark,
+                home_active: _,
+                away_active: _,
             },
             test_result3
         ));

@@ -171,6 +171,14 @@ pub struct BallparkAncient {
     pub quirks: Vec<Quirks>,
 }
 
+// struct for teams in a game - loads player files into Player structs for easier reference
+pub struct ActiveTeam {
+    pub roster: Vec<Player>,
+    pub bench: Vec<Player>,
+    pub pitching: Vec<Player>,
+    pub bullpen: Vec<Player>,
+}
+
 /*==========================================
 FUNCTIONS
 ==========================================*/

@@ -1,0 +1,4 @@
+ - fix create_modern_game test - probably need to make proper team files
+ - develop inning function - need to handle all possible hit outcome
+ - populate all reference tables
+ - finish oddity function (and probably delete Oddity Enum?)
