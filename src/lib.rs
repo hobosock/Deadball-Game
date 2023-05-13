@@ -629,4 +629,44 @@ mod tests {
         let r8 = runnerson(&state);
         assert_eq!(r8, 3);
     }
+
+    // runners_advance test function
+    #[test]
+    fn test_runners_advance() {
+        // create test structures
+        let test_player = Player {
+            first_name: "".to_string(),
+            last_name: "".to_string(),
+            nickname: "".to_string(),
+            position: Position::Pitcher,
+            handedness: Handedness::Right,
+            batter_target: 12,
+            on_base_target: 18,
+            pitch_die: 4,
+            traits: vec![Traits::None],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![InjurySeverity::Uninjured],
+        };
+        let mut state = GameState {
+            status: GameStatus::Ongoing,
+            inning: 1,
+            inning_half: InningTB::Bottom,
+            outs: Outs::Two,
+            runners: RunnersOn::Runner100,
+            batting_team1: 1,
+            batting_team2: 1,
+            current_pitcher_team1: &test_player,
+            current_pitcher_team2: &test_player,
+            pitched_team1: 1,
+            pitched_team2: 1,
+            runs_team1: 0,
+            runs_team2: 0,
+            hits_team1: 0,
+            hits_team2: 0,
+            errors_team1: 0,
+            errors_team2: 0,
+        };
+
+        state = runners_advance(state, &1)
+    }
 }
