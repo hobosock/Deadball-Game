@@ -350,7 +350,7 @@ pub fn create_modern_game<'a>(
     return Ok(game);
 }
 
-pub fn modern_game_flow<'a>(game: &'a GameModern, state: &'a mut GameState<'a>) {
+pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
     let home_team_info = game.home; // home = team 1
     let away_team_info = game.away; // away = team 2
                                     // ONCE PER GAME
@@ -402,7 +402,7 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, state: &'a mut GameState<'a>) 
     }
 }
 
-pub fn modern_inning_flow<'a>(game: &'a GameModern, state: &'a mut GameState<'a>) {
+pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
     loop {
         match state.inning_half {
             InningTB::Top => {}
@@ -435,12 +435,12 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, state: &'a mut GameState<'a>
                         match swing_result {
                             AtBatResults::Oddity => {
                                 let oddity_result = roll(10) + roll(10);
-                                oddity(&oddity_result, &pitch_result, game, state);
+                                state = oddity(&oddity_result, &pitch_result, game, state);
                             }
                             AtBatResults::CriticalHit => {
                                 // make hit roll, bump up a level
-                                let hit_result = roll(20);
-                                let crit_result = crit_hit(&hit_result, game, state);
+                                let mut hit_result = roll(20);
+                                hit_result = crit_hit(&hit_result);
                             }
                             AtBatResults::Hit => {}
                             AtBatResults::Walk => {}
@@ -461,10 +461,10 @@ pub fn oddity<'b>(
     oddity_result: &i32,
     pitch_result: &i32,
     game: &'b GameModern,
-    state: &'b mut GameState<'b>,
-) {
+    mut state: GameState<'b>,
+) -> GameState<'b> {
     match state.inning_half {
-        InningTB::Top => {}
+        InningTB::Top => return state,
         InningTB::Bottom => {
             if *oddity_result == 2 {
                 if pitch_result % 2 == 1 {
@@ -479,54 +479,75 @@ pub fn oddity<'b>(
                         Outs::Three => state.outs = Outs::Three,
                     }
                 }
+                return state;
             } else if *oddity_result == 3 {
                 // animal on the field
                 // animal function here
                 println!("{}", "Animal on the field!".bold().yellow());
+                return state;
             } else if *oddity_result == 4 {
                 // rain delay
                 println!("{}", "Rain delay.".bold().cyan());
                 // rain delay function
+                return state;
             } else if *oddity_result == 5 {
                 // player injured
                 // player injured function
+                return state;
             } else if *oddity_result == 6 {
                 // pitcher appears injured
                 // player injured function
+                return state;
             } else if *oddity_result == 7 {
                 // TOOTBLAN
+                return state;
             } else if *oddity_result == 8 {
                 // pick off
+                return state;
             } else if *oddity_result == 9 {
                 // call blown at first
+                return state;
             } else if *oddity_result == 10 {
                 // call blown at home
+                return state;
             } else if *oddity_result == 11 {
                 // hit by pitch
+                return state;
             } else if *oddity_result == 12 {
                 // wild pitch
+                return state;
             } else if *oddity_result == 13 {
                 // pitcher distracted
+                return state;
             } else if *oddity_result == 14 {
                 // dropped third strike
+                return state;
             } else if *oddity_result == 15 {
                 // passed ball
+                return state;
             } else if *oddity_result == 16 {
                 // current batter appears injured
+                return state;
             } else if *oddity_result == 17 {
                 // previous batter appears injured
+                return state;
             } else if *oddity_result == 18 {
                 // pitcher error
+                return state;
             } else if *oddity_result == 19 {
                 // balk
+                return state;
             } else if *oddity_result == 20 {
                 // catcher interference
+                return state;
+            } else {
+                return state;
             }
         }
     }
 }
 
-pub fn crit_hit<'a>(hit_result: &i32, game: &'a GameModern, state: &'a mut GameState) -> i32 {
+pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
     // based on 2E Deadball quick reference hit table
     let mut crit_result: i32 = *hit_result;
     if *hit_result >= 1 && *hit_result <= 2 {
