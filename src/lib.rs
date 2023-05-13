@@ -599,10 +599,34 @@ mod tests {
         };
 
         let r1 = runnerson(&state);
-        assert_eq!(r1,0);
+        assert_eq!(r1, 0);
 
         state.runners = RunnersOn::Runner100;
         let r2 = runnerson(&state);
-        assert_eq!(r2,1);
+        assert_eq!(r2, 1);
+
+        state.runners = RunnersOn::Runner010;
+        let r3 = runnerson(&state);
+        assert_eq!(r3, 1);
+
+        state.runners = RunnersOn::Runner001;
+        let r4 = runnerson(&state);
+        assert_eq!(r4, 1);
+
+        state.runners = RunnersOn::Runner110;
+        let r5 = runnerson(&state);
+        assert_eq!(r5, 2);
+
+        state.runners = RunnersOn::Runner101;
+        let r6 = runnerson(&state);
+        assert_eq!(r6, 2);
+
+        state.runners = RunnersOn::Runner011;
+        let r7 = runnerson(&state);
+        assert_eq!(r7, 2);
+
+        state.runners = RunnersOn::Runner111;
+        let r8 = runnerson(&state);
+        assert_eq!(r8, 3);
     }
 }
