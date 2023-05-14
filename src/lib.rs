@@ -667,6 +667,32 @@ mod tests {
             errors_team2: 0,
         };
 
-        state = runners_advance(state, &1)
+        state = runners_advance(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner010));
+
+        state = runners_advance(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner001));
+
+        state = runners_advance(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 1);
+
+        state.runners = RunnersOn::Runner100;
+        state = runners_advance(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner001));
+
+        state = runners_advance(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 2);
+
+        state.runners = RunnersOn::Runner011;
+        state = runners_advance(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 4);
+
+        state.runners = RunnersOn::Runner110;
+        state = runners_advance(state, &3);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 6);
     }
 }
