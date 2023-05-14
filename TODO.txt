@@ -2,3 +2,4 @@
  - develop inning function - need to handle all possible hit outcome
  - populate all reference tables
  - finish oddity function (and probably delete Oddity Enum?)
+ - add player find by position to use traits for things like defense rolls
