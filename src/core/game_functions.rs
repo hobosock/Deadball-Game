@@ -441,16 +441,96 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                                 // make hit roll, bump up a level
                                 let mut hit_result = roll(20);
                                 hit_result = crit_hit(&hit_result);
+                                state = hit_table(&hit_result, state);
+                                // TODO no DEF roll on crit_hit
                             }
                             AtBatResults::Hit => {
                                 // hit roll
+                                let hit_result = roll(20);
+                                state = hit_table(&hit_result, state);
                             }
-                            AtBatResults::Walk => {}
-                            AtBatResults::PossibleError => {}
-                            AtBatResults::ProductiveOut1 => {}
-                            AtBatResults::ProductiveOut2 => {}
-                            AtBatResults::Out => {}
-                            AtBatResults::MegaOut => {}
+                            AtBatResults::Walk => {
+                                // basically like a single, just don't update the hit values
+                                state = runners_advance(state, &1);
+                                state = add_runner(state, &1);
+                            }
+                            AtBatResults::PossibleError => {
+                                // TODO Not sure I am implementing this correctly, see page 29
+                                // get position
+                                // TODO get player traits
+                                let def_roll = roll(12);
+                                if def_roll <= 2 {
+                                    // fielder makes an error
+                                    match state.inning_half {
+                                        InningTB::Top => {
+                                            state.errors_team1 += 1;
+                                        }
+                                        InningTB::Bottom => {
+                                            state.errors_team2 += 1;
+                                        }
+                                    }
+                                    state = runners_advance(state, &1);
+                                    state = add_runner(state, &1);
+                                } else {
+                                    // fielder makes the out like normal
+                                    match state.outs {
+                                        Outs::None => {
+                                            state.outs = Outs::One;
+                                        }
+                                        Outs::One => {
+                                            state.outs = Outs::Two;
+                                        }
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        Outs::Three => {
+                                            state.outs = Outs::Three;
+                                        }
+                                    }
+                                }
+                            }
+                            AtBatResults::ProductiveOut1 => {
+                                // TODO only proceed if less than two outs
+                                // if first or outfield, runners on 2nd and 3rd advance
+                                // if 2B/SS/3B, runner at first advances and batter is out
+                                let fielder = get_swing_position(&pitch_result);
+                                if fielder == 1 || fielder >= 7 {
+                                    // check for runners on second and third
+                                    match state.runners {
+                                        RunnersOn::Runner000 => {}
+                                        RunnersOn::Runner100 => {}
+                                        RunnersOn::Runner010 => {
+                                            state = runners_advance(state, &1);
+                                        }
+                                        RunnersOn::Runner001 => {
+                                            state = runners_advance(state, &1);
+                                        }
+                                        RunnersOn::Runner011 => {
+                                            state = runners_advance(state, &1);
+                                        }
+                                        RunnersOn::Runner110 => {
+                                            // can't use normal runners advance function because
+                                            // runner at first doesn't move
+                                            state.runners = RunnersOn::Runner101;
+                                        }
+                                    }
+                                    // advance if they exist
+                                } else {
+                                    // check for runner on first
+                                }
+                                // update out
+                            }
+                            AtBatResults::ProductiveOut2 => {
+                                // if first or outfield, runners on 2nd and 3rd advance
+                                // if 2B/SS/3B, runner is out and batter makes it to first
+                            }
+                            AtBatResults::Out => {
+                                // no runners advance
+                                // anywhere in the infield, runner at first and batter are out
+                            }
+                            AtBatResults::MegaOut => {
+                                // triple play if no outs and runners on first and second
+                            }
                         }
                     }
                 }
@@ -576,15 +656,35 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
     // 1. defense roll (if needed)
     // 2. advance runners
     // 3 move hitter to runner
+    // 4. update hit values in game state
     if *hit_result <= 2 {
         // single
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
+        // simple hit increment when no defense roll involved
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         return state;
     } else if *hit_result == 3 {
         // single DEF 1B
         let mut advance = 1;
         let mut base = 1;
+        // when a defense roll is involved, add hit first and then you can subtract if there is an
+        // out or an error
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -595,6 +695,14 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // single DEF 2B
         let mut advance = 1;
         let mut base = 1;
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -605,6 +713,14 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // single DEF 3B
         let mut advance = 1;
         let mut base = 1;
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -615,6 +731,14 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // single DEF SS
         let mut advance = 1;
         let mut base = 1;
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -625,16 +749,40 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // single
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         return state;
     } else if *hit_result >= 10 && *hit_result <= 14 {
         // single, runners advance 2
         state = runners_advance(state, &2);
         state = add_runner(state, &1);
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         return state;
     } else if *hit_result == 15 {
         // double DEF LF
         let mut advance = 2;
         let mut base = 2;
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -645,6 +793,14 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // double DEF CF
         let mut advance = 2;
         let mut base = 2;
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -655,6 +811,14 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // double DEF RF
         let mut advance = 2;
         let mut base = 2;
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         let def_roll = roll(12); // defense rolls are d12
                                  // TODO: eventually will put trait check here
         (state, advance, base) = defense(state, &def_roll, advance, base);
@@ -665,6 +829,14 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
         // double, runners advance 3
         state = runners_advance(state, &3);
         state = add_runner(state, &2);
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         return state;
     } else if *hit_result >= 19 {
         // home run
@@ -679,13 +851,22 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
                 state.runs_team1 += runs;
             }
         }
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 += 1;
+            }
+        }
         return state;
     } else {
         return state;
     }
 }
 
-// find position player function - finds player info based on position and inning
+// TODO find position player function - finds player info based on position and inning
+
 // defense roll function - rolls on the defense table and updates game state
 pub fn defense<'b>(
     mut state: GameState<'b>,
@@ -695,6 +876,18 @@ pub fn defense<'b>(
 ) -> (GameState<'b>, u32, u32) {
     if *def_result <= 2 {
         // error, runners take an extra base
+        // modify hit and error values
+        // should be okay to subtract here since hit was added before passing into this function
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 -= 1;
+                state.errors_team1 += 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 -= 1;
+                state.errors_team2 += 1;
+            }
+        }
         return (state, advance + 1, base + 1);
     } else if *def_result >= 3 && *def_result <= 9 {
         // no change
@@ -737,6 +930,14 @@ pub fn defense<'b>(
             }
             Outs::Three => {
                 state.outs = Outs::Three;
+            }
+        }
+        match state.inning_half {
+            InningTB::Top => {
+                state.hits_team2 -= 1;
+            }
+            InningTB::Bottom => {
+                state.hits_team1 -= 1;
             }
         }
         base = 0;
@@ -1024,4 +1225,10 @@ pub fn add_runner<'b>(mut state: GameState<'b>, base: &u32) -> GameState<'b> {
             return state;
         }
     }
+}
+
+// function to get last digit of swing_result - used for determining which fielder makes the out
+pub fn get_swing_position(pitch_result: &i32) -> i32 {
+    let last_digit = *pitch_result % 10;
+    return last_digit;
 }
