@@ -3,3 +3,4 @@
  - populate all reference tables
  - finish oddity function (and probably delete Oddity Enum?)
  - add player find by position to use traits for things like defense rolls
+ - probably need to track which player is on base???
