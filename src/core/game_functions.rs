@@ -676,7 +676,51 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                                             state.outs = Outs::Three;
                                         }
                                         _ => match state.runners {
-                                            RunnersOn::Runner000 => match state.outs {
+                                            RunnersOn::Runner100 => {
+                                                state.runners = RunnersOn::Runner000;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            RunnersOn::Runner110 => {
+                                                state.runners = RunnersOn::Runner010;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            RunnersOn::Runner101 => {
+                                                state.runners = RunnersOn::Runner001;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            RunnersOn::Runner111 => {
+                                                state.runners = RunnersOn::Runner011;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            _ => match state.outs {
                                                 Outs::None => {
                                                     state.outs = Outs::One;
                                                 }
@@ -690,24 +734,73 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                                                     state.outs = Outs::Three;
                                                 }
                                             },
-                                            RunnersOn::Runner100 => {
-                                                state.runners = RunnersOn::Runner000;
-                                                match state.outs {
-                                                    Outs::None => {
-                                                        state.outs = Outs::Two;
-                                                    }
-                                                    _ => {
-                                                        state.outs = Outs::Three;
-                                                    }
-                                                }
-                                            }
-                                            RunnersOn::Runner010 => {}
                                         },
+                                    }
+                                } else {
+                                    match state.outs {
+                                        Outs::None => {
+                                            state.outs = Outs::One;
+                                        }
+                                        Outs::One => {
+                                            state.outs = Outs::Two;
+                                        }
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        Outs::Three => {
+                                            state.outs = Outs::Three;
+                                        }
                                     }
                                 }
                             }
                             AtBatResults::MegaOut => {
                                 // triple play if no outs and runners on first and second
+                                // check for triple play, otherwise same as previous branch
+                                match state.runners {
+                                    RunnersOn::Runner110 => {
+                                        state.outs = Outs::Three;
+                                        // TODO only say it's a triple play if no outs
+                                    }
+                                    RunnersOn::Runner111 => {
+                                        state.outs = Outs::Three;
+                                    }
+                                    RunnersOn::Runner100 => {
+                                        state.runners = RunnersOn::Runner000;
+                                        match state.outs {
+                                            Outs::None => {
+                                                state.outs = Outs::Two;
+                                            }
+                                            _ => {
+                                                state.outs = Outs::Three;
+                                            }
+                                        }
+                                    }
+                                    RunnersOn::Runner101 => {
+                                        state.runners = RunnersOn::Runner001;
+                                        match state.outs {
+                                            Outs::None => {
+                                                state.outs = Outs::Two;
+                                            }
+                                            _ => {
+                                                state.outs = Outs::Three;
+                                            }
+                                        }
+                                    }
+                                    _ => match state.outs {
+                                        Outs::None => {
+                                            state.outs = Outs::One;
+                                        }
+                                        Outs::One => {
+                                            state.outs = Outs::Two;
+                                        }
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        Outs::Three => {
+                                            state.outs = Outs::Three;
+                                        }
+                                    },
+                                }
                             }
                         }
                     }
