@@ -1,0 +1,36 @@
+## TEAM INFO
+TEAM: Detroit Steam Hammers
+BALLPARK: src/testfiles/game_test/ballpark.dbp
+LOGO: none
+
+ERA: Modern
+LOCATION: Metropolis
+MASCOT: Train
+TEAM PRIORITY: Staring Pitching
+TEAM MAKEUP: Mostly Prospects
+YEARS IN LEAGUE: 11
+MOST RECENT CHAMPIONSHIP: 7
+FANBASE: Loyal
+
+## MANAGER INFO
+MANAGER: Fastball Mike
+POSITION: P
+LEAGUE: Majors
+RETIRED: 22
+PERSONALITY: Sincere
+DARING: 12
+MOTTO: Score more runs than the other guy.
+
+## OWNER INFO
+BACKGROUND: Venture Capitalist
+OWNER PERSONALITY: Boastful
+
+## ROSTER
+PLAYER: src/testfiles/game_test/ballpark.dbp
+PLAYER: src/testfiles/sample2.dbp
+
+BENCH: src/testfiles/sample_bench.dbp
+
+PITCHER: src/testfiles/sample_pitcher.dbp
+
+

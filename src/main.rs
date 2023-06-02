@@ -6,4 +6,5 @@ use std::fs;
 
 fn main() {
     // quick test, just print out each step of a game and see if it makes sense
+    // 1. load home/away/ballpark files
 }
