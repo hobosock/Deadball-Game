@@ -379,36 +379,451 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
             GameStatus::NotStarted => {
                 // maybe time for the player to make roster adjustments?
                 // just set first pitcher as active pitcher for now
-                state.current_pitcher_team1 = &home_team.pitching[0];
-                state.current_pitcher_team2 = &away_team.pitching[0];
+                //state.current_pitcher_team1 = &home_team.pitching[0];
+                //state.current_pitcher_team2 = &away_team.pitching[0];
                 state.status = GameStatus::Ongoing;
             }
             GameStatus::Ongoing => match state.inning_half {
-                InningTB::Top => {
+                InningTB::Top => match state.outs {
+                    Outs::Three => {
+                        state.inning_half = InningTB::Bottom;
+                        state.outs = Outs::None;
+                    }
+                    _ => {
+                        state = modern_inning_flow(game, state);
+                    }
+                },
+                InningTB::Bottom => {
                     match state.outs {
                         Outs::Three => {
-                            state.inning_half = InningTB::Bottom;
-                            state.outs = Outs::None;
+                            state.inning_half = InningTB::Top;
+                            state.outs = Outs::None; // reset outs
                         }
                         _ => {
-                            // inning function
+                            state = modern_inning_flow(game, state);
                         }
                     }
                 }
-                InningTB::Bottom => {}
             },
-            GameStatus::Over => {}
+            GameStatus::Over => {
+                // temporary printing of results
+                println!("FINAL SCORE");
+                println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
+            }
         }
     }
 }
 
-pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
+pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) -> GameState<'a> {
     loop {
         match state.inning_half {
-            InningTB::Top => {}
+            InningTB::Top => {
+                // should match Bottom arm, just flip the teams - probably a better way to do this
+                // than copy paste
+                match state.outs {
+                    Outs::Three => return state,
+                    _ => {
+                        // get active batter
+                        // get at bat Result
+                        // update score/runners/Outs
+                        let pd = state.current_pitcher_team1.pitch_die;
+                        let mut pitch_result: i32;
+                        if pd > 0 {
+                            pitch_result = roll(pd);
+                        } else {
+                            pitch_result = -1 * roll(pd.abs());
+                        }
+                        pitch_result += roll(100);
+                        let swing_result = at_bat(
+                            game.home_active.roster[state.batting_team2 as usize].batter_target,
+                            game.home_active.roster[state.batting_team2 as usize].on_base_target,
+                            pitch_result,
+                        );
+                        if state.batting_team2 == 9 {
+                            state.batting_team2 = 1;
+                        } else {
+                            state.batting_team2 += 1;
+                        }
+
+                        match swing_result {
+                            AtBatResults::Oddity => {
+                                let oddity_result = roll(10) + roll(10);
+                                state = oddity(&oddity_result, &pitch_result, game, state);
+                            }
+                            AtBatResults::CriticalHit => {
+                                // make hit roll, bump up a level
+                                let mut hit_result = roll(20);
+                                hit_result = crit_hit(&hit_result);
+                                state = hit_table(&hit_result, state);
+                                // TODO no DEF roll on crit_hit
+                            }
+                            AtBatResults::Hit => {
+                                // hit roll
+                                let hit_result = roll(20);
+                                state = hit_table(&hit_result, state);
+                            }
+                            AtBatResults::Walk => {
+                                // basically like a single, just don't update the hit values
+                                state = runners_advance(state, &1);
+                                state = add_runner(state, &1);
+                            }
+                            AtBatResults::PossibleError => {
+                                // TODO Not sure I am implementing this correctly, see page 29
+                                // get position
+                                // TODO get player traits
+                                let def_roll = roll(12);
+                                if def_roll <= 2 {
+                                    // fielder makes an error
+                                    // TODO these kind of match statements are redundant, clean it up
+                                    match state.inning_half {
+                                        InningTB::Top => {
+                                            state.errors_team1 += 1;
+                                        }
+                                        InningTB::Bottom => {
+                                            state.errors_team2 += 1;
+                                        }
+                                    }
+                                    state = runners_advance(state, &1);
+                                    state = add_runner(state, &1);
+                                } else {
+                                    // fielder makes the out like normal
+                                    match state.outs {
+                                        Outs::None => {
+                                            state.outs = Outs::One;
+                                        }
+                                        Outs::One => {
+                                            state.outs = Outs::Two;
+                                        }
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        Outs::Three => {
+                                            state.outs = Outs::Three;
+                                        }
+                                    }
+                                }
+                            }
+                            AtBatResults::ProductiveOut1 => {
+                                // TODO only proceed if less than two outs
+                                // if first or outfield, runners on 2nd and 3rd advance
+                                // if 2B/SS/3B, runner at first advances and batter is out
+                                match state.outs {
+                                    Outs::Three => {}
+                                    Outs::Two => {
+                                        state.outs = Outs::Three;
+                                    }
+                                    _ => {
+                                        let fielder = get_swing_position(&pitch_result);
+                                        if fielder == 3 || fielder >= 7 {
+                                            // check for runners on second and third
+                                            // advance if they exist
+                                            match state.runners {
+                                                RunnersOn::Runner000 => {}
+                                                RunnersOn::Runner100 => {}
+                                                RunnersOn::Runner010 => {
+                                                    state = runners_advance(state, &1);
+                                                }
+                                                RunnersOn::Runner001 => {
+                                                    state = runners_advance(state, &1);
+                                                }
+                                                RunnersOn::Runner011 => {
+                                                    state = runners_advance(state, &1);
+                                                }
+                                                RunnersOn::Runner110 => {
+                                                    // can't use normal runners advance function because
+                                                    // runner at first doesn't move
+                                                    state.runners = RunnersOn::Runner101;
+                                                }
+                                                RunnersOn::Runner101 => {
+                                                    state.runners = RunnersOn::Runner100;
+                                                    match state.inning_half {
+                                                        InningTB::Top => {
+                                                            state.runs_team2 += 1;
+                                                        }
+                                                        InningTB::Bottom => {
+                                                            state.runs_team1 += 1;
+                                                        }
+                                                    }
+                                                }
+                                                RunnersOn::Runner111 => {
+                                                    state.runners = RunnersOn::Runner101;
+                                                    match state.inning_half {
+                                                        InningTB::Top => {
+                                                            state.runs_team2 += 1;
+                                                        }
+                                                        InningTB::Bottom => {
+                                                            state.runs_team1 += 1;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            // check for runner on first
+                                            match state.runners {
+                                                RunnersOn::Runner100 => {
+                                                    state.runners = RunnersOn::Runner010;
+                                                }
+                                                RunnersOn::Runner101 => {
+                                                    state.runners = RunnersOn::Runner011;
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                        // update out
+                                        match state.outs {
+                                            Outs::None => {
+                                                state.outs = Outs::One;
+                                            }
+                                            Outs::One => {
+                                                state.outs = Outs::Two;
+                                            }
+                                            Outs::Two => {
+                                                state.outs = Outs::Three;
+                                            }
+                                            Outs::Three => {
+                                                state.outs = Outs::Three;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            AtBatResults::ProductiveOut2 => {
+                                // if first or outfield, runners on 2nd and 3rd advance
+                                // if 2B/SS/3B, runner is out and batter makes it to first
+                                // the first line is the same as ProductiveOut1
+                                match state.outs {
+                                    Outs::Three => {}
+                                    Outs::Two => {
+                                        state.outs = Outs::Three;
+                                    }
+                                    _ => {
+                                        let fielder = get_swing_position(&pitch_result);
+                                        if fielder == 3 || fielder >= 7 {
+                                            match state.runners {
+                                                RunnersOn::Runner000 => {}
+                                                RunnersOn::Runner100 => {}
+                                                RunnersOn::Runner010 => {
+                                                    state = runners_advance(state, &1);
+                                                }
+                                                RunnersOn::Runner001 => {
+                                                    state = runners_advance(state, &1);
+                                                }
+                                                RunnersOn::Runner011 => {
+                                                    state = runners_advance(state, &1);
+                                                }
+                                                RunnersOn::Runner110 => {
+                                                    // can't use normal runners advance function because
+                                                    // runner at first doesn't move
+                                                    state.runners = RunnersOn::Runner101;
+                                                }
+                                                RunnersOn::Runner101 => {
+                                                    state.runners = RunnersOn::Runner100;
+                                                    match state.inning_half {
+                                                        InningTB::Top => {
+                                                            state.runs_team2 += 1;
+                                                        }
+                                                        InningTB::Bottom => {
+                                                            state.runs_team1 += 1;
+                                                        }
+                                                    }
+                                                }
+                                                RunnersOn::Runner111 => {
+                                                    state.runners = RunnersOn::Runner101;
+                                                    match state.inning_half {
+                                                        InningTB::Top => {
+                                                            state.runs_team2 += 1;
+                                                        }
+                                                        InningTB::Bottom => {
+                                                            state.runs_team1 += 1;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            //
+                                        } else {
+                                            // advance batter to first and lead runner is out
+                                            // TODO should this be done for force outs only?
+                                            match state.runners {
+                                                RunnersOn::Runner000 => {}
+                                                RunnersOn::Runner100 => {}
+                                                RunnersOn::Runner010 => {
+                                                    state.runners = RunnersOn::Runner100;
+                                                }
+                                                RunnersOn::Runner001 => {
+                                                    state.runners = RunnersOn::Runner100;
+                                                }
+                                                RunnersOn::Runner110 => {}
+                                                RunnersOn::Runner011 => {
+                                                    state.runners = RunnersOn::Runner101;
+                                                }
+                                                RunnersOn::Runner101 => {
+                                                    state.runners = RunnersOn::Runner110;
+                                                }
+                                                RunnersOn::Runner111 => {}
+                                            }
+                                        }
+                                        match state.outs {
+                                            Outs::None => {
+                                                state.outs = Outs::One;
+                                            }
+                                            Outs::One => {
+                                                state.outs = Outs::Two;
+                                            }
+                                            Outs::Two => {
+                                                state.outs = Outs::Three;
+                                            }
+                                            Outs::Three => {
+                                                state.outs = Outs::Three;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            AtBatResults::Out => {
+                                // no runners advance
+                                // anywhere in the infield, runner at first and batter are out
+                                let fielder = get_swing_position(&pitch_result);
+                                if fielder >= 3 && fielder <= 6 {
+                                    match state.outs {
+                                        Outs::Three => {}
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        _ => match state.runners {
+                                            RunnersOn::Runner100 => {
+                                                state.runners = RunnersOn::Runner000;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            RunnersOn::Runner110 => {
+                                                state.runners = RunnersOn::Runner010;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            RunnersOn::Runner101 => {
+                                                state.runners = RunnersOn::Runner001;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            RunnersOn::Runner111 => {
+                                                state.runners = RunnersOn::Runner011;
+                                                match state.outs {
+                                                    Outs::None => {
+                                                        state.outs = Outs::Two;
+                                                    }
+                                                    _ => {
+                                                        state.outs = Outs::Three;
+                                                    }
+                                                }
+                                            }
+                                            _ => match state.outs {
+                                                Outs::None => {
+                                                    state.outs = Outs::One;
+                                                }
+                                                Outs::One => {
+                                                    state.outs = Outs::Two;
+                                                }
+                                                Outs::Two => {
+                                                    state.outs = Outs::Three;
+                                                }
+                                                Outs::Three => {
+                                                    state.outs = Outs::Three;
+                                                }
+                                            },
+                                        },
+                                    }
+                                } else {
+                                    match state.outs {
+                                        Outs::None => {
+                                            state.outs = Outs::One;
+                                        }
+                                        Outs::One => {
+                                            state.outs = Outs::Two;
+                                        }
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        Outs::Three => {
+                                            state.outs = Outs::Three;
+                                        }
+                                    }
+                                }
+                            }
+                            AtBatResults::MegaOut => {
+                                // triple play if no outs and runners on first and second
+                                // check for triple play, otherwise same as previous branch
+                                match state.runners {
+                                    RunnersOn::Runner110 => {
+                                        state.outs = Outs::Three;
+                                        // TODO only say it's a triple play if no outs
+                                    }
+                                    RunnersOn::Runner111 => {
+                                        state.outs = Outs::Three;
+                                    }
+                                    RunnersOn::Runner100 => {
+                                        state.runners = RunnersOn::Runner000;
+                                        match state.outs {
+                                            Outs::None => {
+                                                state.outs = Outs::Two;
+                                            }
+                                            _ => {
+                                                state.outs = Outs::Three;
+                                            }
+                                        }
+                                    }
+                                    RunnersOn::Runner101 => {
+                                        state.runners = RunnersOn::Runner001;
+                                        match state.outs {
+                                            Outs::None => {
+                                                state.outs = Outs::Two;
+                                            }
+                                            _ => {
+                                                state.outs = Outs::Three;
+                                            }
+                                        }
+                                    }
+                                    _ => match state.outs {
+                                        Outs::None => {
+                                            state.outs = Outs::One;
+                                        }
+                                        Outs::One => {
+                                            state.outs = Outs::Two;
+                                        }
+                                        Outs::Two => {
+                                            state.outs = Outs::Three;
+                                        }
+                                        Outs::Three => {
+                                            state.outs = Outs::Three;
+                                        }
+                                    },
+                                }
+                            }
+                        }
+                        return state;
+                    }
+                }
+            }
             InningTB::Bottom => {
                 match state.outs {
-                    Outs::Three => return,
+                    Outs::Three => return state,
                     _ => {
                         // get active batter
                         // get at bat Result
@@ -803,6 +1218,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                                 }
                             }
                         }
+                        return state;
                     }
                 }
             }
