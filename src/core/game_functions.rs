@@ -1503,3 +1503,31 @@ pub fn get_swing_position(pitch_result: &i32) -> i32 {
     let last_digit = *pitch_result % 10;
     return last_digit;
 }
+
+// convenience function to initialize a game state struct
+pub fn init_new_game_state<'a>(
+    home_pitcher: &'a Player,
+    away_pitcher: &'a Player,
+) -> GameState<'a> {
+    let game_state = GameState {
+        status: GameStatus::NotStarted,
+        inning: 1,
+        inning_half: InningTB::Top,
+        outs: Outs::None,
+        runners: RunnersOn::Runner000,
+        batting_team1: 1,
+        batting_team2: 1,
+        current_pitcher_team1: home_pitcher,
+        current_pitcher_team2: away_pitcher,
+        pitched_team1: 0,
+        pitched_team2: 0,
+        runs_team1: 0,
+        runs_team2: 0,
+        hits_team1: 0,
+        hits_team2: 0,
+        errors_team1: 0,
+        errors_team2: 0,
+    };
+
+    return game_state;
+}
