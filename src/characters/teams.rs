@@ -4,7 +4,7 @@ MODULE INCLUSIONS
 use std::fs;
 use text_colorizer::*;
 
-use super::players::Position;
+use super::players::{load_player, Player, Position};
 
 /*==========================================
 ENUM DEFINITIONS
@@ -146,6 +146,9 @@ pub struct Team {
     pub owner_background: String,
     pub owner_personality: String,
     pub roster: Vec<String>,
+    pub bench: Vec<String>,
+    pub pitcher: Vec<String>,
+    pub bullpen: Vec<String>,
 }
 
 pub struct BallparkModern {
@@ -166,6 +169,14 @@ pub struct BallparkAncient {
     pub capacity: i32,
     pub condition: Condition,
     pub quirks: Vec<Quirks>,
+}
+
+// struct for teams in a game - loads player files into Player structs for easier reference
+pub struct ActiveTeam {
+    pub roster: Vec<Player>,
+    pub bench: Vec<Player>,
+    pub pitching: Vec<Player>,
+    pub bullpen: Vec<Player>,
 }
 
 /*==========================================
@@ -194,12 +205,15 @@ pub fn load_team(contents: String) -> Team {
     let mut daring: i32 = 0;
     let mut motto = String::new();
     let mut roster = Vec::new();
+    let mut bench = Vec::new();
+    let mut pitcher = Vec::new();
+    let mut bullpen = Vec::new();
     let mut owner_background = String::new();
     let mut owner_personality = String::new();
 
     // sort text into relevant fields
     let rows: Vec<&str> = contents.split("\n").collect();
-    for i in 0..rows.len() - 1 {
+    for i in 0..rows.len() {
         // last line is usually just a new line character
         let rowline: Vec<&str> = rows[i].split(":").collect();
         if rowline[0].trim().eq("TEAM") {
@@ -336,6 +350,12 @@ pub fn load_team(contents: String) -> Team {
             owner_personality = rowline[1].trim().to_string();
         } else if rowline[0].trim().eq("PLAYER") {
             roster.push(rowline[1].trim().to_string());
+        } else if rowline[0].trim().eq("BENCH") {
+            bench.push(rowline[1].trim().to_string());
+        } else if rowline[0].trim().eq("PITCHER") {
+            pitcher.push(rowline[1].trim().to_string());
+        } else if rowline[0].trim().eq("BULLPEN") {
+            bullpen.push(rowline[1].trim().to_string());
         }
     }
 
@@ -361,6 +381,9 @@ pub fn load_team(contents: String) -> Team {
         owner_background: owner_background,
         owner_personality: owner_personality,
         roster: roster,
+        bench: bench,
+        pitcher: pitcher,
+        bullpen: bullpen,
     };
 
     team_data
@@ -460,6 +483,18 @@ pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
     for i in 0..data.roster.len() {
         file_text.push_str("\nPLAYER: ");
         file_text.push_str(&data.roster[i]);
+    }
+    for i in 0..data.bench.len() {
+        file_text.push_str("\nBENCH: ");
+        file_text.push_str(&data.bench[i]);
+    }
+    for i in 0..data.pitcher.len() {
+        file_text.push_str("\nPITCHER: ");
+        file_text.push_str(&data.pitcher[i]);
+    }
+    for i in 0..data.bullpen.len() {
+        file_text.push_str("\nBULLPEN: ");
+        file_text.push_str(&data.bullpen[i]);
     }
 
     let write_result = fs::write(filename, &file_text);
@@ -677,4 +712,54 @@ pub fn load_park_ancient(contents: String) -> BallparkAncient {
     };
 
     park_data
+}
+
+pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<Player>) {
+    let mut roster = Vec::new();
+    let mut bench = Vec::new();
+    let mut pitcher = Vec::new();
+    let mut bullpen = Vec::new();
+
+    for i in 0..team.roster.len() {
+        let read_results = fs::read_to_string(&team.roster[i]);
+        match read_results {
+            Ok(content) => roster.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &team.roster[i]
+            ),
+        }
+    }
+    for i in 0..team.bench.len() {
+        let read_results = fs::read_to_string(&team.bench[i]);
+        match read_results {
+            Ok(content) => bench.push(load_player(content)),
+            Err(_err) => println!("{}: {}", "failed to load file".red().bold(), &team.bench[i]),
+        }
+    }
+    for i in 0..team.pitcher.len() {
+        let read_results = fs::read_to_string(&team.pitcher[i]);
+        match read_results {
+            Ok(content) => pitcher.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &team.pitcher[i]
+            ),
+        }
+    }
+    for i in 0..team.bullpen.len() {
+        let read_results = fs::read_to_string(&team.bullpen[i]);
+        match read_results {
+            Ok(content) => bullpen.push(load_player(content)),
+            Err(_err) => println!(
+                "{}: {}",
+                "failed to load file".red().bold(),
+                &team.bullpen[i]
+            ),
+        }
+    }
+
+    return (roster, bench, pitcher, bullpen);
 }
