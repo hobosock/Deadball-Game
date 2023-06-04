@@ -1,6 +1,6 @@
 ## TEAM INFO
 TEAM: Detroit Steam Hammers
-BALLPARK: /home/seth/Deadball-Game/src/testfiles/railyard.dbb
+BALLPARK: src/testfiles/game_test/ballpark.dbp
 LOGO: none
 
 ERA: Modern
@@ -26,11 +26,11 @@ BACKGROUND: Venture Capitalist
 OWNER PERSONALITY: Boastful
 
 ## ROSTER
-PLAYER: src/testfiles/sample_player.dbp
+PLAYER: src/testfiles/game_test/ballpark.dbp
 PLAYER: src/testfiles/sample2.dbp
 
 BENCH: src/testfiles/sample_bench.dbp
 
 PITCHER: src/testfiles/sample_pitcher.dbp
 
-BULLPEN: src/testfiles/sample_bullpen.dbp
+
