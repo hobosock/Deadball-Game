@@ -5,6 +5,8 @@ use std::fs; // needed to read in files
 
 use text_colorizer::*;
 
+use super::teams::Era;
+
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
@@ -81,6 +83,14 @@ pub enum InjurySeverity {
     Minor,
     Superficial,
     Uninjured,
+}
+
+// this is used for team generation purposes, starting players get better stats, etc.
+#[derive(Debug)]
+pub enum PlayerClass {
+    StartingHitter,
+    PinchHitter,
+    Pitchers,
 }
 
 /*========================================================
@@ -380,4 +390,39 @@ pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> 
 
     let write_result = fs::write(filename, &file_text);
     write_result
+}
+
+// reads in name CSVs and puts them into memory for reference during player generation function
+pub fn load_names() -> (Vec<String>, Vec<String>) {
+    if let Ok(contents) = fs::read_to_string("src/databases/firstname.csv") {
+        // split file up by line - 1 name per line
+        let firstnames: Vec<String> = contents.split('\n');
+    } else {
+        let firstnames = vec!["first".to_string()];
+        println!("WARNING: Failed to read firstname.csv");
+    }
+
+    if let Ok(contents) = fs::read_to_string("src/databases/lastname.csv") {
+        let lastnames: Vec<String> = contents.split('\n');
+    } else {
+        let lastnames = vec!["last".to_string()];
+        println!("WARNING: Failed to read lastname.csv");
+    }
+    return (firstnames, lastnames);
+}
+
+// generates a player name
+pub fn generate_name(firstnames: Vec<String>, lastnames: Vec<String>) -> (String, String) {
+    let len_first = firstnames.len();
+    let len_last = lastnames.len();
+    let roll_first = roll(len_first as i32);
+    let roll_last = roll(len_last as i32);
+    let first_name = firstnames[roll_first as usize];
+    let last_name = lastnames[roll_last as usize];
+    return (first_name, last_name);
+}
+
+// generates a new player in struct format
+pub fn generate_player(player_type: PlayerClass, era: Era, position: Position) -> Player {
+    //
 }
