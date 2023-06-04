@@ -6,6 +6,7 @@ use std::fs; // needed to read in files
 use text_colorizer::*;
 
 use super::teams::Era;
+use crate::core::roll;
 
 /*========================================================
 ENUM DEFINITIONS
@@ -394,18 +395,20 @@ pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> 
 
 // reads in name CSVs and puts them into memory for reference during player generation function
 pub fn load_names() -> (Vec<String>, Vec<String>) {
+    let firstnames: Vec<String>;
+    let lastnames: Vec<String>;
     if let Ok(contents) = fs::read_to_string("src/databases/firstname.csv") {
         // split file up by line - 1 name per line
-        let firstnames: Vec<String> = contents.split('\n');
+        firstnames = contents.split('\n').map(String::from).collect();
     } else {
         let firstnames = vec!["first".to_string()];
         println!("WARNING: Failed to read firstname.csv");
     }
 
     if let Ok(contents) = fs::read_to_string("src/databases/lastname.csv") {
-        let lastnames: Vec<String> = contents.split('\n');
+        lastnames = contents.split('\n').map(String::from).collect();
     } else {
-        let lastnames = vec!["last".to_string()];
+        lastnames = vec!["last".to_string()];
         println!("WARNING: Failed to read lastname.csv");
     }
     return (firstnames, lastnames);
