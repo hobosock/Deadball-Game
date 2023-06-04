@@ -1,3 +1,10 @@
+use deadball::characters::players::*;
+use deadball::characters::teams::*;
+use deadball::core::*;
+
+use std::fs;
+
 fn main() {
-    println!("Hello, world!");
+    // quick test, just print out each step of a game and see if it makes sense
+    // 1. load home/away/ballpark files
 }
