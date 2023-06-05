@@ -4,7 +4,9 @@ MODULE INCLUSIONS
 use std::fs;
 use text_colorizer::*;
 
-use super::players::{load_player, Player, Position};
+use crate::core::roll;
+
+use super::players::{load_player, generate_name, Player, Position};
 
 /*==========================================
 ENUM DEFINITIONS
@@ -762,4 +764,89 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
     }
 
     return (roster, bench, pitcher, bullpen);
+}
+
+// generate ballpark names - two words, CSV for each? some kind of name and then park type
+// generate manager - can borrow a lot from player gen function
+pub fn generate_manager(firstnames: Vec<String>, lastnames: Vec<String>) -> (String) {
+    let (first_name, last_name) = generate_name(firstnames, lastnames);
+    let name = first_name + &last_name;
+    return name;
+}
+// generate logo
+// generate location
+// generate mascot
+// generate priority - TODO make it impact player ages and traits?
+// generate makeup - same TODO
+// generate fanbase
+// generate manager position
+pub fn generate_position() -> Position {
+    let result = roll(10);
+    let position: Position;
+    if result == 1 {
+        position = Position::Pitcher;
+    } else if result == 2 {
+        position = Position::Catcher;
+    } else if result == 3 {
+        position = Position::Firstbase;
+    } else if result == 4 {
+        position = Position::Secondbase;
+    } else if result == 5 {
+        position = Position::Shortstop;
+    } else if result == 6 {
+        position = Position::Thirdbase;
+    } else if result == 7 {
+        position = Position::Rightfield;
+    } else if result == 8 {
+        position = Position::Centerfield;
+    } else if result == 9 {
+        position = Position::Leftfield;
+    } else {
+        position = Position::None;
+    }
+    return position;
+}
+
+// generate manager league
+pub fn generate_league(position: Position) -> ManagerLeague {
+    let league: ManagerLeague;
+    match position {
+        Position::None => {
+            league = ManagerLeague::None;
+        }
+        _ => {
+            let result = roll(2);
+            if result == 1 {
+                league = ManagerLeague::Major;
+            } else {
+                league = ManagerLeague::Minor;
+            }
+        }
+    }
+    return league;
+}
+// generate retired - just roll
+// generate personality
+// generate motto???
+// generate owner background
+// generate owner personality
+
+// generate team function
+pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32, name: &str) -> Team {
+    // iterate over number of players
+    for i in 0..starters {
+        // generate player?
+    }
+
+    // build team struct
+    let new_team = Team {
+        name: name.to_string(),
+        ballpark: , // TODO auto generate or user define
+        manager: ,
+        logo: ,
+        era: Era,
+        location: ,
+        mascot: ,
+
+    }
 }
