@@ -816,7 +816,7 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
 }
 
 // generate ballpark names - two words, CSV for each? some kind of name and then park type
-pub fn generate_ballpark(name1: Vec<String>, name2: Vec<String>) -> String {
+pub fn generate_ballpark_name(name1: Vec<String>, name2: Vec<String>) -> String {
     let len1 = name1.len();
     let len2 = name2.len();
     let roll1 = roll(len1 as i32);
@@ -1121,6 +1121,83 @@ pub fn generate_background() -> Background {
     return background;
 }
 */
+
+// generate park type functions
+pub fn generate_ancient_park_type() -> StadiumTypeAncient {
+    let result = roll(3);
+    let park_type: StadiumTypeAncient;
+    if result == 1 {
+        park_type = StadiumTypeAncient::BaseballPalace;
+    } else if result == 2 {
+        park_type = StadiumTypeAncient::JewelBox;
+    } else if result == 3 {
+        park_type = StadiumTypeAncient::WoodFramePavilion;
+    } else {
+        park_type = StadiumTypeAncient::None;
+    }
+
+    return park_type;
+}
+
+pub fn generate_modern_park_type() -> StadiumTypeModern {
+    let result = roll(5);
+    let park_type: StadiumTypeModern;
+    if result == 1 {
+        park_type = StadiumTypeModern::Retro;
+    } else if  result == 2 {
+        park_type = StadiumTypeModern::JewelBox;
+    } else if result == 3 {
+        park_type = StadiumTypeModern::BaseballPalace;
+    } else if result == 4 {
+        park_type = StadiumTypeModern::SpaceAge;
+    } else if result == 5 {
+        park_type = StadiumTypeModern::ConcreteDonut;
+    } else {
+        park_type = StadiumTypeModern::None;
+    }
+
+    return park_type;
+}
+
+// generate ballpark functions
+pub fn generate_ancient_ballpark(name1: Vec<String>, name2: Vec<String>) -> BallparkAncient {
+    // generate info
+    let park_type = generate_ancient_park_type();
+    let capacity: i32;
+    match park_type {
+        StadiumTypeAncient::WoodFramePavilion => {capacity = 5000}
+        StadiumTypeAncient::JewelBox => {capacity = 35000}
+        StadiumTypeAncient::BaseballPalace => {capacity = 50000}
+        StadiumTypeAncient::None => {capacity = 0}
+    }
+    // quirk roll - match statdium type for number of rolls
+
+    // build struct
+    let ballpark = BallparkAncient {
+        name: generate_ballpark_name(name1, name2),
+        location: generate_location(),
+        park_type: park_type,
+        capacity: capacity,
+        condition: ,
+        quirks: ,
+    };
+    return ballpark;
+}
+
+pub fn generate_modern_ballpark(name1: Vec<String>, name2: Vec<String>) -> BallparkModern {
+    // build struct
+    let ballpark = BallparkModern {
+        name: generate_ballpark_name(name1, name2),
+        location: generate_location(),
+        park_type: generate_modern_park_type(),
+        capacity: ,
+        turf: ,
+        roof: ,
+        condition: ,
+        quirks: ,
+    };
+    return ballpark;
+}
 
 // generate team function
 // TODO combine inputs - load all the csv databases into a vector or array, makes it easier to pass into functions
