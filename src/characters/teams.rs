@@ -44,6 +44,7 @@ pub enum Makeup {
     None,
 }
 
+/*
 pub enum Personality {
     Baffled,
     Boastful,
@@ -66,6 +67,32 @@ pub enum Personality {
     Tempermental,
     Unbalanced,
 }
+*/
+
+/*
+pub enum Background {
+    CaptainofIndustry,
+    EccentricInventor,
+    Entertainer,
+    FormerPlayer,
+    HeirtoPreviousOwner,
+    LocalGovernment,
+    LocalMagnate,
+    MediaPersonality,
+    MillionaireRecluse,
+    MultinationalCorporation,
+    NewspaperSyndicate,
+    OilMan,
+    PlayersCooperative,
+    Politician,
+    RailroadBaron,
+    RealEstateDeveloper,
+    RiverboatGambler,
+    RollerCoasterTycoon,
+    VentureCapitalist,
+    WarHero,
+}
+*/
 
 // championship - I don't think this is needed
 // mascot
@@ -816,12 +843,32 @@ pub fn generate_logo(logos: Vec<String>) -> String {
 }
 
 // generate location
+pub fn generate_location() -> Location {
+    let result = roll(5);
+    let location: Location;
+    if result == 1 {
+        location = Location::MiddleOfNowhere;
+    } else if result == 2 {
+        location = Location::MediumSizedCity;
+    } else if result == 3 {
+        location = Location::SmallTown;
+    } else if result == 4 {
+        location = Location::SmallCity;
+    } else if result == 5 {
+        location = Location::Metropolis;
+    } else {
+        location = Location::None;
+    }
+    return location;
+}
+/*
 pub fn generate_location(locations: Vec<String>) -> String {
     let len1 = locations.len();
     let roll1 = roll(len1 as i32);
     let location = locations[roll1 as usize].clone();
     return location;
 }
+*/
 
 // generate mascot
 pub fn generate_mascot(mascots: Vec<String>) -> String {
@@ -876,9 +923,24 @@ pub fn generate_makeup() -> Makeup {
 }
 
 // generate fanbase
-pub fn generate_fanbase() -> i32 {
-    let result = roll(120000);
-    return result;
+pub fn generate_fanbase() -> Fanbase {
+    let result = roll(5);
+    let fanbase: Fanbase;
+    if result == 1 {
+        fanbase = Fanbase::Loyal;
+    } else if result == 2 {
+        fanbase = Fanbase::Obsessive;
+    } else if result == 3 {
+        fanbase = Fanbase::Nonexistent;
+    } else if result == 4 {
+        fanbase = Fanbase::Indifferent;
+    } else if result == 5 {
+        fanbase = Fanbase::FairWeather;
+    } else {
+        fanbase = Fanbase::None;
+    }
+
+    return fanbase;
 }
 
 // generate manager position
@@ -934,6 +996,14 @@ pub fn generate_retired() -> i32 {
 }
 
 // generate personality
+pub fn generate_personality(personalities: Vec<String>) -> String {
+    let len1 = personalities.len();
+    let result = roll(len1 as i32);
+    let personality = personalities[result as usize].clone();
+    return personality;
+}
+
+/*
 pub fn generate_personality() -> Personality {
     let result = roll(20);
     let personality: Personality;
@@ -983,13 +1053,79 @@ pub fn generate_personality() -> Personality {
 
     return personality;
 }
+*/
 
 // generate motto???
+pub fn generate_motto(mottos: Vec<String>) -> String {
+    let len1 = mottos.len();
+    let roll1 = roll(len1 as i32);
+    let motto = mottos[roll1 as usize].clone();
+    return motto;
+}
+
 // generate owner background
-// generate owner personality
+pub fn generate_background(backgrounds: Vec<String>) -> String {
+    let len1 = backgrounds.len();
+    let roll1 = roll(len1 as i32);
+    let background = backgrounds[roll1 as usize].clone();
+    return background;
+}
+/*
+pub fn generate_background() -> Background {
+    let result = roll(20);
+    let background: Background;
+    if result == 1 {
+        background = Background::PlayersCooperative;
+    } else if result == 2 {
+        background = Background::LocalGovernment;
+    } else if result == 3 {
+        background = Background::EccentricInventor;
+    } else if result == 4 {
+        background = Background::OilMan;
+    } else if result == 5 {
+        background = Background::WarHero;
+    } else if result == 6 {
+        background = Background::Politician;
+    } else if result == 7 {
+        background = Background::Entertainer;
+    } else if result == 8 {
+        background = Background::FormerPlayer;
+    } else if result == 9 {
+        background = Background::LocalMagnate;
+    } else if result == 10 {
+        background = Background::RailroadBaron;
+    } else if result == 11 {
+        background = Background::MediaPersonality;
+    } else if result == 12 {
+        background = Background::RiverboatGambler;
+    } else if result == 13 {
+        background = Background::CaptainofIndustry;
+    } else if result == 14 {
+        background = Background::VentureCapitalist;
+    } else if result == 15 {
+        background = Background::MillionaireRecluse;
+    } else if result == 16 {
+        background = Background::NewspaperSyndicate;
+    } else if result == 17 {
+        background = Background::HeirtoPreviousOwner;
+    } else if result == 18 {
+        background = Background::RealEstateDeveloper;
+    } else if result == 19 {
+        background = Background::RollerCoasterTycoon;
+    } else if result == 20 {
+        background = Background::MultinationalCorporation;
+    } else {
+        background = Background::MillionaireRecluse;
+    }
+
+    return background;
+}
+*/
 
 // generate team function
-pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32, name: &str, firstnames: Vec<String>, lastnames: Vec<String>) -> Team {
+// TODO combine inputs - load all the csv databases into a vector or array, makes it easier to pass into functions
+// probably need to be references as well
+pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32, name: &str, firstnames: Vec<String>, lastnames: Vec<String>, logos: Vec<String>, mascots: Vec<String>, mottos: Vec<String>, personalities: Vec<String>, backgrounds: Vec<String>, locations: Vec<String>) -> Team {
     // iterate over number of players
     for i in 0..starters {
         // generate player?
@@ -1001,31 +1137,37 @@ pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32
     let manager_position = generate_manager_position();
     let manager_league = generate_league(manager_position);
 
+    // team details
+    let years_in_league = roll(100);
+    let years_since_championship = roll(years_in_league);
+
     // build team struct
     let new_team = Team {
         name: name.to_string(),
         ballpark: , // TODO auto generate or user define
         manager: manager_name,
-        logo: ,
-        era: Era,
-        location: ,
-        mascot: ,
-        priority: ,
-        makeup: ,
-        years: ,
-        championship: ,
-        fanbase: ,
+        logo: generate_logo(logos),
+        era: era,
+        location: generate_location(),
+        mascot: generate_mascot(mascots),
+        priority: generate_priority(),
+        makeup: generate_makeup(),
+        years: years_in_league,
+        championship: years_since_championship,
+        fanbase: generate_fanbase(),
         manager_position: manager_position,
         manager_league: manager_league,
-        retired: ,
-        personality: ,
-        daring: ,
-        motto: ,
-        owner_background: ,
-        owner_personality: ,
+        retired: generate_retired(),
+        personality: generate_personality(personalities),
+        daring: roll(20),
+        motto: generate_motto(mottos),
+        owner_background: generate_background(backgrounds),
+        owner_personality: generate_personality(personalities),
         roster: ,
         bench: ,
         pitcher: ,
         bullpen: ,
     };
+
+    return new_team;
 }
