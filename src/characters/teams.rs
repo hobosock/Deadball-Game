@@ -44,11 +44,33 @@ pub enum Makeup {
     None,
 }
 
+pub enum Personality {
+    Baffled,
+    Boastful,
+    Combative,
+    Cowardly,
+    Destructive,
+    Elegant,
+    EvenKeeled,
+    Giddy,
+    Gossipy,
+    Gregarious,
+    Hedonistic,
+    Humble,
+    Lovable,
+    Miserly,
+    Noble,
+    Quixotic,
+    Sadistic,
+    Slovenly,
+    Tempermental,
+    Unbalanced,
+}
+
 // championship - I don't think this is needed
 // mascot
 // years in league
 // owner background
-// owner personality
 // fanbase
 // park name
 // park Location
@@ -767,20 +789,100 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
 }
 
 // generate ballpark names - two words, CSV for each? some kind of name and then park type
+pub fn generate_ballpark(name1: Vec<String>, name2: Vec<String>) -> String {
+    let len1 = name1.len();
+    let len2 = name2.len();
+    let roll1 = roll(len1 as i32);
+    let roll2 = roll(len2 as i32);
+    let part1 = name1[roll1 as usize].clone();
+    let part2 = name2[roll2 as usize].clone();
+    let name = part1 + &part2;
+    return name;
+}
+
 // generate manager - can borrow a lot from player gen function
-pub fn generate_manager(firstnames: Vec<String>, lastnames: Vec<String>) -> (String) {
+pub fn generate_manager(firstnames: Vec<String>, lastnames: Vec<String>) -> String {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     let name = first_name + &last_name;
     return name;
 }
+
 // generate logo
+pub fn generate_logo(logos: Vec<String>) -> String {
+    let len1 = logos.len();
+    let roll1 = roll(len1 as i32);
+    let logo = logos[roll1 as usize].clone();
+    return logo;
+}
+
 // generate location
+pub fn generate_location(locations: Vec<String>) -> String {
+    let len1 = locations.len();
+    let roll1 = roll(len1 as i32);
+    let location = locations[roll1 as usize].clone();
+    return location;
+}
+
 // generate mascot
+pub fn generate_mascot(mascots: Vec<String>) -> String {
+    let len1 = mascots.len();
+    let roll1 = roll(len1 as i32);
+    let mascot = mascots[roll1 as usize].clone();
+    return mascot;
+}
+
 // generate priority - TODO make it impact player ages and traits?
+pub fn generate_priority() -> Priority {
+    let result = roll(7);
+    let priority: Priority;
+    if result == 1 {
+        priority = Priority::Power;
+    } else if result == 2 {
+        priority = Priority::None;
+    } else if result == 3 {
+        priority = Priority::Speed;
+    } else if result == 4 {
+        priority = Priority::Average;
+    } else if result == 5 {
+        priority = Priority::Bullpen;
+    } else if result == 6 {
+        priority = Priority::Defense;
+    } else if result == 7 {
+        priority = Priority::StartingPitching;
+    } else {
+        priority = Priority::None;
+    }
+
+    return priority;
+}
+
 // generate makeup - same TODO
+pub fn generate_makeup() -> Makeup {
+    let result = roll(4);
+    let makeup: Makeup;
+    if result == 1 {
+        makeup = Makeup::MostlyProspects;
+    } else if result == 2 {
+        makeup = Makeup::MostlyVeterans;
+    } else if result == 3 {
+        makeup = Makeup::Balanced
+    } else if result == 4 {
+        makeup = Makeup::None;
+    } else {
+        makeup = Makeup::None;
+    }
+
+    return makeup;
+}
+
 // generate fanbase
+pub fn generate_fanbase() -> i32 {
+    let result = roll(120000);
+    return result;
+}
+
 // generate manager position
-pub fn generate_position() -> Position {
+pub fn generate_manager_position() -> Position {
     let result = roll(10);
     let position: Position;
     if result == 1 {
@@ -826,27 +928,104 @@ pub fn generate_league(position: Position) -> ManagerLeague {
     return league;
 }
 // generate retired - just roll
+pub fn generate_retired() -> i32 {
+    let result = roll(30);
+    return result;
+}
+
 // generate personality
+pub fn generate_personality() -> Personality {
+    let result = roll(20);
+    let personality: Personality;
+    if result == 1 {
+        personality = Personality::Giddy;
+    } else if result == 2 {
+        personality = Personality::Noble;
+    } else if result == 3 {
+        personality = Personality::Humble;
+    } else if result == 4 {
+        personality = Personality::Baffled;
+    } else if result == 5 {
+        personality = Personality::Elegant;
+    } else if result == 6 {
+        personality = Personality::Gossipy;
+    } else if result == 7 {
+        personality = Personality::Lovable;
+    } else if result == 8 {
+        personality = Personality::Miserly;
+    } else if result == 9 {
+        personality = Personality::Boastful;
+    } else if result == 10 {
+        personality = Personality::Cowardly;
+    } else if result == 11 {
+        personality = Personality::Quixotic;
+    } else if result == 12 {
+        personality = Personality::Sadistic;
+    } else if result == 13 {
+        personality = Personality::Slovenly;
+    } else if result == 14 {
+        personality = Personality::Combative;
+    } else if result == 15 {
+        personality = Personality::EvenKeeled;
+    } else if result == 16 {
+        personality = Personality::Gregarious;
+    } else if result == 17 {
+        personality = Personality::Hedonistic;
+    } else if result == 18 {
+        personality = Personality::Unbalanced;
+    } else if result == 19 {
+        personality = Personality::Destructive;
+    } else if result == 20 {
+        personality = Personality::Tempermental;
+    } else {
+        personality = Personality::EvenKeeled;
+    }
+
+    return personality;
+}
+
 // generate motto???
 // generate owner background
 // generate owner personality
 
 // generate team function
-pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32, name: &str) -> Team {
+pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32, name: &str, firstnames: Vec<String>, lastnames: Vec<String>) -> Team {
     // iterate over number of players
     for i in 0..starters {
         // generate player?
     }
 
+
+    // manager details
+    let manager_name = generate_manager(firstnames, lastnames);
+    let manager_position = generate_manager_position();
+    let manager_league = generate_league(manager_position);
+
     // build team struct
     let new_team = Team {
         name: name.to_string(),
         ballpark: , // TODO auto generate or user define
-        manager: ,
+        manager: manager_name,
         logo: ,
         era: Era,
         location: ,
         mascot: ,
-
-    }
+        priority: ,
+        makeup: ,
+        years: ,
+        championship: ,
+        fanbase: ,
+        manager_position: manager_position,
+        manager_league: manager_league,
+        retired: ,
+        personality: ,
+        daring: ,
+        motto: ,
+        owner_background: ,
+        owner_personality: ,
+        roster: ,
+        bench: ,
+        pitcher: ,
+        bullpen: ,
+    };
 }
