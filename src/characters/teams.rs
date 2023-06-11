@@ -6,7 +6,7 @@ use text_colorizer::*;
 
 use crate::core::roll;
 
-use super::players::{load_player, generate_name, Player, Position};
+use super::players::{generate_name, generate_player, load_player, Player, Position};
 
 /*==========================================
 ENUM DEFINITIONS
@@ -1144,7 +1144,7 @@ pub fn generate_modern_park_type() -> StadiumTypeModern {
     let park_type: StadiumTypeModern;
     if result == 1 {
         park_type = StadiumTypeModern::Retro;
-    } else if  result == 2 {
+    } else if result == 2 {
         park_type = StadiumTypeModern::JewelBox;
     } else if result == 3 {
         park_type = StadiumTypeModern::BaseballPalace;
@@ -1159,18 +1159,128 @@ pub fn generate_modern_park_type() -> StadiumTypeModern {
     return park_type;
 }
 
+//generate condition function
+pub fn generate_ballpark_condition(era: Era) -> Condition {
+    let mut result = roll(20);
+    let condition: Condition;
+    match era {
+        Era::Ancient => result -= 1,
+        _ => {}
+    }
+    if result == 0 {
+        condition = Condition::FallingApart;
+    } else if result >= 1 && result <= 6 {
+        condition = Condition::Decrepit;
+    } else if result >= 7 && result <= 15 {
+        condition = Condition::WellWorn;
+    } else {
+        condition = Condition::Sparkling;
+    }
+
+    return condition;
+}
+
+// generate turf function
+pub fn generate_turf() -> Turf {
+    let result = roll(20);
+    let turf: Turf;
+    // TODO make turf impact steals, etc.
+    if result <= 2 {
+        turf = Turf::Ragged;
+        // -1 to steal and infield defense
+    } else if result >= 3 && result <= 10 {
+        turf = Turf::Good;
+    } else {
+        turf = Turf::Artificial;
+        // +1 to steal and infield defense
+    }
+
+    return turf;
+}
+
+// generate roof function
+pub fn generate_roof() -> Roof {
+    let result = roll(20);
+    let roof: Roof;
+    // TODO make roof impact play
+    if result <= 13 {
+        roof = Roof::NoRoof;
+    } else if result >= 14 && result <= 15 {
+        roof = Roof::PermanentRoof;
+    } else {
+        roof = Roof::RetractableRoof;
+    }
+
+    return roof;
+}
+
+// generate ballpark quirks functions
+// TODO make quirks impact play
+pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
+    let mut quirks: Vec<Quirks>;
+    if quirk_num == 0 {
+        quirks.push(Quirks::None);
+    } else {
+        for i in 0..quirk_num {
+            let result = roll(20);
+            if result <= 3 {
+                quirks.push(Quirks::CozyOutfield);
+            } else if result >= 4 && result <= 6 {
+                quirks.push(Quirks::ExpansiveOutfield);
+            } else if result == 7 {
+                quirks.push(Quirks::ShortLeft);
+            } else if result == 8 {
+                quirks.push(Quirks::ShortRight);
+            } else if result == 9 {
+                quirks.push(Quirks::OddLeft);
+            } else if result == 10 {
+                quirks.push(Quirks::OddCenter);
+            } else if result == 11 {
+                quirks.push(Quirks::OddRight);
+            } else if result == 12 {
+                quirks.push(Quirks::FastInfield);
+            } else if result == 13 {
+                quirks.push(Quirks::SlowInfield);
+            } else if result == 14 {
+                quirks.push(Quirks::HighMound);
+            } else if result >= 15 && result <= 17 {
+                quirks.push(Quirks::Beautiful);
+            } else {
+                quirks.push(Quirks::Hideous);
+            }
+        }
+    }
+
+    return quirks;
+}
+
 // generate ballpark functions
 pub fn generate_ancient_ballpark(name1: Vec<String>, name2: Vec<String>) -> BallparkAncient {
     // generate info
     let park_type = generate_ancient_park_type();
     let capacity: i32;
+    let quirk_num: i32;
     match park_type {
-        StadiumTypeAncient::WoodFramePavilion => {capacity = 5000}
-        StadiumTypeAncient::JewelBox => {capacity = 35000}
-        StadiumTypeAncient::BaseballPalace => {capacity = 50000}
-        StadiumTypeAncient::None => {capacity = 0}
+        StadiumTypeAncient::WoodFramePavilion => {
+            capacity = 5000;
+            quirk_num = 2;
+        }
+        StadiumTypeAncient::JewelBox => {
+            capacity = 35000;
+            quirk_num = 1;
+        }
+        StadiumTypeAncient::BaseballPalace => {
+            capacity = 50000;
+            quirk_num = 0;
+        }
+        StadiumTypeAncient::None => {
+            capacity = 0;
+            quirk_num = 0;
+        }
     }
-    // quirk roll - match statdium type for number of rolls
+    let condition = generate_ballpark_condition(Era::Ancient);
+    // TODO influence fanbase
+    // quirk roll - match stadium type for number of rolls
 
     // build struct
     let ballpark = BallparkAncient {
@@ -1178,23 +1288,72 @@ pub fn generate_ancient_ballpark(name1: Vec<String>, name2: Vec<String>) -> Ball
         location: generate_location(),
         park_type: park_type,
         capacity: capacity,
-        condition: ,
-        quirks: ,
+        condition: condition,
+        quirks: generate_quirks(quirk_num),
     };
     return ballpark;
 }
 
 pub fn generate_modern_ballpark(name1: Vec<String>, name2: Vec<String>) -> BallparkModern {
+    // generate info
+    let park_type = generate_modern_park_type();
+    let capacity: i32;
+    let turf: Turf;
+    let roof: Roof;
+    let quirk_num: i32;
+    match park_type {
+        StadiumTypeModern::None => {
+            capacity = 0;
+            turf = Turf::Good;
+            roof = Roof::None;
+            quirk_num = 0;
+        }
+        StadiumTypeModern::Retro => {
+            capacity = 38000;
+            turf = Turf::Good;
+            roof = generate_roof();
+            quirk_num = 1;
+        }
+        StadiumTypeModern::JewelBox => {
+            capacity = 35000;
+            turf = Turf::Good;
+            roof = Roof::None;
+            quirk_num = 1;
+        }
+        StadiumTypeModern::SpaceAge => {
+            capacity = 50000;
+            turf = Turf::Good;
+            roof = generate_roof();
+            quirk_num = 0;
+        }
+        StadiumTypeModern::ConcreteDonut => {
+            capacity = 55000;
+            turf = generate_turf();
+            roof = generate_roof();
+            quirk_num = 0;
+            // TODO generate turf for other stadium types???
+        }
+        StadiumTypeModern::BaseballPalace => {
+            capacity = 50000;
+            turf = Turf::Good;
+            roof = Roof::None;
+            quirk_num = 0;
+        }
+    }
+    let condition = generate_ballpark_condition(Era::Modern);
+    // TODO influence fanbase
+    // quirk roll - match stadium type for number of rolls
+
     // build struct
     let ballpark = BallparkModern {
         name: generate_ballpark_name(name1, name2),
         location: generate_location(),
         park_type: generate_modern_park_type(),
-        capacity: ,
-        turf: ,
-        roof: ,
-        condition: ,
-        quirks: ,
+        capacity: capacity,
+        turf: turf,
+        roof: roof,
+        condition: condition,
+        quirks: generate_quirks(quirk_num),
     };
     return ballpark;
 }
@@ -1202,12 +1361,66 @@ pub fn generate_modern_ballpark(name1: Vec<String>, name2: Vec<String>) -> Ballp
 // generate team function
 // TODO combine inputs - load all the csv databases into a vector or array, makes it easier to pass into functions
 // probably need to be references as well
-pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32, name: &str, firstnames: Vec<String>, lastnames: Vec<String>, logos: Vec<String>, mascots: Vec<String>, mottos: Vec<String>, personalities: Vec<String>, backgrounds: Vec<String>, locations: Vec<String>) -> Team {
+pub fn gen_team(
+    era: Era,
+    starters: u32,
+    bench: u32,
+    pitchers: u32,
+    bullpen: u32,
+    name: &str,
+    firstnames: Vec<String>,
+    lastnames: Vec<String>,
+    logos: Vec<String>,
+    mascots: Vec<String>,
+    mottos: Vec<String>,
+    personalities: Vec<String>,
+    backgrounds: Vec<String>,
+    locations: Vec<String>,
+    name1: Vec<String>,
+    name2: Vec<String>,
+) -> Team {
     // iterate over number of players
+    let mut roster_raw: Vec<Player> = vec![];
+    let mut bench_raw: Vec<Player> = vec![];
+    let mut pitcher_raw: Vec<Player> = vec![];
+    let mut bullpen_raw: Vec<Player> = vec![];
+    let mut roster: Vec<String> = vec![];
+    let mut bench: Vec<String> = vec![];
+    let mut pitcher: Vec<String> = vec![];
+    let mut bullpen: Vec<String> = vec![];
+    let mut position: Position;
+    // create player structs, then write to files - it's the filenames that need to be stored in
+    // the team struct
     for i in 0..starters {
-        // generate player?
+        // TODO IDK what to do here, should always be 8 position players so I'm just going to hard
+        // code for now
+        if i == 0 {
+            position = Position::Catcher;
+        } else if i == 1 {
+            position = Position::Firstbase;
+        } else if i == 2 {
+            position = Position::Secondbase;
+        } else if i == 3 {
+            position = Position::Shortstop;
+        } else if i == 4 {
+            position = Position::Thirdbase;
+        } else if i == 5 {
+            position = Position::Leftfield;
+        } else if i == 6 {
+            position = Position::Centerfield;
+        } else if i == 7 {
+            position = Position::Rightfield;
+        } else {
+            position = Position::Firstbase;
+        }
+        roster_raw.push(generate_player(
+            super::players::PlayerClass::StartingHitter,
+            era,
+            position,
+            firstnames,
+            lastnames,
+        ));
     }
-
 
     // manager details
     let manager_name = generate_manager(firstnames, lastnames);
@@ -1218,10 +1431,24 @@ pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32
     let years_in_league = roll(100);
     let years_since_championship = roll(years_in_league);
 
+    // ballpark details
+    let ballpark;
+    match era {
+        Era::Modern => {
+            let ballpark = generate_modern_ballpark(name1, name2);
+        }
+        Era::Ancient => {
+            let ballpark = generate_ancient_ballpark(name1, name2);
+        }
+        Era::None => {
+            let ballpark = generate_modern_ballpark(name1, name2);
+        }
+    }
+
     // build team struct
     let new_team = Team {
         name: name.to_string(),
-        ballpark: , // TODO auto generate or user define
+        ballpark: ballpark, // TODO auto generate or user define
         manager: manager_name,
         logo: generate_logo(logos),
         era: era,
@@ -1240,10 +1467,10 @@ pub fn gen_team(era: Era, starters: u32, bench: u32, pitchers: u32, bullpen: u32
         motto: generate_motto(mottos),
         owner_background: generate_background(backgrounds),
         owner_personality: generate_personality(personalities),
-        roster: ,
-        bench: ,
-        pitcher: ,
-        bullpen: ,
+        roster: roster,
+        bench: bench,
+        pitcher: pitcher,
+        bullpen: bullpen,
     };
 
     return new_team;
