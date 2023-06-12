@@ -828,7 +828,7 @@ pub fn generate_ballpark_name(name1: Vec<String>, name2: Vec<String>) -> String 
 }
 
 // generate manager - can borrow a lot from player gen function
-pub fn generate_manager(firstnames: Vec<String>, lastnames: Vec<String>) -> String {
+pub fn generate_manager(firstnames: &Vec<String>, lastnames: &Vec<String>) -> String {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     let name = first_name + &last_name;
     return name;
@@ -1217,11 +1217,11 @@ pub fn generate_roof() -> Roof {
 // generate ballpark quirks functions
 // TODO make quirks impact play
 pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
-    let mut quirks: Vec<Quirks>;
+    let mut quirks: Vec<Quirks> = vec![];
     if quirk_num == 0 {
         quirks.push(Quirks::None);
     } else {
-        for i in 0..quirk_num {
+        for _i in 0..quirk_num {
             let result = roll(20);
             if result <= 3 {
                 quirks.push(Quirks::CozyOutfield);
@@ -1368,8 +1368,8 @@ pub fn gen_team(
     pitchers: u32,
     bullpen: u32,
     name: &str,
-    firstnames: Vec<String>,
-    lastnames: Vec<String>,
+    firstnames: &Vec<String>,
+    lastnames: &Vec<String>,
     logos: Vec<String>,
     mascots: Vec<String>,
     mottos: Vec<String>,
@@ -1415,10 +1415,10 @@ pub fn gen_team(
         }
         roster_raw.push(generate_player(
             super::players::PlayerClass::StartingHitter,
-            era,
+            &era,
             position,
-            firstnames,
-            lastnames,
+            &firstnames,
+            &lastnames,
         ));
     }
 
@@ -1432,17 +1432,10 @@ pub fn gen_team(
     let years_since_championship = roll(years_in_league);
 
     // ballpark details
-    let ballpark;
     match era {
-        Era::Modern => {
-            let ballpark = generate_modern_ballpark(name1, name2);
-        }
-        Era::Ancient => {
-            let ballpark = generate_ancient_ballpark(name1, name2);
-        }
-        Era::None => {
-            let ballpark = generate_modern_ballpark(name1, name2);
-        }
+        Era::Modern => let ballpark = generate_modern_ballpark(name1, name2),
+        Era::Ancient => let ballpark = generate_ancient_ballpark(name1, name2),
+        Era::None => let ballpark = generate_modern_ballpark(name1, name2),
     }
 
     // build team struct

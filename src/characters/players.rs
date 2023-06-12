@@ -419,7 +419,7 @@ pub fn load_names() -> (Vec<String>, Vec<String>) {
 // TODO could add mechanic for farmhand/prospect/veteran/etc.
 
 // generates a player name
-pub fn generate_name(firstnames: Vec<String>, lastnames: Vec<String>) -> (String, String) {
+pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (String, String) {
     let len_first = firstnames.len();
     let len_last = lastnames.len();
     let roll_first = roll(len_first as i32);
@@ -518,7 +518,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     }
     // TODO could clean this up so only a single none is written, but it doesn't matter that much
     // so I'm not going to worry about it right now
-    for i in 0..num_traits {
+    for _i in 0..num_traits {
         let result = roll(10) + roll(10);
         match player_type {
             PlayerClass::Pitchers => {
@@ -577,10 +577,10 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
 // generates a new player in struct format
 pub fn generate_player(
     player_type: PlayerClass,
-    era: Era,
+    era: &Era,
     position: Position,
-    firstnames: Vec<String>,
-    lastnames: Vec<String>,
+    firstnames: &Vec<String>,
+    lastnames: &Vec<String>,
 ) -> Player {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     let (bt, ot) = generate_batter_target(&player_type);
