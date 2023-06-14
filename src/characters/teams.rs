@@ -657,6 +657,66 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
         }
     }
 
+    pub fn write_ballpark_modern(
+        data: &BallparkModern,
+        filename: &str,
+    ) -> Result<(), std::io::Error> {
+        let mut file_text = String::new();
+        file_text.push_str("NAME: ");
+        file_text.push_str(&data.name);
+        file_text.push_str("\nLOCATION: ");
+        match data.location {
+            Location::None => file_text.push_str("None"),
+            Location::SmallTown => file_text.push_str("Small Town"),
+            Location::SmallCity => file_text.push_str("Small City"),
+            Location::Metropolis => file_text.push_str("Metropolis"),
+            Location::MiddleOfNowhere => file_text.push_str("Middle Of Nowhere"),
+            Location::MediumSizedCity => file_text.push_str("Medium Sized City"),
+        }
+        file_text.push_str("\nTYPE: ");
+        match data.park_type {
+            StadiumTypeModern::None => file_text.push_str("None"),
+            StadiumTypeModern::BaseballPalace => file_text.push_str("Baseball Palace"),
+            StadiumTypeModern::Retro => file_text.push_str("Retro"),
+            StadiumTypeModern::JewelBox => file_text.push_str("Jewel Box"),
+            StadiumTypeModern::SpaceAge => file_text.push_str("Space Age"),
+            StadiumTypeModern::ConcreteDonut => file_text.push_str("Concrete Donot"),
+        }
+        file_text.push_str("\nCAPACITY: ");
+        file_text.push_str(&data.capacity.to_string());
+        file_text.push_str("\nTURF: ");
+        match data.turf {
+            Turf::None => file_text.push_str("None"),
+            Turf::Good => file_text.push_str("Good"),
+            Turf::Ragged => file_text.push_str("Ragged"),
+            Turf::Artificial => file_text.push_str("Artificial"),
+        }
+        file_text.push_str("\nROOF: ");
+        match data.roof {
+            Roof::None => file_text.push_str("None"),
+            Roof::NoRoof => file_text.push_str("No Roof"),
+            Roof::PermanentRoof => file_text.push_str("Permanent Roof"),
+            Roof::RetractableRoof => file_text.push_str("Retractable Roof"),
+        }
+        file_text.push_str("\nCONDITION: ");
+        match data.condition {
+            Condition::None => file_text.push_str("None"),
+            Condition::Decrepit => file_text.push_str("Decrepit"),
+            Condition::WellWorn => file_text.push_str("Well Worn"),
+            Condition::Sparkling => file_text.push_str("Sparkling"),
+            Condition::FallingApart => file_text.push_str("Falling Apart"),
+        }
+        file_text.push_str("\nQUIRKS: ");
+        for i in 0..data.quirks.len() {
+            match data.quirks[i] {
+                Quirks::None => {}
+                Quirks::SlowInfield => file_text.push_str(" Slow Infield,"),
+                Quirks::OddLeft => file_text.push_str(" Odd Left,"),
+                Quirks::Hideous => file_text.push_str(" Hideous,"),
+            }
+        }
+    }
+
     let park_data = BallparkModern {
         name: name,
         location: location,
@@ -1431,11 +1491,18 @@ pub fn gen_team(
     let years_in_league = roll(100);
     let years_since_championship = roll(years_in_league);
 
-    // ballpark details
+    // generate ballpark structure then write it to file
     match era {
-        Era::Modern => let ballpark = generate_modern_ballpark(name1, name2),
-        Era::Ancient => let ballpark = generate_ancient_ballpark(name1, name2),
-        Era::None => let ballpark = generate_modern_ballpark(name1, name2),
+        Era::Modern => {
+            // ballpark details
+            let ballpark = generate_modern_ballpark(name1, name2);
+        }
+        Era::Ancient => {
+            let ballpark = generate_ancient_ballpark(name1, name2);
+        }
+        Era::None => {
+            let ballpark = generate_ancient_ballpark(name1, name2);
+        }
     }
 
     // build team struct
