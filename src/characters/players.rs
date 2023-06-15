@@ -302,6 +302,7 @@ pub fn load_player(contents: String) -> Player {
 }
 
 // writes a Player struct to a *.DBP file
+// TODO - shouldn't this take a reference to a player struct?
 pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("First Name: ");
