@@ -1488,10 +1488,10 @@ pub fn generate_modern_ballpark(name1: Vec<String>, name2: Vec<String>) -> Ballp
 // probably need to be references as well
 pub fn gen_team(
     era: Era,
-    starters: u32,
-    bench: u32,
-    pitchers: u32,
-    bullpen: u32,
+    starters_num: u32,
+    bench_num: u32,
+    pitchers_num: u32,
+    bullpen_num: u32,
     name: &str,
     firstnames: &Vec<String>,
     lastnames: &Vec<String>,
@@ -1516,7 +1516,7 @@ pub fn gen_team(
     let mut position: Position;
     // create player structs, then write to files - it's the filenames that need to be stored in
     // the team struct
-    for i in 0..starters {
+    for i in 0..starters_num {
         // TODO IDK what to do here, should always be 8 position players so I'm just going to hard
         // code for now
         if i == 0 {
@@ -1540,8 +1540,34 @@ pub fn gen_team(
         }
         roster_raw.push(generate_player(
             super::players::PlayerClass::StartingHitter,
-            &era,
+            //&era, // uncomment when reintroducing Era
             position,
+            &firstnames,
+            &lastnames,
+        ));
+        // write player struct, if file write is successful add it to the filename struct
+    }
+
+    for _i in 0..bench_num {
+        bench_raw.push(generate_player(
+            super::players::PlayerClass::PinchHitter,
+            Position::None,
+            &firstnames,
+            &lastnames,
+        ));
+    }
+
+    pitcher_raw.push(generate_player(
+        super::players::PlayerClass::Pitchers,
+        Position::Pitcher,
+        &firstnames,
+        &lastnames,
+    ));
+
+    for _i in 0..bullpen_num {
+        bullpen_raw.push(generate_player(
+            super::players::PlayerClass::Pitchers,
+            Position::Pitcher,
             &firstnames,
             &lastnames,
         ));

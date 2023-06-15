@@ -5,7 +5,7 @@ use std::fs; // needed to read in files
 
 use text_colorizer::*;
 
-use super::teams::Era;
+//use super::teams::Era; // uncomment after reintroducing Era
 use crate::core::roll;
 
 /*========================================================
@@ -578,7 +578,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
 // generates a new player in struct format
 pub fn generate_player(
     player_type: PlayerClass,
-    era: &Era,
+    //era: &Era, // TODO adjust generation for Ancient era
     position: Position,
     firstnames: &Vec<String>,
     lastnames: &Vec<String>,
