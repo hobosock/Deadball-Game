@@ -4,9 +4,13 @@ MODULE INCLUSIONS
 use std::fs;
 use text_colorizer::*;
 
-use crate::core::{file_locations::BALLPARK_LOCATION, game_functions::modern_game_flow, *};
+use crate::core::{
+    file_locations::{BALLPARK_LOCATION, PLAYER_LOCATION},
+    //game_functions::modern_game_flow,
+    *,
+};
 
-use super::players::{generate_name, generate_player, load_player, Player, Position};
+use super::players::{generate_name, generate_player, load_player, write_player, Player, Position};
 
 /*==========================================
 ENUM DEFINITIONS
@@ -941,7 +945,7 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
 }
 
 // generate ballpark names - two words, CSV for each? some kind of name and then park type
-pub fn generate_ballpark_name(name1: Vec<String>, name2: Vec<String>) -> String {
+pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> String {
     let len1 = name1.len();
     let len2 = name2.len();
     let roll1 = roll(len1 as i32);
@@ -960,7 +964,7 @@ pub fn generate_manager(firstnames: &Vec<String>, lastnames: &Vec<String>) -> St
 }
 
 // generate logo
-pub fn generate_logo(logos: Vec<String>) -> String {
+pub fn generate_logo(logos: &Vec<String>) -> String {
     let len1 = logos.len();
     let roll1 = roll(len1 as i32);
     let logo = logos[roll1 as usize].clone();
@@ -996,7 +1000,7 @@ pub fn generate_location(locations: Vec<String>) -> String {
 */
 
 // generate mascot
-pub fn generate_mascot(mascots: Vec<String>) -> String {
+pub fn generate_mascot(mascots: &Vec<String>) -> String {
     let len1 = mascots.len();
     let roll1 = roll(len1 as i32);
     let mascot = mascots[roll1 as usize].clone();
@@ -1181,7 +1185,7 @@ pub fn generate_personality() -> Personality {
 */
 
 // generate motto???
-pub fn generate_motto(mottos: Vec<String>) -> String {
+pub fn generate_motto(mottos: &Vec<String>) -> String {
     let len1 = mottos.len();
     let roll1 = roll(len1 as i32);
     let motto = mottos[roll1 as usize].clone();
@@ -1189,7 +1193,7 @@ pub fn generate_motto(mottos: Vec<String>) -> String {
 }
 
 // generate owner background
-pub fn generate_background(backgrounds: Vec<String>) -> String {
+pub fn generate_background(backgrounds: &Vec<String>) -> String {
     let len1 = backgrounds.len();
     let roll1 = roll(len1 as i32);
     let background = backgrounds[roll1 as usize].clone();
@@ -1380,7 +1384,7 @@ pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
 }
 
 // generate ballpark functions
-pub fn generate_ancient_ballpark(name1: Vec<String>, name2: Vec<String>) -> BallparkAncient {
+pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> BallparkAncient {
     // generate info
     let park_type = generate_ancient_park_type();
     let capacity: i32;
@@ -1419,7 +1423,7 @@ pub fn generate_ancient_ballpark(name1: Vec<String>, name2: Vec<String>) -> Ball
     return ballpark;
 }
 
-pub fn generate_modern_ballpark(name1: Vec<String>, name2: Vec<String>) -> BallparkModern {
+pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> BallparkModern {
     // generate info
     let park_type = generate_modern_park_type();
     let capacity: i32;
@@ -1486,7 +1490,7 @@ pub fn generate_modern_ballpark(name1: Vec<String>, name2: Vec<String>) -> Ballp
 // generate team function
 // TODO combine inputs - load all the csv databases into a vector or array, makes it easier to pass into functions
 // probably need to be references as well
-pub fn gen_team(
+pub fn generate_team(
     era: Era,
     starters_num: u32,
     bench_num: u32,
@@ -1495,14 +1499,14 @@ pub fn gen_team(
     name: &str,
     firstnames: &Vec<String>,
     lastnames: &Vec<String>,
-    logos: Vec<String>,
-    mascots: Vec<String>,
-    mottos: Vec<String>,
-    personalities: Vec<String>,
-    backgrounds: Vec<String>,
-    locations: Vec<String>,
-    name1: Vec<String>,
-    name2: Vec<String>,
+    logos: &Vec<String>,
+    mascots: &Vec<String>,
+    mottos: &Vec<String>,
+    personalities: &Vec<String>,
+    backgrounds: &Vec<String>,
+    //locations: Vec<String>, // honestly I forget why this was here in the first place
+    name1: &Vec<String>,
+    name2: &Vec<String>,
 ) -> Team {
     // iterate over number of players
     let mut roster_raw: Vec<Player> = vec![];
@@ -1546,31 +1550,76 @@ pub fn gen_team(
             &lastnames,
         ));
         // write player struct, if file write is successful add it to the filename struct
+        let mut file_name_str = PLAYER_LOCATION.to_owned();
+        file_name_str.push_str(&roster_raw[i as usize].first_name);
+        file_name_str.push_str("_");
+        file_name_str.push_str(&roster_raw[i as usize].last_name);
+        file_name_str.push_str(".dbp");
+        let write_result = write_player(&roster_raw[i as usize], &file_name_str);
+        match write_result {
+            Ok(()) => roster.push(file_name_str),
+            Err(_err) => println!("Error writing file: {}", file_name_str),
+        }
     }
 
-    for _i in 0..bench_num {
+    for i in 0..bench_num as usize {
         bench_raw.push(generate_player(
             super::players::PlayerClass::PinchHitter,
             Position::None,
             &firstnames,
             &lastnames,
         ));
+        // write player struct, if file write is successful add it to the filename struct
+        let mut file_name_str = PLAYER_LOCATION.to_owned();
+        file_name_str.push_str(&bench_raw[i].first_name);
+        file_name_str.push_str("_");
+        file_name_str.push_str(&bench_raw[i].last_name);
+        file_name_str.push_str(".dbp");
+        let write_result = write_player(&roster_raw[i], &file_name_str);
+        match write_result {
+            Ok(()) => bench.push(file_name_str),
+            Err(_err) => println!("Error writing file: {}", file_name_str),
+        }
     }
 
-    pitcher_raw.push(generate_player(
-        super::players::PlayerClass::Pitchers,
-        Position::Pitcher,
-        &firstnames,
-        &lastnames,
-    ));
+    for i in 0..pitchers_num as usize {
+        pitcher_raw.push(generate_player(
+            super::players::PlayerClass::Pitchers,
+            Position::Pitcher,
+            &firstnames,
+            &lastnames,
+        ));
+        // write player struct, if file write is successful add it to the filename struct
+        let mut file_name_str = PLAYER_LOCATION.to_owned();
+        file_name_str.push_str(&pitcher_raw[i].first_name);
+        file_name_str.push_str("_");
+        file_name_str.push_str(&pitcher_raw[i].last_name);
+        file_name_str.push_str(".dbp");
+        let write_result = write_player(&pitcher_raw[i], &file_name_str);
+        match write_result {
+            Ok(()) => pitcher.push(file_name_str),
+            Err(_err) => println!("Error writing file: {}", file_name_str),
+        }
+    }
 
-    for _i in 0..bullpen_num {
+    for i in 0..bullpen_num as usize {
         bullpen_raw.push(generate_player(
             super::players::PlayerClass::Pitchers,
             Position::Pitcher,
             &firstnames,
             &lastnames,
         ));
+        // write player struct, if file write is successful add it to the filename struct
+        let mut file_name_str = PLAYER_LOCATION.to_owned();
+        file_name_str.push_str(&bullpen_raw[i].first_name);
+        file_name_str.push_str("_");
+        file_name_str.push_str(&bullpen_raw[i].last_name);
+        file_name_str.push_str(".dbp");
+        let write_result = write_player(&bullpen_raw[i], &file_name_str);
+        match write_result {
+            Ok(()) => bullpen.push(file_name_str),
+            Err(_err) => println!("Error writing file: {}", file_name_str),
+        }
     }
 
     // manager details

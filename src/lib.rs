@@ -128,7 +128,7 @@ mod tests {
             ],
         };
         let filename = "src/testfiles/write_test.dbp";
-        let write_result = write_player(test_player, filename);
+        let write_result = write_player(&test_player, filename);
 
         let contents = fs::read_to_string(filename).unwrap();
         let test_player = load_player(contents);
