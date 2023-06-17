@@ -27,7 +27,10 @@ mod tests {
     use std::fs;
 
     //use crate::core::gameFunctions::atBatResults;
-    use crate::{characters::players::*, characters::teams::*, core::game_functions::*};
+    use crate::{
+        characters::players::*, characters::teams::*, core::file_locations::*,
+        core::game_functions::*,
+    };
 
     use super::*;
 
@@ -746,5 +749,18 @@ mod tests {
 
         state = add_runner(state, &2);
         assert!(matches!(state.runners, RunnersOn::Runner110));
+    }
+
+    // load_csv function test
+    #[test]
+    fn test_load_csv() {
+        let filename = "src/testfiles/csv_test.csv";
+        let delimiter = "\n";
+        let result = load_csv(filename, delimiter).unwrap();
+        assert_eq!(result.len(), 4);
+        assert!(result[0] == "this");
+        assert!(result[1] == "is");
+        assert!(result[2] == "a");
+        assert!(result[3] == "test");
     }
 }
