@@ -1,8 +1,8 @@
-use deadball::characters::players::*;
+//use deadball::characters::players::*;
 use deadball::characters::teams::*;
 use deadball::core::file_locations::*;
 
-use std::fs;
+//use std::fs;
 
 fn main() {
     // need to load in databases for generating names, etc.

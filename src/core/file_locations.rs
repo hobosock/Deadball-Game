@@ -19,6 +19,10 @@ pub fn load_csv(filename: &str, delimiter: &str) -> Result<Vec<String>, std::io:
             let mut result: Vec<String> = raw_text.split(delimiter).map(str::to_string).collect();
             // need to check for "empty" entries
             result.retain(|x| x.len() >= 1);
+            // trim whitespace, can't figure out how to do it during collection
+            for i in 0..result.len() as usize {
+                result[i] = result[i].trim().to_string();
+            }
 
             return Ok(result);
         }

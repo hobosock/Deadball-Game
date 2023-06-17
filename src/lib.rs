@@ -24,7 +24,7 @@ TESTS
 #[allow(unused_variables)]
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use std::{fs, vec};
 
     //use crate::core::gameFunctions::atBatResults;
     use crate::{
@@ -762,5 +762,49 @@ mod tests {
         assert!(result[1] == "is");
         assert!(result[2] == "a");
         assert!(result[3] == "test");
+    }
+
+    // generate player function test
+    #[test]
+    fn test_generate_player() {
+        // use same file name every time so test directory isn't mindlessly spammed
+        // make basic first name and last name vectors to keep things simple
+        // make them vector of vectors so you can take randomness out of player names for test
+        let firstnames = vec![
+            vec!["Seth".to_string(), "Seth".to_string()],
+            vec!["Ben".to_string(), "Ben".to_string()],
+            vec!["Chuck".to_string(), "Chuck".to_string()],
+        ];
+        let lastnames = vec![
+            vec!["Loveall".to_string(), "Loveall".to_string()],
+            vec!["Smith".to_string(), "Smith".to_string()],
+            vec!["Schuldiner".to_string(), "Schuldiner".to_string()],
+        ];
+        for i in 0..3 as usize {
+            let test_player = generate_player(
+                PlayerClass::StartingHitter,
+                Position::Firstbase,
+                &firstnames[i],
+                &lastnames[i],
+            );
+            let mut filename = "src/testfiles/game_test/test_player".to_string();
+            filename.push_str(&i.to_string());
+            filename.push_str(".dbp");
+            _ = write_player(&test_player, &filename);
+            let contents = fs::read_to_string(filename).unwrap();
+            let read_player = load_player(contents);
+
+            let position = read_player.position;
+            let handedness = read_player.handedness;
+            let raits = read_player.traits;
+            assert!(matches!(test_player.position, position));
+            assert!(test_player.first_name == read_player.first_name);
+            assert!(test_player.last_name == read_player.last_name);
+            assert!(matches!(test_player.handedness, handedness));
+            assert_eq!(test_player.batter_target, read_player.batter_target);
+            assert_eq!(test_player.on_base_target, read_player.on_base_target);
+            assert_eq!(test_player.pitch_die, read_player.pitch_die);
+            assert!(matches!(test_player.traits, traits));
+        }
     }
 }
