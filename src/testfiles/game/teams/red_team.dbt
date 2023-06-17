@@ -1,0 +1,42 @@
+TEAM: Red Team
+BALLPARK: src/testfiles/game/ballparks/Candlestick Stadium.dbb
+LOGO: Grenadiers
+ERA: Modern
+Location: Small Town
+MASCOT: Grenadiers
+TEAM PRIORITY: Average
+TEAM MAKEUP: Balanced
+YEARS IN LEAGUE: 17
+MOST RECENT CHAMPIONSHIP: 12
+FANBASE: Loyal/n/n## MANAGER INFO
+MANAGER: ChrisTrotter
+POSITION: CF
+LEAGUE: Majors
+RETIRED: 29
+PERSONALITY: Humble
+DARING: 16
+MOTTO: There are two theories on hitting the knuckleball.  Unfortunately, neither one of them works.
+
+## OWNER INFO
+BACKGROUND: Oil Man
+OWNER PERSONALITY: Miserly
+
+## ROSTER
+PLAYER: src/testfiles/game/players/Rich_Cameron.dbp
+PLAYER: src/testfiles/game/players/Randy_Oglivie.dbp
+PLAYER: src/testfiles/game/players/Bill_Reid.dbp
+PLAYER: src/testfiles/game/players/Ray_Vizcaino.dbp
+PLAYER: src/testfiles/game/players/Charlie_Young.dbp
+PLAYER: src/testfiles/game/players/Fred_Grisham.dbp
+PLAYER: src/testfiles/game/players/Ab_Dow.dbp
+PLAYER: src/testfiles/game/players/Joe_Holdsworth.dbp
+BENCH: src/testfiles/game/players/Al_Crow.dbp
+BENCH: src/testfiles/game/players/Leo_Haldeman.dbp
+BENCH: src/testfiles/game/players/Jim_Swanson.dbp
+BENCH: src/testfiles/game/players/Dennis_Casale.dbp
+PITCHER: src/testfiles/game/players/Jack_Tate.dbp
+BULLPEN: src/testfiles/game/players/Tom_Alvarez.dbp
+BULLPEN: src/testfiles/game/players/Charlie_Epps.dbp
+BULLPEN: src/testfiles/game/players/James_St. Claire.dbp
+BULLPEN: src/testfiles/game/players/Roger_Fenwick.dbp
+BULLPEN: src/testfiles/game/players/John_Burgos.dbp

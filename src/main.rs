@@ -1,10 +1,12 @@
 //use deadball::characters::players::*;
 use deadball::characters::teams::*;
 use deadball::core::file_locations::*;
+use deadball::core::game_functions::create_modern_game;
 
-//use std::fs;
+use std::fs;
 
 fn main() {
+    /* SEGMENT OF CODE TO GENERATE TEAMS, DON'T NEED IT EVERY TIME
     // need to load in databases for generating names, etc.
     let mut first_names: Vec<String> = vec![];
     let read_result = load_csv("src/databases/firstname.csv", "\n");
@@ -108,4 +110,14 @@ fn main() {
         &name2,
     );
     let _ = write_team(team2, "src/testfiles/game/teams/blue_team.dbt");
+    */
+
+    let contents1 = fs::read_to_string("src/testfiles/game/teams/red_team.dbt").unwrap();
+    let contents2 = fs::read_to_string("src/testfiles/game/teams/blue_team.dbt").unwrap();
+    let team1 = load_team(contents1);
+    let team2 = load_team(contents2);
+    let contents3 = fs::read_to_string(&team1.ballpark).unwrap();
+    let ballpark = load_park_modern(contents3);
+
+    let game = create_modern_game(&team1, &team2, &ballpark);
 }
