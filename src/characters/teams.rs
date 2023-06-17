@@ -1575,7 +1575,7 @@ pub fn generate_team(
         file_name_str.push_str("_");
         file_name_str.push_str(&bench_raw[i].last_name);
         file_name_str.push_str(".dbp");
-        let write_result = write_player(&roster_raw[i], &file_name_str);
+        let write_result = write_player(&bench_raw[i], &file_name_str);
         match write_result {
             Ok(()) => bench.push(file_name_str),
             Err(_err) => println!("Error writing file: {}", file_name_str),
