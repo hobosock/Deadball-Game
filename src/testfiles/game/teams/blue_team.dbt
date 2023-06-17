@@ -1,0 +1,42 @@
+TEAM: Blue Team
+BALLPARK: src/testfiles/game/ballparks/CandlestickPark.dbb
+LOGO: Parrots
+ERA: Modern
+Location: Small Town
+MASCOT: Boomers
+TEAM PRIORITY: Power
+TEAM MAKEUP: Balanced
+YEARS IN LEAGUE: 92
+MOST RECENT CHAMPIONSHIP: 89
+FANBASE: Indifferent/n/n## MANAGER INFO
+MANAGER: BruceSmith
+POSITION: 2B
+LEAGUE: Majors
+RETIRED: 13
+PERSONALITY: Gossipy
+DARING: 4
+MOTTO: I watch a lot of baseball on the radio.
+
+## OWNER INFO
+BACKGROUND: Venture Capitalist
+OWNER PERSONALITY: Gossipy
+
+## ROSTER
+PLAYER: src/testfiles/game/players/Eddie_Erskine.dbp
+PLAYER: src/testfiles/game/players/Sid_Cusick.dbp
+PLAYER: src/testfiles/game/players/Steve_Cox.dbp
+PLAYER: src/testfiles/game/players/Slim_Klink.dbp
+PLAYER: src/testfiles/game/players/Reggie_Scribner.dbp
+PLAYER: src/testfiles/game/players/Bill_Ladew.dbp
+PLAYER: src/testfiles/game/players/George_Knoedler.dbp
+PLAYER: src/testfiles/game/players/Thyago_Brown.dbp
+BENCH: src/testfiles/game/players/Jim_Morel.dbp
+BENCH: src/testfiles/game/players/Ike_Woodward.dbp
+BENCH: src/testfiles/game/players/Eric_Brown.dbp
+BENCH: src/testfiles/game/players/Carl_Balester.dbp
+PITCHER: src/testfiles/game/players/Shad_Kamp.dbp
+BULLPEN: src/testfiles/game/players/Glen_Muno.dbp
+BULLPEN: src/testfiles/game/players/Ruben_Ernaga.dbp
+BULLPEN: src/testfiles/game/players/Rudy_Harriss.dbp
+BULLPEN: src/testfiles/game/players/Nels_Keupper.dbp
+BULLPEN: src/testfiles/game/players/Fred_Ens.dbp

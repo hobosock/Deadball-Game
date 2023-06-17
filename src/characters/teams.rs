@@ -952,7 +952,7 @@ pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> Strin
     let roll2 = roll(len2 as i32);
     let part1 = name1[roll1 as usize].clone();
     let part2 = name2[roll2 as usize].clone();
-    let name = part1 + &part2;
+    let name = part1 + " " + &part2;
     return name;
 }
 

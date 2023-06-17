@@ -28,42 +28,42 @@ fn main() {
     }
 
     let mut mascots: Vec<String> = vec![];
-    let read_result = load_csv("src/databases/lastname.csv", "\n");
+    let read_result = load_csv("src/databases/mascot.csv", "\n");
     match read_result {
         Ok(mut a) => mascots.append(&mut a),
         Err(_) => {}
     }
 
     let mut mottos: Vec<String> = vec![];
-    let read_result = load_csv("src/databases/lastname.csv", "\n");
+    let read_result = load_csv("src/databases/motto.csv", "\n");
     match read_result {
         Ok(mut a) => mottos.append(&mut a),
         Err(_) => {}
     }
 
     let mut personalities: Vec<String> = vec![];
-    let read_result = load_csv("src/databases/lastname.csv", "\n");
+    let read_result = load_csv("src/databases/personality.csv", "\n");
     match read_result {
         Ok(mut a) => personalities.append(&mut a),
         Err(_) => {}
     }
 
     let mut backgrounds: Vec<String> = vec![];
-    let read_result = load_csv("src/databases/lastname.csv", "\n");
+    let read_result = load_csv("src/databases/background.csv", "\n");
     match read_result {
         Ok(mut a) => backgrounds.append(&mut a),
         Err(_) => {}
     }
 
     let mut name1: Vec<String> = vec![];
-    let read_result = load_csv("src/databases/lastname.csv", "\n");
+    let read_result = load_csv("src/databases/park1.csv", "\n");
     match read_result {
         Ok(mut a) => name1.append(&mut a),
         Err(_) => {}
     }
 
     let mut name2: Vec<String> = vec![];
-    let read_result = load_csv("src/databases/lastname.csv", "\n");
+    let read_result = load_csv("src/databases/park2.csv", "\n");
     match read_result {
         Ok(mut a) => name2.append(&mut a),
         Err(_) => {}
@@ -88,6 +88,7 @@ fn main() {
         &name1,
         &name2,
     );
+    let _ = write_team(team1, "src/testfiles/game/teams/red_team.dbt");
 
     let team2 = generate_team(
         Era::Modern,
@@ -95,7 +96,7 @@ fn main() {
         4,
         1,
         5,
-        "Red Team",
+        "Blue Team",
         &first_names,
         &last_names,
         &logos,
@@ -106,4 +107,5 @@ fn main() {
         &name1,
         &name2,
     );
+    let _ = write_team(team2, "src/testfiles/game/teams/blue_team.dbt");
 }

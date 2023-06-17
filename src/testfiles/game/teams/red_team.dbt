@@ -1,0 +1,42 @@
+TEAM: Red Team
+BALLPARK: src/testfiles/game/ballparks/LakesidePark.dbb
+LOGO: Thunder
+ERA: Modern
+Location: Middle Of Nowhere
+MASCOT: Coronas
+TEAM PRIORITY: Bullpen
+TEAM MAKEUP: Balanced
+YEARS IN LEAGUE: 37
+MOST RECENT CHAMPIONSHIP: 26
+FANBASE: Indifferent/n/n## MANAGER INFO
+MANAGER: JoseNavarro
+POSITION: 3B
+LEAGUE: Majors
+RETIRED: 2
+PERSONALITY: Hedonistic
+DARING: 19
+MOTTO: We know we're better than this, but we can't prove it.
+
+## OWNER INFO
+BACKGROUND: Venture Capitalist
+OWNER PERSONALITY: Elegant
+
+## ROSTER
+PLAYER: src/testfiles/game/players/El_Spikes.dbp
+PLAYER: src/testfiles/game/players/Leon_Metcalf.dbp
+PLAYER: src/testfiles/game/players/Cal_Rasmus.dbp
+PLAYER: src/testfiles/game/players/John_Shea.dbp
+PLAYER: src/testfiles/game/players/Papa_Bilko.dbp
+PLAYER: src/testfiles/game/players/Jae Kuk_Sosa.dbp
+PLAYER: src/testfiles/game/players/Rey_Colon.dbp
+PLAYER: src/testfiles/game/players/Jack_Gilham.dbp
+BENCH: src/testfiles/game/players/Carlos_Lundgren.dbp
+BENCH: src/testfiles/game/players/Frank_Raich.dbp
+BENCH: src/testfiles/game/players/Dave_Naylor.dbp
+BENCH: src/testfiles/game/players/Edgmer_Erickson.dbp
+PITCHER: src/testfiles/game/players/Andy_Wallace.dbp
+BULLPEN: src/testfiles/game/players/T. J._Ebbets.dbp
+BULLPEN: src/testfiles/game/players/Steve_Manzanillo.dbp
+BULLPEN: src/testfiles/game/players/Pi_Cusick.dbp
+BULLPEN: src/testfiles/game/players/Mike_Hampson.dbp
+BULLPEN: src/testfiles/game/players/Carlos_Villar.dbp
