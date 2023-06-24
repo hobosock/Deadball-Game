@@ -1,7 +1,7 @@
 //use deadball::characters::players::*;
 use deadball::characters::teams::*;
 use deadball::core::file_locations::*;
-use deadball::core::game_functions::create_modern_game;
+use deadball::core::game_functions::{create_modern_game, init_new_game_state, modern_game_flow};
 
 use std::fs;
 
@@ -116,8 +116,12 @@ fn main() {
     let contents2 = fs::read_to_string("src/testfiles/game/teams/blue_team.dbt").unwrap();
     let team1 = load_team(contents1);
     let team2 = load_team(contents2);
+    let (mut roster1, mut bench1, mut pitcher1, mut bullpen1) = load_roster(&team1);
+    let (mut roster2, mut bench2, mut pitcher2, mut bullpen2) = load_roster(&team2);
     let contents3 = fs::read_to_string(&team1.ballpark).unwrap();
     let ballpark = load_park_modern(contents3);
 
-    let game = create_modern_game(&team1, &team2, &ballpark);
+    let game = create_modern_game(&team1, &team2, &ballpark).unwrap();
+    let mut game_state = init_new_game_state(&pitcher1[0], &pitcher2[0]);
+    modern_game_flow(&game, game_state);
 }

@@ -5,13 +5,13 @@ use std::fs; // needed to read in files
 
 use text_colorizer::*;
 
-//use super::teams::Era; // uncomment after reintroducing Era
+use super::teams::Era;
 use crate::core::roll;
 
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Position {
     Pitcher,
     Catcher,
@@ -26,7 +26,7 @@ pub enum Position {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Handedness {
     Right,
     Left,
@@ -34,7 +34,7 @@ pub enum Handedness {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Traits {
     // hitter traits
     PowerHitter,
@@ -59,7 +59,7 @@ pub enum Traits {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum InjuryLocation {
     Head,
     Shoulder,
@@ -77,7 +77,7 @@ pub enum InjuryLocation {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum InjurySeverity {
     Catastrophic,
     Major,
@@ -97,7 +97,7 @@ pub enum PlayerClass {
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     pub first_name: String,
     pub last_name: String,
@@ -366,6 +366,7 @@ pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error>
             InjuryLocation::Knee => file_text.push_str(" Knee,"),
             InjuryLocation::Hip => file_text.push_str(" Hip,"),
             InjuryLocation::Head => file_text.push_str(" Head,"),
+            InjuryLocation::Head => file_text.push_str(" Head,"),
             InjuryLocation::Hand => file_text.push_str(" Hand,"),
             InjuryLocation::Back => file_text.push_str(" Back,"),
             InjuryLocation::Foot => file_text.push_str(" Foot,"),
@@ -562,7 +563,6 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
                     traits.push(Traits::ContactHitter);
                 } else if result == 18 {
                     traits.push(Traits::SpeedyRunner);
-                } else if result == 19 {
                     traits.push(Traits::ToughPlayer);
                 } else if result == 20 {
                     traits.push(Traits::ElitePowerHitter);
@@ -578,7 +578,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
 // generates a new player in struct format
 pub fn generate_player(
     player_type: PlayerClass,
-    //era: &Era, // TODO adjust generation for Ancient era
+    //era: &Era,
     position: Position,
     firstnames: &Vec<String>,
     lastnames: &Vec<String>,

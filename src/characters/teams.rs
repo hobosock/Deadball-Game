@@ -232,6 +232,7 @@ pub struct ActiveTeam {
     pub bench: Vec<Player>,
     pub pitching: Vec<Player>,
     pub bullpen: Vec<Player>,
+    pub batting_order: Vec<Player>,
 }
 
 /*==========================================
