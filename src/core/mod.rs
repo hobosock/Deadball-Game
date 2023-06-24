@@ -7,7 +7,8 @@ CONFIGURE RUSTC WARNINGS
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
-pub mod game_functions; // include things like at bat functinos, defense rolls, etc.
+pub mod file_locations;
+pub mod game_functions; // include things like at bat functinos, defense rolls, etc. // default file locations for teams/players/ballparks
 
 use rand::Rng;
 

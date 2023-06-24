@@ -1,0 +1,42 @@
+TEAM: Blue Team
+BALLPARK: src/testfiles/game/ballparks/Nightside Field.dbb
+LOGO: Boomers
+ERA: Modern
+Location: Middle Of Nowhere
+MASCOT: Samurai
+TEAM PRIORITY: Power
+TEAM MAKEUP: Balanced
+YEARS IN LEAGUE: 5
+MOST RECENT CHAMPIONSHIP: 3
+FANBASE: Obsessive/n/n## MANAGER INFO
+MANAGER: PedroShoup
+POSITION: 2B
+LEAGUE: Majors
+RETIRED: 22
+PERSONALITY: Gossipy
+DARING: 16
+MOTTO: It took me 17 years to get 3,000 hits in baseball, and I did it in one afternoon on the golf course.
+
+## OWNER INFO
+BACKGROUND: Railroad Baron
+OWNER PERSONALITY: Even-keeled
+
+## ROSTER
+PLAYER: src/testfiles/game/players/Dan_Samardzija.dbp
+PLAYER: src/testfiles/game/players/Manuel_Perez.dbp
+PLAYER: src/testfiles/game/players/Ed_Munson.dbp
+PLAYER: src/testfiles/game/players/Mort_Moore.dbp
+PLAYER: src/testfiles/game/players/Steve_Delahanty.dbp
+PLAYER: src/testfiles/game/players/Jeff_Valdespin.dbp
+PLAYER: src/testfiles/game/players/Mike_Boyland.dbp
+PLAYER: src/testfiles/game/players/Jack_Rodriguez.dbp
+BENCH: src/testfiles/game/players/Bobby_Jarvis.dbp
+BENCH: src/testfiles/game/players/Jack_Angle.dbp
+BENCH: src/testfiles/game/players/Jerry_Genewich.dbp
+BENCH: src/testfiles/game/players/Bob_Spanswick.dbp
+PITCHER: src/testfiles/game/players/Kurt_Yost.dbp
+BULLPEN: src/testfiles/game/players/Cliff_Willoughby.dbp
+BULLPEN: src/testfiles/game/players/Ed_Miller.dbp
+BULLPEN: src/testfiles/game/players/Harry_Head.dbp
+BULLPEN: src/testfiles/game/players/Frank_Fleming.dbp
+BULLPEN: src/testfiles/game/players/Pat_Scrivener.dbp
