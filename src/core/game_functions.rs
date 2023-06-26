@@ -29,11 +29,13 @@ pub enum AtBatResults {
     MegaOut,
 }
 
+#[derive(Debug)]
 pub enum InningTB {
     Top,
     Bottom,
 }
 
+#[derive(Debug)]
 pub enum Outs {
     One,
     Two,
@@ -42,6 +44,7 @@ pub enum Outs {
 }
 
 // each number is base binary (1 is runner on, 0 is no runner)
+#[derive(Debug)]
 pub enum RunnersOn {
     Runner000,
     Runner100,
@@ -53,6 +56,7 @@ pub enum RunnersOn {
     Runner111,
 }
 
+#[derive(Debug)]
 pub enum GameStatus {
     NotStarted,
     Ongoing,
@@ -142,6 +146,8 @@ pub struct GameModern<'a> {
     pub away_active: ActiveTeam,
     pub ballpark: &'a BallparkModern,
 }
+
+#[derive(Debug)]
 pub struct GameState<'a> {
     pub status: GameStatus,
     pub inning: u32,
@@ -206,7 +212,7 @@ pub fn create_modern_game<'a>(
     ballpark: &'a BallparkModern,
 ) -> Result<GameModern<'a>, TeamError> {
     // check teams and park for complete information
-    if home.roster.len() < 9 {
+    if home.roster.len() < 8 {
         println!(
             "{}",
             "Home team does not have a complete roster".red().bold()
@@ -216,7 +222,7 @@ pub fn create_modern_game<'a>(
             team: home.name.clone(),
         });
     }
-    if away.roster.len() < 9 {
+    if away.roster.len() < 8 {
         println!(
             "{}",
             "Away team does not have a complete roster".red().bold()
@@ -250,6 +256,7 @@ pub fn create_modern_game<'a>(
         bench: vec![],
         pitching: vec![],
         bullpen: vec![],
+        batting_order: vec![],
     };
     // try to load all the players, return error if it fails
     for i in 0..home.roster.len() {
@@ -292,12 +299,18 @@ pub fn create_modern_game<'a>(
             ),
         }
     }
+    // for now, make batting order roster + pitcher
+    home_active.batting_order = home_active.roster.clone();
+    home_active
+        .batting_order
+        .push(home_active.pitching[0].clone());
 
     let mut away_active = ActiveTeam {
         roster: vec![],
         bench: vec![],
         pitching: vec![],
         bullpen: vec![],
+        batting_order: vec![],
     };
     for i in 0..away.roster.len() {
         let read_results = fs::read_to_string(&away.roster[i]);
@@ -339,6 +352,11 @@ pub fn create_modern_game<'a>(
             ),
         }
     }
+    // for now, make batting order roster + pitcher
+    away_active.batting_order = away_active.roster.clone();
+    away_active
+        .batting_order
+        .push(away_active.pitching[0].clone());
 
     let game = GameModern {
         home: home,
@@ -368,6 +386,8 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
     let away_team = &game.away_active;
 
     loop {
+        // TODO delete these debug print statements once it is fixed
+        println!("{:?}", state);
         // check top of the 9th at a different place
         if state.inning > 9 {
             // check score
@@ -382,12 +402,17 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                 //state.current_pitcher_team1 = &home_team.pitching[0];
                 //state.current_pitcher_team2 = &away_team.pitching[0];
                 state.status = GameStatus::Ongoing;
+                // TODO delete this
+                println!("Play ball!");
             }
             GameStatus::Ongoing => match state.inning_half {
                 InningTB::Top => match state.outs {
                     Outs::Three => {
+                        // clean up game state, reset for new inning
                         state.inning_half = InningTB::Bottom;
                         state.outs = Outs::None;
+                        state.runners = RunnersOn::Runner000;
+                        state.inning += 1;
                     }
                     _ => {
                         state = modern_inning_flow(game, state);
@@ -397,7 +422,9 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                     match state.outs {
                         Outs::Three => {
                             state.inning_half = InningTB::Top;
+                            state.runners = RunnersOn::Runner000;
                             state.outs = Outs::None; // reset outs
+                            state.inning += 1;
                         }
                         _ => {
                             state = modern_inning_flow(game, state);
@@ -407,8 +434,11 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
             },
             GameStatus::Over => {
                 // temporary printing of results
+                // TODO print score report?
+                // TODO inning ticks over one final time before game ends, need to fix
                 println!("FINAL SCORE");
                 println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
+                break;
             }
         }
     }
@@ -416,6 +446,7 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
 
 pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) -> GameState<'a> {
     loop {
+        // TODO hange here and update GUI, wait for player interaction
         match state.inning_half {
             InningTB::Top => {
                 // should match Bottom arm, just flip the teams - probably a better way to do this
@@ -435,12 +466,14 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) ->
                         }
                         pitch_result += roll(100);
                         let swing_result = at_bat(
-                            game.home_active.roster[state.batting_team2 as usize].batter_target,
-                            game.home_active.roster[state.batting_team2 as usize].on_base_target,
+                            game.home_active.batting_order[state.batting_team2 as usize]
+                                .batter_target,
+                            game.home_active.batting_order[state.batting_team2 as usize]
+                                .on_base_target,
                             pitch_result,
                         );
-                        if state.batting_team2 == 9 {
-                            state.batting_team2 = 1;
+                        if state.batting_team2 == 8 {
+                            state.batting_team2 = 0;
                         } else {
                             state.batting_team2 += 1;
                         }
@@ -837,12 +870,14 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) ->
                         }
                         pitch_result += roll(100);
                         let swing_result = at_bat(
-                            game.home_active.roster[state.batting_team1 as usize].batter_target,
-                            game.home_active.roster[state.batting_team1 as usize].on_base_target,
+                            game.home_active.batting_order[state.batting_team1 as usize]
+                                .batter_target,
+                            game.home_active.batting_order[state.batting_team1 as usize]
+                                .on_base_target,
                             pitch_result,
                         );
-                        if state.batting_team1 == 9 {
-                            state.batting_team1 = 1;
+                        if state.batting_team1 == 8 {
+                            state.batting_team1 = 0;
                         } else {
                             state.batting_team1 += 1;
                         }
@@ -1239,7 +1274,7 @@ pub fn oddity<'b>(
             if *oddity_result == 2 {
                 if pitch_result % 2 == 1 {
                     // fan catches sure out, at bat continues
-                    state.batting_team1 -= 1;
+                    //state.batting_team1 -= 1;
                 } else {
                     // home run overturned, batter out
                     match state.outs {
@@ -1931,8 +1966,8 @@ pub fn init_new_game_state<'a>(
         inning_half: InningTB::Top,
         outs: Outs::None,
         runners: RunnersOn::Runner000,
-        batting_team1: 1,
-        batting_team2: 1,
+        batting_team1: 0,
+        batting_team2: 0,
         current_pitcher_team1: home_pitcher,
         current_pitcher_team2: away_pitcher,
         pitched_team1: 0,

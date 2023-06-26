@@ -5,10 +5,13 @@ use std::fs; // needed to read in files
 
 use text_colorizer::*;
 
+use super::teams::Era;
+use crate::core::roll;
+
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Position {
     Pitcher,
     Catcher,
@@ -23,7 +26,7 @@ pub enum Position {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Handedness {
     Right,
     Left,
@@ -31,7 +34,7 @@ pub enum Handedness {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Traits {
     // hitter traits
     PowerHitter,
@@ -56,7 +59,7 @@ pub enum Traits {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum InjuryLocation {
     Head,
     Shoulder,
@@ -74,7 +77,7 @@ pub enum InjuryLocation {
     None,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum InjurySeverity {
     Catastrophic,
     Major,
@@ -83,10 +86,18 @@ pub enum InjurySeverity {
     Uninjured,
 }
 
+// this is used for team generation purposes, starting players get better stats, etc.
+#[derive(Debug)]
+pub enum PlayerClass {
+    StartingHitter,
+    PinchHitter,
+    Pitchers,
+}
+
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Player {
     pub first_name: String,
     pub last_name: String,
@@ -291,7 +302,8 @@ pub fn load_player(contents: String) -> Player {
 }
 
 // writes a Player struct to a *.DBP file
-pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> {
+// TODO - shouldn't this take a reference to a player struct?
+pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("First Name: ");
     file_text.push_str(&data.first_name);
@@ -354,6 +366,7 @@ pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> 
             InjuryLocation::Knee => file_text.push_str(" Knee,"),
             InjuryLocation::Hip => file_text.push_str(" Hip,"),
             InjuryLocation::Head => file_text.push_str(" Head,"),
+            InjuryLocation::Head => file_text.push_str(" Head,"),
             InjuryLocation::Hand => file_text.push_str(" Hand,"),
             InjuryLocation::Back => file_text.push_str(" Back,"),
             InjuryLocation::Foot => file_text.push_str(" Foot,"),
@@ -380,4 +393,212 @@ pub fn write_player(data: Player, filename: &str) -> Result<(), std::io::Error> 
 
     let write_result = fs::write(filename, &file_text);
     write_result
+}
+
+// reads in name CSVs and puts them into memory for reference during player generation function
+pub fn load_names() -> (Vec<String>, Vec<String>) {
+    let firstnames: Vec<String>;
+    let lastnames: Vec<String>;
+    if let Ok(contents) = fs::read_to_string("src/databases/firstname.csv") {
+        // split file up by line - 1 name per line
+        firstnames = contents.split('\n').map(String::from).collect();
+    } else {
+        firstnames = vec!["first".to_string()];
+        println!("WARNING: Failed to read firstname.csv");
+    }
+
+    if let Ok(contents) = fs::read_to_string("src/databases/lastname.csv") {
+        lastnames = contents.split('\n').map(String::from).collect();
+    } else {
+        lastnames = vec!["last".to_string()];
+        println!("WARNING: Failed to read lastname.csv");
+    }
+    return (firstnames, lastnames);
+}
+
+// TODO player generation should take into account target ERA - will fix later
+// TODO might add aging at a later date
+// TODO could add mechanic for farmhand/prospect/veteran/etc.
+
+// generates a player name
+pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (String, String) {
+    let len_first = firstnames.len();
+    let len_last = lastnames.len();
+    let roll_first = roll(len_first as i32);
+    let roll_last = roll(len_last as i32);
+    let first_name = firstnames[roll_first as usize].clone();
+    let last_name = lastnames[roll_last as usize].clone();
+    return (first_name, last_name);
+}
+
+// generates handedness
+pub fn generate_handedness(player_type: &PlayerClass) -> Handedness {
+    let hand: Handedness;
+    match player_type {
+        PlayerClass::StartingHitter => {
+            let result = roll(10);
+            if result <= 6 {
+                hand = Handedness::Right;
+            } else if result >= 7 && result <= 9 {
+                hand = Handedness::Left;
+            } else {
+                hand = Handedness::Switch;
+            }
+        }
+        PlayerClass::PinchHitter => {
+            let result = roll(10);
+            if result <= 6 {
+                hand = Handedness::Right;
+            } else if result >= 7 && result <= 9 {
+                hand = Handedness::Left;
+            } else {
+                hand = Handedness::Switch;
+            }
+        }
+        PlayerClass::Pitchers => {
+            let result = roll(10);
+            if result <= 6 {
+                hand = Handedness::Right;
+            } else {
+                hand = Handedness::Left;
+            }
+        }
+    }
+    return hand;
+}
+
+// generate batter target and on base target
+pub fn generate_batter_target(player_type: &PlayerClass) -> (i32, i32) {
+    let bt: i32;
+    match player_type {
+        PlayerClass::StartingHitter => {
+            bt = 15 + roll(10) + roll(10);
+        }
+        PlayerClass::PinchHitter => {
+            bt = 15 + roll(10);
+        }
+        PlayerClass::Pitchers => {
+            bt = 5 + roll(10);
+        }
+    }
+    let ot = bt + roll(6);
+    return (bt, ot);
+}
+
+// generate pitch die
+pub fn generate_pitch_die(player_type: &PlayerClass) -> i32 {
+    let pd: i32;
+    match player_type {
+        PlayerClass::Pitchers => {
+            let result = roll(8);
+            if result == 1 {
+                pd = 12;
+            } else if result == 2 || result == 3 {
+                pd = 8;
+            } else if result >= 4 && result <= 6 {
+                pd = 4;
+            } else {
+                pd = -4;
+            }
+        }
+        _ => {
+            pd = -8;
+        }
+    }
+    return pd;
+}
+// generate traits
+pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
+    let mut traits: Vec<Traits> = vec![];
+    // roll for chance of 2 traits
+    let chance = roll(100);
+    let num_traits: i32;
+    if chance <= 2 {
+        num_traits = 2;
+    } else {
+        num_traits = 1;
+    }
+    // TODO could clean this up so only a single none is written, but it doesn't matter that much
+    // so I'm not going to worry about it right now
+    for _i in 0..num_traits {
+        let result = roll(10) + roll(10);
+        match player_type {
+            PlayerClass::Pitchers => {
+                if result < 5 {
+                    traits.push(Traits::None);
+                } else if result == 5 {
+                    traits.push(Traits::Wild);
+                } else if result >= 6 && result <= 14 {
+                    traits.push(Traits::None);
+                } else if result == 15 {
+                    traits.push(Traits::StrikeoutArtist);
+                } else if result == 16 {
+                    traits.push(Traits::GroundballMachine);
+                } else if result == 17 {
+                    traits.push(Traits::ControlPitcher);
+                } else if result == 18 {
+                    traits.push(Traits::GreatStamina);
+                } else {
+                    traits.push(Traits::None);
+                }
+            }
+            _ => {
+                if result == 2 {
+                    traits.push(Traits::ExtraWeakHitter);
+                } else if result == 3 {
+                    traits.push(Traits::WeakHitter);
+                } else if result == 4 {
+                    traits.push(Traits::SlowRunner);
+                } else if result == 5 {
+                    traits.push(Traits::FreeSwinger);
+                } else if result == 6 {
+                    traits.push(Traits::PoorDefender);
+                } else if result >= 7 && result <= 14 {
+                    traits.push(Traits::None);
+                } else if result == 15 {
+                    traits.push(Traits::GreatDefender);
+                } else if result == 16 {
+                    traits.push(Traits::PowerHitter);
+                } else if result == 17 {
+                    traits.push(Traits::ContactHitter);
+                } else if result == 18 {
+                    traits.push(Traits::SpeedyRunner);
+                    traits.push(Traits::ToughPlayer);
+                } else if result == 20 {
+                    traits.push(Traits::ElitePowerHitter);
+                } else {
+                    traits.push(Traits::None);
+                }
+            }
+        }
+    }
+    return traits;
+}
+
+// generates a new player in struct format
+pub fn generate_player(
+    player_type: PlayerClass,
+    //era: &Era,
+    position: Position,
+    firstnames: &Vec<String>,
+    lastnames: &Vec<String>,
+) -> Player {
+    let (first_name, last_name) = generate_name(firstnames, lastnames);
+    let (bt, ot) = generate_batter_target(&player_type);
+
+    let new_player = Player {
+        first_name: first_name,
+        last_name: last_name,
+        nickname: "".to_string(),
+        position: position,
+        handedness: generate_handedness(&player_type),
+        batter_target: bt,
+        on_base_target: ot,
+        pitch_die: generate_pitch_die(&player_type),
+        traits: generate_traits(&player_type),
+        injury_location: vec![InjuryLocation::None],
+        injury_severity: vec![InjurySeverity::Uninjured],
+    };
+
+    return new_player;
 }
