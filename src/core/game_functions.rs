@@ -408,8 +408,11 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
             GameStatus::Ongoing => match state.inning_half {
                 InningTB::Top => match state.outs {
                     Outs::Three => {
+                        // clean up game state, reset for new inning
                         state.inning_half = InningTB::Bottom;
                         state.outs = Outs::None;
+                        state.runners = RunnersOn::Runner000;
+                        state.inning += 1;
                     }
                     _ => {
                         state = modern_inning_flow(game, state);
@@ -419,7 +422,9 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                     match state.outs {
                         Outs::Three => {
                             state.inning_half = InningTB::Top;
+                            state.runners = RunnersOn::Runner000;
                             state.outs = Outs::None; // reset outs
+                            state.inning += 1;
                         }
                         _ => {
                             state = modern_inning_flow(game, state);
@@ -429,8 +434,11 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
             },
             GameStatus::Over => {
                 // temporary printing of results
+                // TODO print score report?
+                // TODO inning ticks over one final time before game ends, need to fix
                 println!("FINAL SCORE");
                 println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
+                break;
             }
         }
     }
@@ -438,6 +446,7 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
 
 pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) -> GameState<'a> {
     loop {
+        // TODO hange here and update GUI, wait for player interaction
         match state.inning_half {
             InningTB::Top => {
                 // should match Bottom arm, just flip the teams - probably a better way to do this
