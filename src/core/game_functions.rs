@@ -29,11 +29,13 @@ pub enum AtBatResults {
     MegaOut,
 }
 
+#[derive(Debug)]
 pub enum InningTB {
     Top,
     Bottom,
 }
 
+#[derive(Debug)]
 pub enum Outs {
     One,
     Two,
@@ -42,6 +44,7 @@ pub enum Outs {
 }
 
 // each number is base binary (1 is runner on, 0 is no runner)
+#[derive(Debug)]
 pub enum RunnersOn {
     Runner000,
     Runner100,
@@ -53,6 +56,7 @@ pub enum RunnersOn {
     Runner111,
 }
 
+#[derive(Debug)]
 pub enum GameStatus {
     NotStarted,
     Ongoing,
@@ -142,6 +146,8 @@ pub struct GameModern<'a> {
     pub away_active: ActiveTeam,
     pub ballpark: &'a BallparkModern,
 }
+
+#[derive(Debug)]
 pub struct GameState<'a> {
     pub status: GameStatus,
     pub inning: u32,
@@ -380,6 +386,8 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
     let away_team = &game.away_active;
 
     loop {
+        // TODO delete these debug print statements once it is fixed
+        println!("{:?}", state);
         // check top of the 9th at a different place
         if state.inning > 9 {
             // check score
@@ -394,6 +402,8 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
                 //state.current_pitcher_team1 = &home_team.pitching[0];
                 //state.current_pitcher_team2 = &away_team.pitching[0];
                 state.status = GameStatus::Ongoing;
+                // TODO delete this
+                println!("Play ball!");
             }
             GameStatus::Ongoing => match state.inning_half {
                 InningTB::Top => match state.outs {
@@ -1255,7 +1265,7 @@ pub fn oddity<'b>(
             if *oddity_result == 2 {
                 if pitch_result % 2 == 1 {
                     // fan catches sure out, at bat continues
-                    state.batting_team1 -= 1;
+                    //state.batting_team1 -= 1;
                 } else {
                     // home run overturned, batter out
                     match state.outs {
