@@ -8,6 +8,9 @@ use deadball::core::game_functions::{create_modern_game, init_new_game_state, mo
 use std::fs;
 */
 
+/*==============================================================================================
+ * IMPORTS
+ * ===========================================================================================*/
 use eframe::{
     egui,
     epaint::{pos2, Color32},
@@ -15,11 +18,35 @@ use eframe::{
 use egui::{Rect, RichText};
 use egui_extras::RetainedImage;
 
+/*==============================================================================================
+ * ENUMS
+ * ===========================================================================================*/
+#[derive(PartialEq, Eq)]
+enum Panel {
+    Menu,
+    Game,
+}
+
+/*
+impl Default for Panel {
+    fn default() -> Self {
+        Self::Menu
+    }
+}
+*/
+
+/*==============================================================================================
+ * STRUCTS
+ * ===========================================================================================*/
 struct DeadballApp<'a> {
-    heading1: &'a str,
-    heading2: &'a str,
-    heading3: &'a str,
-    heading4: &'a str,
+    current_inning: &'a str,
+    current_outs: &'a str,
+    away_hits: &'a str,
+    away_errors: &'a str,
+    away_runs: &'a str,
+    home_hits: &'a str,
+    home_errors: &'a str,
+    home_runs: &'a str,
     diamond_image: RetainedImage,
     pitcher_label: &'a str,
     catcher_label: &'a str,
@@ -30,15 +57,27 @@ struct DeadballApp<'a> {
     rightfield_label: &'a str,
     centerfield_label: &'a str,
     leftfield_label: &'a str,
+    away_team_name: &'a str,
+    away_team_loaded: bool,
+    home_team_name: &'a str,
+    home_team_loaded: bool,
+    bottom_panel: Panel,
+    version_window: bool,
+    about_deadball_window: bool,
+    about_app_window: bool,
 }
 
 impl Default for DeadballApp<'_> {
     fn default() -> Self {
         Self {
-            heading1: "Left Panel",
-            heading2: "Right Panel",
-            heading3: "Central Panel",
-            heading4: "Bottom Panel",
+            current_inning: "1^",
+            current_outs: "0",
+            away_hits: "0",
+            away_errors: "0",
+            away_runs: "0",
+            home_hits: "0",
+            home_errors: "0",
+            home_runs: "0",
             diamond_image: RetainedImage::from_image_bytes(
                 "baseball_diamond.png",
                 include_bytes!("images/baseball_diamond.png"),
@@ -53,6 +92,14 @@ impl Default for DeadballApp<'_> {
             rightfield_label: "Seth Loveall",
             centerfield_label: "Seth Loveall",
             leftfield_label: "Seth Loveall",
+            away_team_name: "Away Team",
+            away_team_loaded: false,
+            home_team_name: "Home Team",
+            home_team_loaded: false,
+            bottom_panel: Panel::Menu,
+            version_window: false,
+            about_deadball_window: false,
+            about_app_window: false,
         }
     }
 }
@@ -61,21 +108,102 @@ impl eframe::App for DeadballApp<'_> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // GUI logic here
         // draw GUI here
+        //
+        // check if other windows are open
+        egui::Window::new("Version")
+            .open(&mut self.version_window)
+            .show(ctx, |ui| {
+                ui.label("Version 0.1");
+            });
+        egui::Window::new("About Deadball Game")
+            .open(&mut self.about_deadball_window)
+            .show(ctx, |ui| {
+                ui.label("placeholder");
+            });
+        egui::Window::new("About this app")
+            .open(&mut self.about_app_window)
+            .show(ctx, |ui| {
+                ui.label("placeholder");
+            });
+
+        // main window
         egui::TopBottomPanel::bottom("Control Panel").show(ctx, |ui| {
-            ui.label(self.heading4);
+            ui.horizontal(|ui| {
+                ui.selectable_value(&mut self.bottom_panel, Panel::Game, "Game");
+                ui.selectable_value(&mut self.bottom_panel, Panel::Menu, "Menu");
+            });
+            ui.separator();
+            match self.bottom_panel {
+                Panel::Menu => {
+                    ui.horizontal(|ui| {
+                        ui.menu_button("Game", |ui| {
+                            ui.menu_button("Create Game", |ui| {
+                                // placeholder
+                            });
+                            ui.button("Load Game");
+                        });
+                        ui.menu_button("About", |ui| {
+                            if ui.button("Version").clicked() {
+                                self.version_window = true;
+                                ui.close_menu();
+                            }
+                            ui.button("Help");
+                            if ui.button("About Deadball").clicked() {
+                                self.about_deadball_window = true;
+                                ui.close_menu();
+                            }
+                            if ui.button("About This App").clicked() {
+                                self.about_app_window = true;
+                                ui.close_menu();
+                            }
+                        })
+                    });
+                }
+                Panel::Game => {
+                    ui.label("Game placeholder");
+                }
+            }
         });
         egui::SidePanel::left("Away Team").show(ctx, |ui| {
-            ui.label(self.heading1);
+            ui.heading(self.away_team_name);
+            if self.away_team_loaded {
+                // show batting order
+            }
         });
         egui::SidePanel::right("Home Team").show(ctx, |ui| {
-            ui.label(self.heading2);
+            ui.heading(self.home_team_name);
+            if self.home_team_loaded {
+                // show batting order
+            }
         });
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label(self.heading3);
+            // score line
+            ui.horizontal(|ui| {
+                ui.label("Inning:");
+                ui.label(self.current_inning);
+                ui.label("AWAY");
+                ui.label("hits:");
+                ui.label(self.away_hits);
+                ui.label("errors:");
+                ui.label(self.away_errors);
+                ui.label("runs:");
+                ui.label(self.away_runs);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Outs:");
+                ui.label(self.current_outs);
+                ui.label("HOME");
+                ui.label("hits:");
+                ui.label(self.home_hits);
+                ui.label("errors:");
+                ui.label(self.home_errors);
+                ui.label("runs:");
+                ui.label(self.home_runs);
+            });
             // draw baseball field and label players
             ui.add(egui::Image::new(
                 self.diamond_image.texture_id(ctx),
-                self.diamond_image.size_vec2() * 0.2,
+                self.diamond_image.size_vec2() * 0.3,
             ));
             // put player names
             ui.put(
@@ -87,8 +215,7 @@ impl eframe::App for DeadballApp<'_> {
                     RichText::new(self.firstbase_label)
                         .color(Color32::BLACK)
                         .strong()
-                        .background_color(Color32::WHITE)
-                        .size(16.0),
+                        .background_color(Color32::WHITE), //.size(16.0),
                 ),
             );
             ui.put(
@@ -100,8 +227,7 @@ impl eframe::App for DeadballApp<'_> {
                     RichText::new(self.secondbase_label)
                         .color(Color32::BLACK)
                         .strong()
-                        .background_color(Color32::WHITE)
-                        .size(16.0),
+                        .background_color(Color32::WHITE), //.size(16.0),
                 ),
             );
         });
