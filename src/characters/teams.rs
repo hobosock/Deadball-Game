@@ -16,6 +16,7 @@ use super::players::{generate_name, generate_player, load_player, write_player, 
 ENUM DEFINITIONS
 ==========================================*/
 // TEAM ENUMS
+#[derive(PartialEq)]
 pub enum Era {
     Ancient,
     Modern,

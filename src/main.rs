@@ -1,12 +1,10 @@
 //use deadball::characters::players::*;
 
-/*
 use deadball::characters::teams::*;
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{create_modern_game, init_new_game_state, modern_game_flow};
 
 use std::fs;
-*/
 
 /*==============================================================================================
  * IMPORTS
@@ -17,6 +15,16 @@ use eframe::{
 };
 use egui::{Rect, RichText};
 use egui_extras::RetainedImage;
+use egui_file::FileDialog;
+use std::path::PathBuf;
+
+/*==============================================================================================
+ * CONSTANTS
+ * ===========================================================================================*/
+const ABOUT_DEABALL: &str =
+    "Deadball: Baseball With Dice is a tabletop game developed by W.M. Akers.  For more information about the game, or to purchase the rules, please visit the Deadball website.";
+
+const ABOUT_APP: &str = "This application was developed as practice with the Rust programming language.  All credit goes to the creator of Deadball, W.M. Akers.  Please purchase and consult the official rulebooks for questions about game mechanics.";
 
 /*==============================================================================================
  * ENUMS
@@ -39,6 +47,7 @@ impl Default for Panel {
  * STRUCTS
  * ===========================================================================================*/
 struct DeadballApp<'a> {
+    // score information
     current_inning: &'a str,
     current_outs: &'a str,
     away_hits: &'a str,
@@ -47,6 +56,7 @@ struct DeadballApp<'a> {
     home_hits: &'a str,
     home_errors: &'a str,
     home_runs: &'a str,
+    // ballfield interface
     diamond_image: RetainedImage,
     pitcher_label: &'a str,
     catcher_label: &'a str,
@@ -57,14 +67,27 @@ struct DeadballApp<'a> {
     rightfield_label: &'a str,
     centerfield_label: &'a str,
     leftfield_label: &'a str,
+    // batting order interface
     away_team_name: &'a str,
     away_team_loaded: bool,
     home_team_name: &'a str,
     home_team_loaded: bool,
+    // menu/controls interface
     bottom_panel: Panel,
+    // tracking for other windows
     version_window: bool,
     about_deadball_window: bool,
     about_app_window: bool,
+    create_game_window: bool,
+    // create game interface
+    create_game_era: Era,
+    away_team_file: Option<PathBuf>,
+    away_team_file_dialog: Option<FileDialog>,
+    home_team_file: Option<PathBuf>,
+    home_team_file_dialog: Option<FileDialog>,
+    ballpark_file: Option<PathBuf>,
+    ballpark_file_dialog: Option<FileDialog>,
+    create_game_error: String,
 }
 
 impl Default for DeadballApp<'_> {
@@ -100,6 +123,15 @@ impl Default for DeadballApp<'_> {
             version_window: false,
             about_deadball_window: false,
             about_app_window: false,
+            create_game_window: false,
+            create_game_era: Era::None,
+            away_team_file: None,
+            away_team_file_dialog: None,
+            home_team_file: None,
+            home_team_file_dialog: None,
+            ballpark_file: None,
+            ballpark_file_dialog: None,
+            create_game_error: "".to_owned(),
         }
     }
 }
@@ -118,12 +150,116 @@ impl eframe::App for DeadballApp<'_> {
         egui::Window::new("About Deadball Game")
             .open(&mut self.about_deadball_window)
             .show(ctx, |ui| {
-                ui.label("placeholder");
+                ui.label(ABOUT_DEABALL);
+                ui.hyperlink("http://wmakers.net/deadball");
             });
         egui::Window::new("About this app")
             .open(&mut self.about_app_window)
             .show(ctx, |ui| {
-                ui.label("placeholder");
+                ui.label(ABOUT_APP);
+            });
+        egui::Window::new("Create new game")
+            .open(&mut self.create_game_window)
+            .show(ctx, |ui| {
+                // selectable value for game era
+                ui.horizontal(|ui| {
+                    ui.label("Era:");
+                    ui.selectable_value(&mut self.create_game_era, Era::None, "None");
+                    ui.selectable_value(&mut self.create_game_era, Era::Modern, "Modern");
+                    ui.selectable_value(&mut self.create_game_era, Era::Ancient, "Ancient");
+                });
+                // file dialog for away team
+                ui.horizontal(|ui| {
+                    ui.label("Away Team:");
+                    if let Some(away_file) = &mut self.away_team_file {
+                        ui.label(format!("{:?}", away_file));
+                    } else {
+                        ui.label("None");
+                    }
+                    if ui.button("Open").clicked() {
+                        let mut dialog = FileDialog::open_file(self.away_team_file.clone());
+                        dialog.open();
+                        self.away_team_file_dialog = Some(dialog);
+                    }
+                    if let Some(dialog) = &mut self.away_team_file_dialog {
+                        if dialog.show(ctx).selected() {
+                            if let Some(file) = dialog.path() {
+                                self.away_team_file = Some(file);
+                            }
+                        }
+                    }
+                });
+                // file dialog for home team
+                ui.horizontal(|ui| {
+                    ui.label("Home Team:");
+                    if let Some(home_file) = &mut self.home_team_file {
+                        ui.label(format!("{:?}", home_file));
+                    } else {
+                        ui.label("None");
+                    }
+                    if ui.button("Open").clicked() {
+                        let mut dialog = FileDialog::open_file(self.home_team_file.clone());
+                        dialog.open();
+                        self.home_team_file_dialog = Some(dialog);
+                    }
+                    if let Some(dialog) = &mut self.home_team_file_dialog {
+                        if dialog.show(ctx).selected() {
+                            if let Some(file) = dialog.path() {
+                                self.home_team_file = Some(file);
+                            }
+                        }
+                    }
+                });
+                // file dialog for ball park
+                ui.horizontal(|ui| {
+                    ui.label("Ballpark: ");
+                    if let Some(ballpark_file) = &mut self.ballpark_file {
+                        ui.label(format!("{:?}", ballpark_file));
+                    } else {
+                        ui.label("None");
+                    }
+                    if ui.button("Open").clicked() {
+                        let mut dialog = FileDialog::open_file(self.ballpark_file.clone());
+                        dialog.open();
+                        self.ballpark_file_dialog = Some(dialog);
+                    }
+                    if let Some(dialog) = &mut self.ballpark_file_dialog {
+                        if dialog.show(ctx).selected() {
+                            if let Some(file) = dialog.path() {
+                                self.ballpark_file = Some(file);
+                            }
+                        }
+                    }
+                });
+                ui.separator();
+                // button to create game and return to main screen
+                if ui.button("Create").clicked() {
+                    self.create_game_error = "".to_owned();
+                    // check and make sure options are set properly
+                    if self.away_team_file.is_some()
+                        && self.home_team_file.is_some()
+                        && self.ballpark_file.is_some()
+                    {
+                        // create game
+                    } else {
+                        // update error message and display error window
+                        if self.away_team_file.is_none() {
+                            self.create_game_error = self.create_game_error.clone()
+                                + "Must select a *.dbt file for away team.\n";
+                        }
+                        if self.home_team_file.is_none() {
+                            self.create_game_error = self.create_game_error.clone()
+                                + "Must select a *.dbt file for home team.\n";
+                        }
+                        if self.ballpark_file.is_none() {
+                            self.create_game_error = self.create_game_error.clone()
+                                + "Must select a *.dbb file for ballpark.\n";
+                        }
+                    }
+                }
+                ui.add(eframe::egui::Label::new(
+                    RichText::new(&self.create_game_error).color(Color32::RED),
+                ));
             });
 
         // main window
@@ -137,9 +273,10 @@ impl eframe::App for DeadballApp<'_> {
                 Panel::Menu => {
                     ui.horizontal(|ui| {
                         ui.menu_button("Game", |ui| {
-                            ui.menu_button("Create Game", |ui| {
-                                // placeholder
-                            });
+                            if ui.button("Create Game").clicked() {
+                                self.create_game_window = true;
+                                ui.close_menu();
+                            }
                             ui.button("Load Game");
                         });
                         ui.menu_button("About", |ui| {
