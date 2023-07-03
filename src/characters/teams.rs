@@ -228,6 +228,7 @@ pub struct BallparkAncient {
 }
 
 // struct for teams in a game - loads player files into Player structs for easier reference
+#[derive(Clone)]
 pub struct ActiveTeam {
     pub roster: Vec<Player>,
     pub bench: Vec<Player>,

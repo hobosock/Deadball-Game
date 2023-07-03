@@ -139,6 +139,7 @@ pub enum Animal {
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
+#[derive(Clone)]
 pub struct GameModern<'a> {
     pub home: &'a Team,
     pub away: &'a Team,

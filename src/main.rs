@@ -2,7 +2,9 @@
 
 use deadball::characters::teams::*;
 use deadball::core::file_locations::*;
-use deadball::core::game_functions::{create_modern_game, init_new_game_state, modern_game_flow};
+use deadball::core::game_functions::{
+    create_modern_game, init_new_game_state, modern_game_flow, GameModern,
+};
 
 use std::fs;
 
@@ -68,10 +70,8 @@ struct DeadballApp<'a> {
     centerfield_label: &'a str,
     leftfield_label: &'a str,
     // batting order interface
-    away_team_name: &'a str,
-    away_team_loaded: bool,
-    home_team_name: &'a str,
-    home_team_loaded: bool,
+    away_team_name: String,
+    home_team_name: String,
     // menu/controls interface
     bottom_panel: Panel,
     // tracking for other windows
@@ -88,9 +88,16 @@ struct DeadballApp<'a> {
     ballpark_file: Option<PathBuf>,
     ballpark_file_dialog: Option<FileDialog>,
     create_game_error: String,
+    // game data
+    away_team: Option<Team>,
+    home_team: Option<Team>,
+    ballpark_modern: Option<BallparkModern>,
+    ballpark_ancient: Option<BallparkAncient>,
+    game_modern: Option<GameModern<'a>>,
+    // TODO add ancient game
 }
 
-impl Default for DeadballApp<'_> {
+impl<'a> Default for DeadballApp<'a> {
     fn default() -> Self {
         Self {
             current_inning: "1^",
@@ -115,10 +122,8 @@ impl Default for DeadballApp<'_> {
             rightfield_label: "Seth Loveall",
             centerfield_label: "Seth Loveall",
             leftfield_label: "Seth Loveall",
-            away_team_name: "Away Team",
-            away_team_loaded: false,
-            home_team_name: "Home Team",
-            home_team_loaded: false,
+            away_team_name: "Away Team".to_owned(),
+            home_team_name: "Home Team".to_owned(),
             bottom_panel: Panel::Menu,
             version_window: false,
             about_deadball_window: false,
@@ -132,11 +137,16 @@ impl Default for DeadballApp<'_> {
             ballpark_file: None,
             ballpark_file_dialog: None,
             create_game_error: "".to_owned(),
+            away_team: None,
+            home_team: None,
+            ballpark_modern: None,
+            ballpark_ancient: None,
+            game_modern: None,
         }
     }
 }
 
-impl eframe::App for DeadballApp<'_> {
+impl<'a> eframe::App for DeadballApp<'a> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // GUI logic here
         // draw GUI here
@@ -240,7 +250,61 @@ impl eframe::App for DeadballApp<'_> {
                         && self.home_team_file.is_some()
                         && self.ballpark_file.is_some()
                     {
-                        // create game
+                        // try to load teams and ballpark files
+                        match fs::read_to_string(&self.away_team_file.as_ref().unwrap().as_path()) {
+                            Ok(contents) => {
+                                self.away_team = Some(load_team(contents));
+                            }
+                            Err(err) => {
+                                self.create_game_error = self.create_game_error.clone()
+                                    + "Failed to read Away team file."
+                                    + &format!("{:?}", err);
+                            }
+                        }
+                        match fs::read_to_string(&self.home_team_file.as_ref().unwrap().as_path()) {
+                            Ok(contents) => {
+                                self.home_team = Some(load_team(contents));
+                            }
+                            Err(err) => {
+                                self.create_game_error = self.create_game_error.clone()
+                                    + "Failed to read Home team file."
+                                    + &format!("{:?}", err);
+                            }
+                        }
+                        match self.create_game_era {
+                            Era::Modern => {
+                                match fs::read_to_string(
+                                    &self.ballpark_file.as_ref().unwrap().as_path(),
+                                ) {
+                                    Ok(contents) => {
+                                        self.ballpark_modern = Some(load_park_modern(contents));
+                                    }
+                                    Err(err) => {
+                                        self.create_game_error = self.create_game_error.clone()
+                                            + "Failed to read Ballpark file."
+                                            + &format!("{:?}", err);
+                                    }
+                                }
+                            }
+                            Era::Ancient => {
+                                match fs::read_to_string(
+                                    &self.ballpark_file.as_ref().unwrap().as_path(),
+                                ) {
+                                    Ok(contents) => {
+                                        self.ballpark_ancient = Some(load_park_ancient(contents));
+                                    }
+                                    Err(err) => {
+                                        self.create_game_error = self.create_game_error.clone()
+                                            + "Failed to read Ballpark file."
+                                            + &format!("{:?}", err);
+                                    }
+                                }
+                            }
+                            Era::None => {
+                                self.create_game_error =
+                                    self.create_game_error.clone() + "Please select an Era.";
+                            }
+                        }
                     } else {
                         // update error message and display error window
                         if self.away_team_file.is_none() {
@@ -255,6 +319,37 @@ impl eframe::App for DeadballApp<'_> {
                             self.create_game_error = self.create_game_error.clone()
                                 + "Must select a *.dbb file for ballpark.\n";
                         }
+                    }
+                }
+                // if everything loaded okay, generate game
+                match self.create_game_era {
+                    Era::Modern => {
+                        if self.away_team.is_some()
+                            && self.home_team.is_some()
+                            && self.ballpark_modern.is_some()
+                        {
+                            match create_modern_game(
+                                &self.home_team.as_ref().unwrap(),
+                                &self.away_team.as_ref().unwrap(),
+                                &self.ballpark_modern.as_ref().unwrap(),
+                            ) {
+                                Ok(game) => self.game_modern = Some(game),
+                                Err(err) => {
+                                    self.create_game_error =
+                                        self.create_game_error.clone() + &format!("{:?}", err)
+                                }
+                            }
+                        }
+                    }
+                    Era::Ancient => {
+                        if self.away_team.is_some()
+                            && self.home_team.is_some()
+                            && self.ballpark_ancient.is_some()
+                        {}
+                    }
+                    Era::None => {
+                        self.create_game_error =
+                            self.create_game_error.clone() + "Please select an Era.";
                     }
                 }
                 ui.add(eframe::egui::Label::new(
@@ -302,15 +397,17 @@ impl eframe::App for DeadballApp<'_> {
             }
         });
         egui::SidePanel::left("Away Team").show(ctx, |ui| {
-            ui.heading(self.away_team_name);
-            if self.away_team_loaded {
-                // show batting order
+            ui.heading(&self.away_team_name);
+            if self.away_team.is_some() {
+                let away_team = self.away_team.as_ref().unwrap();
+                self.away_team_name = away_team.name.to_string();
             }
         });
         egui::SidePanel::right("Home Team").show(ctx, |ui| {
-            ui.heading(self.home_team_name);
-            if self.home_team_loaded {
-                // show batting order
+            ui.heading(&self.home_team_name);
+            if self.home_team.is_some() {
+                let home_team = self.home_team.as_ref().unwrap();
+                self.home_team_name = home_team.name.to_string();
             }
         });
         egui::CentralPanel::default().show(ctx, |ui| {
