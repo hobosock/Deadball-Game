@@ -93,7 +93,7 @@ struct DeadballApp<'a> {
     home_team: Option<Team>,
     ballpark_modern: Option<BallparkModern>,
     ballpark_ancient: Option<BallparkAncient>,
-    game_modern: Option<GameModern<'a>>,
+    game_modern: Option<GameModern>,
     // TODO add ancient game
 }
 
@@ -243,8 +243,8 @@ impl<'a> eframe::App for DeadballApp<'a> {
                 });
                 ui.separator();
                 // button to create game and return to main screen
+                self.create_game_error = "".to_owned();
                 if ui.button("Create").clicked() {
-                    self.create_game_error = "".to_owned();
                     // check and make sure options are set properly
                     if self.away_team_file.is_some()
                         && self.home_team_file.is_some()
@@ -329,9 +329,9 @@ impl<'a> eframe::App for DeadballApp<'a> {
                             && self.ballpark_modern.is_some()
                         {
                             match create_modern_game(
-                                &self.home_team.as_ref().unwrap(),
-                                &self.away_team.as_ref().unwrap(),
-                                &self.ballpark_modern.as_ref().unwrap(),
+                                self.home_team.clone().unwrap(),
+                                self.away_team.clone().unwrap(),
+                                self.ballpark_modern.clone().unwrap(),
                             ) {
                                 Ok(game) => self.game_modern = Some(game),
                                 Err(err) => {

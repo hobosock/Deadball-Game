@@ -140,12 +140,12 @@ pub enum Animal {
 STRUCT DEFINITIONS
 ========================================================*/
 #[derive(Clone)]
-pub struct GameModern<'a> {
-    pub home: &'a Team,
-    pub away: &'a Team,
+pub struct GameModern {
+    pub home: Team,
+    pub away: Team,
     pub home_active: ActiveTeam,
     pub away_active: ActiveTeam,
-    pub ballpark: &'a BallparkModern,
+    pub ballpark: BallparkModern,
 }
 
 #[derive(Debug)]
@@ -208,10 +208,10 @@ pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatR
 }
 
 pub fn create_modern_game<'a>(
-    home: &'a Team,
-    away: &'a Team,
-    ballpark: &'a BallparkModern,
-) -> Result<GameModern<'a>, TeamError> {
+    home: Team,
+    away: Team,
+    ballpark: BallparkModern,
+) -> Result<GameModern, TeamError> {
     // check teams and park for complete information
     if home.roster.len() < 8 {
         println!(
@@ -370,19 +370,19 @@ pub fn create_modern_game<'a>(
 }
 
 pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
-    let home_team_info = game.home; // home = team 1
-    let away_team_info = game.away; // away = team 2
-                                    // ONCE PER GAME
-                                    // ONCE PER INNING HALF
-                                    // check inning
-                                    // check score
-                                    // check number of innings pitched
-                                    // ONCE PER AT BAT
-                                    // check number of outs
-                                    // user input???
-                                    // check at bat position
-                                    // simulate at bat
-                                    // update game state
+    let home_team_info = &game.home; // home = team 1
+    let away_team_info = &game.away; // away = team 2
+                                     // ONCE PER GAME
+                                     // ONCE PER INNING HALF
+                                     // check inning
+                                     // check score
+                                     // check number of innings pitched
+                                     // ONCE PER AT BAT
+                                     // check number of outs
+                                     // user input???
+                                     // check at bat position
+                                     // simulate at bat
+                                     // update game state
     let home_team = &game.home_active;
     let away_team = &game.away_active;
 
