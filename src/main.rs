@@ -320,38 +320,39 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                 + "Must select a *.dbb file for ballpark.\n";
                         }
                     }
-                }
-                // if everything loaded okay, generate game
-                match self.create_game_era {
-                    Era::Modern => {
-                        if self.away_team.is_some()
-                            && self.home_team.is_some()
-                            && self.ballpark_modern.is_some()
-                        {
-                            match create_modern_game(
-                                self.home_team.clone().unwrap(),
-                                self.away_team.clone().unwrap(),
-                                self.ballpark_modern.clone().unwrap(),
-                            ) {
-                                Ok(game) => self.game_modern = Some(game),
-                                Err(err) => {
-                                    self.create_game_error =
-                                        self.create_game_error.clone() + &format!("{:?}", err)
+                    match self.create_game_era {
+                        Era::Modern => {
+                            if self.away_team.is_some()
+                                && self.home_team.is_some()
+                                && self.ballpark_modern.is_some()
+                            {
+                                match create_modern_game(
+                                    self.home_team.clone().unwrap(),
+                                    self.away_team.clone().unwrap(),
+                                    self.ballpark_modern.clone().unwrap(),
+                                ) {
+                                    Ok(game) => self.game_modern = Some(game),
+                                    Err(err) => {
+                                        self.create_game_error =
+                                            self.create_game_error.clone() + &format!("{:?}", err)
+                                    }
                                 }
                             }
                         }
+                        Era::Ancient => {
+                            if self.away_team.is_some()
+                                && self.home_team.is_some()
+                                && self.ballpark_ancient.is_some()
+                            {}
+                        }
+                        Era::None => {
+                            self.create_game_error =
+                                self.create_game_error.clone() + "Please select an Era.";
+                        }
                     }
-                    Era::Ancient => {
-                        if self.away_team.is_some()
-                            && self.home_team.is_some()
-                            && self.ballpark_ancient.is_some()
-                        {}
-                    }
-                    Era::None => {
-                        self.create_game_error =
-                            self.create_game_error.clone() + "Please select an Era.";
-                    }
+                    //TODO:: make the window close after successfully generating a game
                 }
+                // if everything loaded okay, generate game
                 ui.add(eframe::egui::Label::new(
                     RichText::new(&self.create_game_error).color(Color32::RED),
                 ));
