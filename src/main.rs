@@ -90,6 +90,7 @@ struct DeadballApp<'a> {
     create_game_error: String,
     // game data
     away_team: Option<Team>,
+    away_team_active: Option<ActiveTeam>,
     away_batter1: Option<Player>,
     away_batter2: Option<Player>,
     away_batter3: Option<Player>,
@@ -100,6 +101,7 @@ struct DeadballApp<'a> {
     away_batter8: Option<Player>,
     away_batter9: Option<Player>,
     home_team: Option<Team>,
+    home_team_active: Option<ActiveTeam>,
     home_batter1: Option<Player>,
     home_batter2: Option<Player>,
     home_batter3: Option<Player>,
@@ -156,6 +158,7 @@ impl<'a> Default for DeadballApp<'a> {
             ballpark_file_dialog: None,
             create_game_error: "".to_owned(),
             away_team: None,
+            away_team_active: None,
             away_batter1: None,
             away_batter2: None,
             away_batter3: None,
@@ -166,6 +169,7 @@ impl<'a> Default for DeadballApp<'a> {
             away_batter8: None,
             away_batter9: None,
             home_team: None,
+            home_team_active: None,
             home_batter1: None,
             home_batter2: None,
             home_batter3: None,
@@ -443,11 +447,25 @@ impl<'a> eframe::App for DeadballApp<'a> {
         });
         egui::SidePanel::left("Away Team").show(ctx, |ui| {
             ui.heading(&self.away_team_name);
+            let away_name1: String;
             if self.away_team.is_some() {
                 let away_team = self.away_team.as_ref().unwrap();
+                let away_team_active = self.game_modern.clone().unwrap().away_active;
                 self.away_team_name = away_team.name.to_string();
-                self.away_batter1 = away_team.roster[0].f
+                self.away_batter1 = Some(away_team_active.roster[0].clone());
+                self.away_batter2 = Some(away_team_active.roster[1].clone());
+                self.away_batter3 = Some(away_team_active.roster[2].clone());
+                self.away_batter4 = Some(away_team_active.roster[3].clone());
+                self.away_batter5 = Some(away_team_active.roster[4].clone());
+                self.away_batter6 = Some(away_team_active.roster[5].clone());
+                self.away_batter7 = Some(away_team_active.roster[6].clone());
+                self.away_batter8 = Some(away_team_active.roster[7].clone());
+                self.away_batter9 = Some(away_team_active.pitching[0].clone());
+                away_name1 = self.away_batter1.clone().unwrap().first_name;
+            } else {
+                away_name1 = "None".to_string();
             }
+            ui.label(away_name1);
         });
         egui::SidePanel::right("Home Team").show(ctx, |ui| {
             ui.heading(&self.home_team_name);
