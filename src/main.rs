@@ -1,6 +1,6 @@
 //use deadball::characters::players::*;
 
-use deadball::characters::teams::*;
+use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
     create_modern_game, init_new_game_state, modern_game_flow, GameModern,
@@ -90,11 +90,29 @@ struct DeadballApp<'a> {
     create_game_error: String,
     // game data
     away_team: Option<Team>,
+    away_batter1: Option<Player>,
+    away_batter2: Option<Player>,
+    away_batter3: Option<Player>,
+    away_batter4: Option<Player>,
+    away_batter5: Option<Player>,
+    away_batter6: Option<Player>,
+    away_batter7: Option<Player>,
+    away_batter8: Option<Player>,
+    away_batter9: Option<Player>,
     home_team: Option<Team>,
+    home_batter1: Option<Player>,
+    home_batter2: Option<Player>,
+    home_batter3: Option<Player>,
+    home_batter4: Option<Player>,
+    home_batter5: Option<Player>,
+    home_batter6: Option<Player>,
+    home_batter7: Option<Player>,
+    home_batter8: Option<Player>,
+    home_batter9: Option<Player>,
     ballpark_modern: Option<BallparkModern>,
     ballpark_ancient: Option<BallparkAncient>,
     game_modern: Option<GameModern>,
-    // TODO add ancient game
+    // TODO: add ancient game
 }
 
 impl<'a> Default for DeadballApp<'a> {
@@ -138,7 +156,25 @@ impl<'a> Default for DeadballApp<'a> {
             ballpark_file_dialog: None,
             create_game_error: "".to_owned(),
             away_team: None,
+            away_batter1: None,
+            away_batter2: None,
+            away_batter3: None,
+            away_batter4: None,
+            away_batter5: None,
+            away_batter6: None,
+            away_batter7: None,
+            away_batter8: None,
+            away_batter9: None,
             home_team: None,
+            home_batter1: None,
+            home_batter2: None,
+            home_batter3: None,
+            home_batter4: None,
+            home_batter5: None,
+            home_batter6: None,
+            home_batter7: None,
+            home_batter8: None,
+            home_batter9: None,
             ballpark_modern: None,
             ballpark_ancient: None,
             game_modern: None,
@@ -373,14 +409,22 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                 self.create_game_window = true;
                                 ui.close_menu();
                             }
-                            ui.button("Load Game");
+                            if ui.button("Load Game").clicked() {
+                                // TODO: add load game feature (need to add save game feature first)
+                                println!("Load game feature has not yet been added.");
+                                ui.close_menu();
+                            }
                         });
                         ui.menu_button("About", |ui| {
                             if ui.button("Version").clicked() {
                                 self.version_window = true;
                                 ui.close_menu();
                             }
-                            ui.button("Help");
+                            if ui.button("Help").clicked() {
+                                // TODO: add help window
+                                println!("No help menu available at this time.");
+                                ui.close_menu();
+                            }
                             if ui.button("About Deadball").clicked() {
                                 self.about_deadball_window = true;
                                 ui.close_menu();
@@ -402,6 +446,7 @@ impl<'a> eframe::App for DeadballApp<'a> {
             if self.away_team.is_some() {
                 let away_team = self.away_team.as_ref().unwrap();
                 self.away_team_name = away_team.name.to_string();
+                self.away_batter1 = away_team.roster[0].f
             }
         });
         egui::SidePanel::right("Home Team").show(ctx, |ui| {
@@ -460,6 +505,91 @@ impl<'a> eframe::App for DeadballApp<'a> {
                 },
                 eframe::egui::Label::new(
                     RichText::new(self.secondbase_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            // TODO: position the rest of these labels
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.pitcher_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.catcher_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.thirdbase_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.shortstop_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.rightfield_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.centerfield_label)
+                        .color(Color32::BLACK)
+                        .strong()
+                        .background_color(Color32::WHITE), //.size(16.0),
+                ),
+            );
+            ui.put(
+                Rect {
+                    min: pos2(400.0, 180.0),
+                    max: pos2(500.0, 200.0),
+                },
+                eframe::egui::Label::new(
+                    RichText::new(self.leftfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
