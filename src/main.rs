@@ -90,7 +90,6 @@ struct DeadballApp<'a> {
     create_game_error: String,
     // game data
     away_team: Option<Team>,
-    away_team_active: Option<ActiveTeam>,
     away_batter1: Option<Player>,
     away_batter2: Option<Player>,
     away_batter3: Option<Player>,
@@ -101,16 +100,15 @@ struct DeadballApp<'a> {
     away_batter8: Option<Player>,
     away_batter9: Option<Player>,
     home_team: Option<Team>,
-    home_team_active: Option<ActiveTeam>,
-    home_batter1: Option<Player>,
-    home_batter2: Option<Player>,
-    home_batter3: Option<Player>,
-    home_batter4: Option<Player>,
-    home_batter5: Option<Player>,
-    home_batter6: Option<Player>,
-    home_batter7: Option<Player>,
-    home_batter8: Option<Player>,
-    home_batter9: Option<Player>,
+    home_batter1: String,
+    home_batter2: String,
+    home_batter3: String,
+    home_batter4: String,
+    home_batter5: String,
+    home_batter6: String,
+    home_batter7: String,
+    home_batter8: String,
+    home_batter9: String,
     ballpark_modern: Option<BallparkModern>,
     ballpark_ancient: Option<BallparkAncient>,
     game_modern: Option<GameModern>,
@@ -158,7 +156,6 @@ impl<'a> Default for DeadballApp<'a> {
             ballpark_file_dialog: None,
             create_game_error: "".to_owned(),
             away_team: None,
-            away_team_active: None,
             away_batter1: None,
             away_batter2: None,
             away_batter3: None,
@@ -169,16 +166,15 @@ impl<'a> Default for DeadballApp<'a> {
             away_batter8: None,
             away_batter9: None,
             home_team: None,
-            home_team_active: None,
-            home_batter1: None,
-            home_batter2: None,
-            home_batter3: None,
-            home_batter4: None,
-            home_batter5: None,
-            home_batter6: None,
-            home_batter7: None,
-            home_batter8: None,
-            home_batter9: None,
+            home_batter1: "None".to_string(),
+            home_batter2: "None".to_string(),
+            home_batter3: "None".to_string(),
+            home_batter4: "None".to_string(),
+            home_batter5: "None".to_string(),
+            home_batter6: "None".to_string(),
+            home_batter7: "None".to_string(),
+            home_batter8: "None".to_string(),
+            home_batter9: "None".to_string(),
             ballpark_modern: None,
             ballpark_ancient: None,
             game_modern: None,
@@ -188,9 +184,6 @@ impl<'a> Default for DeadballApp<'a> {
 
 impl<'a> eframe::App for DeadballApp<'a> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // GUI logic here
-        // draw GUI here
-        //
         // check if other windows are open
         egui::Window::new("Version")
             .open(&mut self.version_window)
@@ -371,7 +364,10 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                     self.away_team.clone().unwrap(),
                                     self.ballpark_modern.clone().unwrap(),
                                 ) {
-                                    Ok(game) => self.game_modern = Some(game),
+                                    Ok(game) => {
+                                        self.game_modern = Some(game);
+                                        //TODO: make the window close after successfully generating a game
+                                    }
                                     Err(err) => {
                                         self.create_game_error =
                                             self.create_game_error.clone() + &format!("{:?}", err)
@@ -390,7 +386,6 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                 self.create_game_error.clone() + "Please select an Era.";
                         }
                     }
-                    //TODO:: make the window close after successfully generating a game
                 }
                 // if everything loaded okay, generate game
                 ui.add(eframe::egui::Label::new(
@@ -448,6 +443,14 @@ impl<'a> eframe::App for DeadballApp<'a> {
         egui::SidePanel::left("Away Team").show(ctx, |ui| {
             ui.heading(&self.away_team_name);
             let away_name1: String;
+            let away_name2: String;
+            let away_name3: String;
+            let away_name4: String;
+            let away_name5: String;
+            let away_name6: String;
+            let away_name7: String;
+            let away_name8: String;
+            let away_name9: String;
             if self.away_team.is_some() {
                 let away_team = self.away_team.as_ref().unwrap();
                 let away_team_active = self.game_modern.clone().unwrap().away_active;
@@ -461,18 +464,163 @@ impl<'a> eframe::App for DeadballApp<'a> {
                 self.away_batter7 = Some(away_team_active.roster[6].clone());
                 self.away_batter8 = Some(away_team_active.roster[7].clone());
                 self.away_batter9 = Some(away_team_active.pitching[0].clone());
-                away_name1 = self.away_batter1.clone().unwrap().first_name;
+                away_name1 = format!(
+                    "{} {}",
+                    self.away_batter1.clone().unwrap().first_name,
+                    self.away_batter1.clone().unwrap().last_name
+                );
+                away_name2 = format!(
+                    "{} {}",
+                    self.away_batter2.clone().unwrap().first_name,
+                    self.away_batter2.clone().unwrap().last_name
+                );
+                away_name3 = format!(
+                    "{} {}",
+                    self.away_batter3.clone().unwrap().first_name,
+                    self.away_batter3.clone().unwrap().last_name
+                );
+                away_name4 = format!(
+                    "{} {}",
+                    self.away_batter4.clone().unwrap().first_name,
+                    self.away_batter4.clone().unwrap().last_name
+                );
+                away_name5 = format!(
+                    "{} {}",
+                    self.away_batter5.clone().unwrap().first_name,
+                    self.away_batter5.clone().unwrap().last_name
+                );
+                away_name6 = format!(
+                    "{} {}",
+                    self.away_batter6.clone().unwrap().first_name,
+                    self.away_batter6.clone().unwrap().last_name
+                );
+                away_name7 = format!(
+                    "{} {}",
+                    self.away_batter7.clone().unwrap().first_name,
+                    self.away_batter7.clone().unwrap().last_name
+                );
+                away_name8 = format!(
+                    "{} {}",
+                    self.away_batter8.clone().unwrap().first_name,
+                    self.away_batter8.clone().unwrap().last_name
+                );
+                away_name9 = format!(
+                    "{} {}",
+                    self.away_batter9.clone().unwrap().first_name,
+                    self.away_batter9.clone().unwrap().last_name
+                );
             } else {
                 away_name1 = "None".to_string();
+                away_name2 = "None".to_string();
+                away_name3 = "None".to_string();
+                away_name4 = "None".to_string();
+                away_name5 = "None".to_string();
+                away_name6 = "None".to_string();
+                away_name7 = "None".to_string();
+                away_name8 = "None".to_string();
+                away_name9 = "None".to_string();
             }
-            ui.label(away_name1);
+            ui.horizontal(|ui| {
+                ui.label("1. ");
+                ui.label(away_name1);
+                // TODO: figure out a way to put baseball icon to indicate current batter
+            });
+            ui.horizontal(|ui| {
+                ui.label("2. ");
+                ui.label(away_name2);
+            });
+            ui.horizontal(|ui| {
+                ui.label("3. ");
+                ui.label(away_name3);
+            });
+            ui.horizontal(|ui| {
+                ui.label("4. ");
+                ui.label(away_name4);
+            });
+            ui.horizontal(|ui| {
+                ui.label("5. ");
+                ui.label(away_name5);
+            });
+            ui.horizontal(|ui| {
+                ui.label("6. ");
+                ui.label(away_name6);
+            });
+            ui.horizontal(|ui| {
+                ui.label("7. ");
+                ui.label(away_name7);
+            });
+            ui.horizontal(|ui| {
+                ui.label("8. ");
+                ui.label(away_name8);
+            });
+            ui.horizontal(|ui| {
+                ui.label("9. ");
+                ui.label(away_name9);
+            });
         });
         egui::SidePanel::right("Home Team").show(ctx, |ui| {
             ui.heading(&self.home_team_name);
             if self.home_team.is_some() {
                 let home_team = self.home_team.as_ref().unwrap();
                 self.home_team_name = home_team.name.to_string();
+                self.home_batter1 = format!(
+                    "{} {}",
+                    self.game_modern.clone().unwrap().home_active.roster[0].first_name,
+                    self.game_modern.clone().unwrap().home_active.roster[0].last_name
+                );
+                let batter2 = &self.game_modern.clone().unwrap().home_active.roster[1];
+                self.home_batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
+                let batter3 = &self.game_modern.clone().unwrap().home_active.roster[2];
+                self.home_batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
+                let batter4 = &self.game_modern.clone().unwrap().home_active.roster[3];
+                self.home_batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
+                let batter5 = &self.game_modern.clone().unwrap().home_active.roster[4];
+                self.home_batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
+                let batter6 = &self.game_modern.clone().unwrap().home_active.roster[5];
+                self.home_batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
+                let batter7 = &self.game_modern.clone().unwrap().home_active.roster[6];
+                self.home_batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
+                let batter8 = &self.game_modern.clone().unwrap().home_active.roster[7];
+                self.home_batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
+                let batter9 = &self.game_modern.clone().unwrap().home_active.pitching[0];
+                self.home_batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             }
+            ui.horizontal(|ui| {
+                ui.label("1. ");
+                ui.label(&self.home_batter1);
+            });
+            ui.horizontal(|ui| {
+                ui.label("2. ");
+                ui.label(&self.home_batter2);
+            });
+            ui.horizontal(|ui| {
+                ui.label("3. ");
+                ui.label(&self.home_batter3);
+            });
+            ui.horizontal(|ui| {
+                ui.label("4. ");
+                ui.label(&self.home_batter4);
+            });
+            ui.horizontal(|ui| {
+                ui.label("5. ");
+                ui.label(&self.home_batter5);
+            });
+            ui.horizontal(|ui| {
+                ui.label("6. ");
+                ui.label(&self.home_batter6);
+            });
+            ui.horizontal(|ui| {
+                ui.label("7. ");
+                ui.label(&self.home_batter7);
+            });
+            ui.horizontal(|ui| {
+                ui.label("8. ");
+                ui.label(&self.home_batter8);
+            });
+            ui.horizontal(|ui| {
+                ui.label("9. ");
+                ui.label(&self.home_batter9);
+            });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             // score line
