@@ -481,7 +481,7 @@ mod tests {
             quirks: vec![Quirks::OddLeft],
         };
 
-        let test_result = create_modern_game(&team1, &team2, &ballpark);
+        let test_result = create_modern_game(team1.clone(), team2.clone(), ballpark.clone());
         assert!(matches!(
             Err::<GameModern, core::game_functions::TeamError>(TeamError {
                 message: "Home team does not have a complete roster".to_string(),
@@ -502,7 +502,7 @@ mod tests {
             "test".to_string(),
         ];
 
-        let test_result2 = create_modern_game(&team1, &team2, &ballpark);
+        let test_result2 = create_modern_game(team1, team2.clone(), ballpark);
         assert!(matches!(
             Err::<GameModern, core::game_functions::TeamError>(TeamError {
                 message: "Away team is not for the modern era".to_string(),
