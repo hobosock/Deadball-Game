@@ -35,6 +35,7 @@ const ABOUT_APP: &str = "This application was developed as practice with the Rus
 enum Panel {
     Menu,
     Game,
+    Roster,
 }
 
 /*
@@ -398,6 +399,7 @@ impl<'a> eframe::App for DeadballApp<'a> {
             ui.horizontal(|ui| {
                 ui.selectable_value(&mut self.bottom_panel, Panel::Game, "Game");
                 ui.selectable_value(&mut self.bottom_panel, Panel::Menu, "Menu");
+                ui.selectable_value(&mut self.bottom_panel, Panel::Roster, "Roster");
             });
             ui.separator();
             match self.bottom_panel {
@@ -437,6 +439,19 @@ impl<'a> eframe::App for DeadballApp<'a> {
                 }
                 Panel::Game => {
                     ui.label("Game placeholder");
+                }
+                Panel::Roster => {
+                    ui.horizontal(|ui| {
+                        if ui.button("Batting Order").clicked() {
+                            println!("Batting Order button placeholder.");
+                        }
+                        if ui.button("Bullpen").clicked() {
+                            println!("Bullpen button placeholder.");
+                        }
+                        if ui.button("View Team").clicked() {
+                            println!("View Team button placeholder.");
+                        }
+                    });
                 }
             }
         });
