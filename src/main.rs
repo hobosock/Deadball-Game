@@ -3,7 +3,7 @@
 use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, GameModern,
+    create_modern_game, init_new_game_state, modern_game_flow, GameModern, GameState,
 };
 
 use std::fs;
@@ -113,6 +113,7 @@ struct DeadballApp<'a> {
     ballpark_modern: Option<BallparkModern>,
     ballpark_ancient: Option<BallparkAncient>,
     game_modern: Option<GameModern>,
+    game_state: Option<GameState<'a>>,
     // TODO: add ancient game
 }
 
@@ -179,6 +180,7 @@ impl<'a> Default for DeadballApp<'a> {
             ballpark_modern: None,
             ballpark_ancient: None,
             game_modern: None,
+            game_state: None,
         }
     }
 }
@@ -410,10 +412,17 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                 self.create_game_window = true;
                                 ui.close_menu();
                             }
+                            if ui.button("Start Game").clicked() {
+                                // TODO: put active teams in app struct first
+                            }
                             if ui.button("Load Game").clicked() {
                                 // TODO: add load game feature (need to add save game feature first)
                                 println!("Load game feature has not yet been added.");
                                 ui.close_menu();
+                            }
+                            if ui.button("Save Game").clicked() {
+                                // TODO: add save game feature
+                                println!("Save game feature has not been added yet.");
                             }
                         });
                         ui.menu_button("About", |ui| {
