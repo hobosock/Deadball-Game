@@ -1,10 +1,4 @@
 /*========================================================
-CONFIGURE RUSTC WARNINGS
-========================================================*/
-//#[allow(non_camel_case_types)]
-//#[allow(non_snake_case)]
-
-/*========================================================
 MODULE INCLUSIONS
 ========================================================*/
 use std::fs;
@@ -149,7 +143,7 @@ pub struct GameModern {
 }
 
 #[derive(Debug)]
-pub struct GameState<'a> {
+pub struct GameState {
     pub status: GameStatus,
     pub inning: u32,
     pub inning_half: InningTB,
@@ -157,8 +151,8 @@ pub struct GameState<'a> {
     pub runners: RunnersOn,
     pub batting_team1: u32,
     pub batting_team2: u32,
-    pub current_pitcher_team1: &'a Player,
-    pub current_pitcher_team2: &'a Player,
+    pub current_pitcher_team1: Player,
+    pub current_pitcher_team2: Player,
     pub pitched_team1: u32,
     pub pitched_team2: u32,
     pub runs_team1: u32,
@@ -252,6 +246,7 @@ pub fn create_modern_game<'a>(
         }
     }
     // initialize structs and then push
+    // TODO: I feel like load_roster function could be used here?
     let mut home_active = ActiveTeam {
         roster: vec![],
         bench: vec![],
@@ -369,7 +364,7 @@ pub fn create_modern_game<'a>(
     return Ok(game);
 }
 
-pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
+pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState) {
     let home_team_info = &game.home; // home = team 1
     let away_team_info = &game.away; // away = team 2
                                      // ONCE PER GAME
@@ -445,7 +440,7 @@ pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) {
     }
 }
 
-pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState<'a>) -> GameState<'a> {
+pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> GameState {
     loop {
         // TODO hange here and update GUI, wait for player interaction
         match state.inning_half {
@@ -1267,8 +1262,8 @@ pub fn oddity<'b>(
     oddity_result: &i32,
     pitch_result: &i32,
     game: &'b GameModern,
-    mut state: GameState<'b>,
-) -> GameState<'b> {
+    mut state: GameState,
+) -> GameState {
     match state.inning_half {
         InningTB::Top => return state,
         InningTB::Bottom => {
@@ -1375,7 +1370,7 @@ pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
 }
 
 // rolls on the hit table and updates game state accordingly
-pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b> {
+pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
     // 1. defense roll (if needed)
     // 2. advance runners
     // 3 move hitter to runner
@@ -1592,11 +1587,11 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState<'b>) -> GameState<'b
 
 // defense roll function - rolls on the defense table and updates game state
 pub fn defense<'b>(
-    mut state: GameState<'b>,
+    mut state: GameState,
     def_result: &i32,
     mut advance: u32,
     mut base: u32,
-) -> (GameState<'b>, u32, u32) {
+) -> (GameState, u32, u32) {
     if *def_result <= 2 {
         // error, runners take an extra base
         // modify hit and error values
@@ -1672,7 +1667,7 @@ pub fn defense<'b>(
 }
 // advance runners function - handles base runners and scoring after a hit/etc.
 // for now I think the best way is to handle advancing runners first, then add the batter after
-pub fn runners_advance<'b>(mut state: GameState<'b>, advance_num: &u32) -> GameState<'b> {
+pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState {
     if *advance_num == 1 {
         // move 1
         match state.runners {
@@ -1883,7 +1878,7 @@ pub fn runnerson(state: &GameState) -> u32 {
 
 // function to put a hitter onto the bases
 // certain conditions shouldn't come up ever, so just skip them
-pub fn add_runner<'b>(mut state: GameState<'b>, base: &u32) -> GameState<'b> {
+pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
     match state.runners {
         RunnersOn::Runner000 => {
             if *base == 1 {
@@ -1957,10 +1952,7 @@ pub fn get_swing_position(pitch_result: &i32) -> i32 {
 }
 
 // convenience function to initialize a game state struct
-pub fn init_new_game_state<'a>(
-    home_pitcher: &'a Player,
-    away_pitcher: &'a Player,
-) -> GameState<'a> {
+pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> GameState {
     let game_state = GameState {
         status: GameStatus::NotStarted,
         inning: 1,
@@ -1983,3 +1975,5 @@ pub fn init_new_game_state<'a>(
 
     return game_state;
 }
+
+// TODO: find a player by position in roster

@@ -1,10 +1,9 @@
-//use deadball::characters::players::*;
-
 use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
     create_modern_game, init_new_game_state, modern_game_flow, GameModern, GameState,
 };
+mod gui;
 
 use std::fs;
 
@@ -91,6 +90,7 @@ struct DeadballApp<'a> {
     create_game_error: String,
     // game data
     away_team: Option<Team>,
+    away_team_active: Option<ActiveTeam>,
     away_batter1: Option<Player>,
     away_batter2: Option<Player>,
     away_batter3: Option<Player>,
@@ -101,6 +101,7 @@ struct DeadballApp<'a> {
     away_batter8: Option<Player>,
     away_batter9: Option<Player>,
     home_team: Option<Team>,
+    home_team_active: Option<ActiveTeam>,
     home_batter1: String,
     home_batter2: String,
     home_batter3: String,
@@ -113,7 +114,7 @@ struct DeadballApp<'a> {
     ballpark_modern: Option<BallparkModern>,
     ballpark_ancient: Option<BallparkAncient>,
     game_modern: Option<GameModern>,
-    game_state: Option<GameState<'a>>,
+    game_state: Option<GameState>,
     // TODO: add ancient game
 }
 
@@ -158,6 +159,7 @@ impl<'a> Default for DeadballApp<'a> {
             ballpark_file_dialog: None,
             create_game_error: "".to_owned(),
             away_team: None,
+            away_team_active: None,
             away_batter1: None,
             away_batter2: None,
             away_batter3: None,
@@ -168,6 +170,7 @@ impl<'a> Default for DeadballApp<'a> {
             away_batter8: None,
             away_batter9: None,
             home_team: None,
+            home_team_active: None,
             home_batter1: "None".to_string(),
             home_batter2: "None".to_string(),
             home_batter3: "None".to_string(),
@@ -369,6 +372,12 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                 ) {
                                     Ok(game) => {
                                         self.game_modern = Some(game);
+                                        self.home_team_active = Some(
+                                            self.game_modern.clone().unwrap().home_active.clone(),
+                                        );
+                                        self.away_team_active = Some(
+                                            self.game_modern.clone().unwrap().away_active.clone(),
+                                        );
                                         //TODO: make the window close after successfully generating a game
                                     }
                                     Err(err) => {
@@ -413,7 +422,17 @@ impl<'a> eframe::App for DeadballApp<'a> {
                                 ui.close_menu();
                             }
                             if ui.button("Start Game").clicked() {
-                                // TODO: put active teams in app struct first
+                                // check if there are active teams loaded
+                                if self.home_team_active.is_some()
+                                    && self.away_team_active.is_some()
+                                {
+                                    self.game_state = Some(init_new_game_state(
+                                        self.home_team_active.clone().unwrap().pitching[0].clone(),
+                                        self.away_team_active.clone().unwrap().pitching[0].clone(),
+                                    ));
+                                } else {
+                                    println!("Load teams first.");
+                                }
                             }
                             if ui.button("Load Game").clicked() {
                                 // TODO: add load game feature (need to add save game feature first)
