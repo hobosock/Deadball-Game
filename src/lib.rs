@@ -807,4 +807,16 @@ mod tests {
             assert!(matches!(test_player.traits, traits));
         }
     }
+
+    // find player by position test
+    #[test]
+    fn test_find_by_position() {
+        let filename = "src/testfiles/game/teams/blue_team.dbt";
+        let contents = fs::read_to_string(filename).unwrap();
+        let team = load_team(contents);
+        let (roster, _, _, _) = load_roster(&team);
+        let second_baseman = find_by_position(Position::Secondbase, &roster).unwrap();
+        assert_eq!(second_baseman.batter_target, 26); // this was easier than actually comparing
+                                                      // name strings or something, lol
+    }
 }

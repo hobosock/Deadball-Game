@@ -11,7 +11,7 @@ use crate::core::roll;
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Position {
     Pitcher,
     Catcher,

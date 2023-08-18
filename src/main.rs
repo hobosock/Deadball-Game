@@ -1,8 +1,9 @@
 use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, GameModern, GameState,
+    create_modern_game, init_new_game_state, modern_game_flow, GameModern, GameState, InningTB,
 };
+use gui::gui_functions::update_player_labels;
 mod gui;
 
 use std::fs;
@@ -694,6 +695,22 @@ impl<'a> eframe::App for DeadballApp<'a> {
                 self.diamond_image.texture_id(ctx),
                 self.diamond_image.size_vec2() * 0.3,
             ));
+            // update player labels
+            if self.home_team_active.is_some()
+                && self.away_team_active.is_some()
+                && self.game_state.is_some()
+            {
+                let labels: Vec<String>;
+                match self.game_state.as_ref().unwrap().inning_half {
+                    InningTB::Top => {
+                        labels = update_player_labels(&self.home_team_active.as_ref().unwrap());
+                    }
+                    InningTB::Bottom => {
+                        labels = update_player_labels(&self.away_team_active.as_ref().unwrap());
+                    }
+                }
+                self.firstbase_label = &labels[0];
+            }
             // put player names
             ui.put(
                 Rect {

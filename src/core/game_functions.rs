@@ -1976,4 +1976,14 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
     return game_state;
 }
 
-// TODO: find a player by position in roster
+// TODO: find a player by position in roster\
+/// Finds the player in a certain position.  Takes a reference to a roster (active team struct) and
+/// returns a copy of the desired player struct
+pub fn find_by_position(position: Position, roster: &Vec<Player>) -> Option<Player> {
+    for player in roster.iter() {
+        if player.position == position {
+            return Some(player.clone());
+        }
+    }
+    return None;
+}
