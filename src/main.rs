@@ -61,15 +61,15 @@ struct DeadballApp<'a> {
     home_runs: &'a str,
     // ballfield interface
     diamond_image: RetainedImage,
-    pitcher_label: &'a str,
-    catcher_label: &'a str,
-    firstbase_label: &'a str,
-    secondbase_label: &'a str,
-    shortstop_label: &'a str,
-    thirdbase_label: &'a str,
-    rightfield_label: &'a str,
-    centerfield_label: &'a str,
-    leftfield_label: &'a str,
+    pitcher_label: String,
+    catcher_label: String,
+    firstbase_label: String,
+    secondbase_label: String,
+    shortstop_label: String,
+    thirdbase_label: String,
+    rightfield_label: String,
+    centerfield_label: String,
+    leftfield_label: String,
     // batting order interface
     away_team_name: String,
     home_team_name: String,
@@ -135,15 +135,15 @@ impl<'a> Default for DeadballApp<'a> {
                 include_bytes!("images/baseball_diamond.png"),
             )
             .unwrap(),
-            pitcher_label: "Seth Loveall",
-            catcher_label: "Seth Loveall",
-            firstbase_label: "Seth Loveall",
-            secondbase_label: "Seth Loveall",
-            shortstop_label: "Seth Loveall",
-            thirdbase_label: "Seth Loveall",
-            rightfield_label: "Seth Loveall",
-            centerfield_label: "Seth Loveall",
-            leftfield_label: "Seth Loveall",
+            pitcher_label: "P: Seth Loveall".to_string(),
+            catcher_label: "C: Seth Loveall".to_string(),
+            firstbase_label: "1B: Seth Loveall".to_string(),
+            secondbase_label: "2B: Seth Loveall".to_string(),
+            shortstop_label: "SS: Seth Loveall".to_string(),
+            thirdbase_label: "3B: Seth Loveall".to_string(),
+            rightfield_label: "RF: Seth Loveall".to_string(),
+            centerfield_label: "CF: Seth Loveall".to_string(),
+            leftfield_label: "LF: Seth Loveall".to_string(),
             away_team_name: "Away Team".to_owned(),
             home_team_name: "Home Team".to_owned(),
             bottom_panel: Panel::Menu,
@@ -709,16 +709,24 @@ impl<'a> eframe::App for DeadballApp<'a> {
                         labels = update_player_labels(&self.away_team_active.as_ref().unwrap());
                     }
                 }
-                self.firstbase_label = &labels[0];
+                self.firstbase_label = labels[0].clone();
+                self.secondbase_label = labels[1].clone();
+                self.shortstop_label = labels[2].clone();
+                self.thirdbase_label = labels[3].clone();
+                self.catcher_label = labels[4].clone();
+                self.leftfield_label = labels[5].clone();
+                self.centerfield_label = labels[6].clone();
+                self.rightfield_label = labels[7].clone();
+                self.pitcher_label = labels[8].clone();
             }
             // put player names
             ui.put(
                 Rect {
-                    min: pos2(460.0, 240.0),
-                    max: pos2(560.0, 260.0),
+                    min: pos2(460.0, 260.0),
+                    max: pos2(560.0, 280.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.firstbase_label)
+                    RichText::new(&self.firstbase_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -730,7 +738,7 @@ impl<'a> eframe::App for DeadballApp<'a> {
                     max: pos2(500.0, 200.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.secondbase_label)
+                    RichText::new(&self.secondbase_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -739,11 +747,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             // TODO: position the rest of these labels
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(340.0, 300.0),
+                    max: pos2(440.0, 320.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.pitcher_label)
+                    RichText::new(&self.pitcher_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -751,11 +759,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             );
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(340.0, 480.0),
+                    max: pos2(440.0, 500.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.catcher_label)
+                    RichText::new(&self.catcher_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -763,11 +771,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             );
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(200.0, 270.0),
+                    max: pos2(300.0, 290.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.thirdbase_label)
+                    RichText::new(&self.thirdbase_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -775,11 +783,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             );
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(240.0, 200.0),
+                    max: pos2(340.0, 220.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.shortstop_label)
+                    RichText::new(&self.shortstop_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -787,11 +795,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             );
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(480.0, 100.0),
+                    max: pos2(580.0, 120.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.rightfield_label)
+                    RichText::new(&self.rightfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -799,11 +807,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             );
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(300.0, 100.0),
+                    max: pos2(400.0, 120.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.centerfield_label)
+                    RichText::new(&self.centerfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -811,11 +819,11 @@ impl<'a> eframe::App for DeadballApp<'a> {
             );
             ui.put(
                 Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
+                    min: pos2(160.0, 100.0),
+                    max: pos2(260.0, 120.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(self.leftfield_label)
+                    RichText::new(&self.leftfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
