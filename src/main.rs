@@ -1,7 +1,8 @@
 use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, GameModern, GameState, InningTB,
+    create_modern_game, init_new_game_state, modern_game_flow, modern_inning_flow, GameModern,
+    GameState, GameStatus, InningTB,
 };
 use gui::gui_functions::update_player_labels;
 mod gui;
@@ -467,7 +468,35 @@ impl<'a> eframe::App for DeadballApp<'a> {
                     });
                 }
                 Panel::Game => {
-                    ui.label("Game placeholder");
+                    if ui.button("Next At Bat").clicked() {
+                        // TODO: this could be cleaner
+                        if self.game_state.is_some() && self.game_modern.is_some() {
+                            // TODO: update with ancient game when ready
+                            match self.game_state.clone().unwrap().status {
+                                GameStatus::NotStarted => {
+                                    self.game_state.as_mut().unwrap().status = GameStatus::Ongoing
+                                }
+                                GameStatus::Ongoing => {
+                                    self.game_state = Some(modern_inning_flow(
+                                        &self.game_modern.clone().unwrap(),
+                                        self.game_state.clone().unwrap(),
+                                    ));
+                                    println!("{:?}", self.game_state);
+                                }
+                                GameStatus::Over => {}
+                            }
+                        }
+                        if self.game_state.is_some() && self.game_modern.is_some() {
+                            // TODO: update with ancient game when ready
+                            self.game_state = Some(modern_inning_flow(
+                                &self.game_modern.clone().unwrap(),
+                                self.game_state.clone().unwrap(),
+                            ));
+                            println!("{:?}", self.game_state);
+                        } else {
+                            println!("Need to initialize a game first.");
+                        }
+                    }
                 }
                 Panel::Roster => {
                     ui.horizontal(|ui| {
@@ -744,7 +773,6 @@ impl<'a> eframe::App for DeadballApp<'a> {
                         .background_color(Color32::WHITE), //.size(16.0),
                 ),
             );
-            // TODO: position the rest of these labels
             ui.put(
                 Rect {
                     min: pos2(340.0, 300.0),
