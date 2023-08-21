@@ -2,7 +2,7 @@ use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
     create_modern_game, init_new_game_state, modern_game_flow, modern_inning_flow, GameModern,
-    GameState, GameStatus, InningTB,
+    GameState, GameStatus, InningTB, Outs,
 };
 use gui::gui_functions::update_player_labels;
 mod gui;
@@ -50,18 +50,19 @@ impl Default for Panel {
 /*==============================================================================================
  * STRUCTS
  * ===========================================================================================*/
-struct DeadballApp<'a> {
+struct DeadballApp {
     // score information
-    current_inning: &'a str,
-    current_outs: &'a str,
-    away_hits: &'a str,
-    away_errors: &'a str,
-    away_runs: &'a str,
-    home_hits: &'a str,
-    home_errors: &'a str,
-    home_runs: &'a str,
+    current_inning: String,
+    current_outs: String,
+    away_hits: String,
+    away_errors: String,
+    away_runs: String,
+    home_hits: String,
+    home_errors: String,
+    home_runs: String,
     // ballfield interface
     diamond_image: RetainedImage,
+    helmet_image: RetainedImage,
     pitcher_label: String,
     catcher_label: String,
     firstbase_label: String,
@@ -120,20 +121,25 @@ struct DeadballApp<'a> {
     // TODO: add ancient game
 }
 
-impl<'a> Default for DeadballApp<'a> {
+impl<'a> Default for DeadballApp {
     fn default() -> Self {
         Self {
-            current_inning: "1^",
-            current_outs: "0",
-            away_hits: "0",
-            away_errors: "0",
-            away_runs: "0",
-            home_hits: "0",
-            home_errors: "0",
-            home_runs: "0",
+            current_inning: "1^".to_string(),
+            current_outs: "0".to_string(),
+            away_hits: "0".to_string(),
+            away_errors: "0".to_string(),
+            away_runs: "0".to_string(),
+            home_hits: "0".to_string(),
+            home_errors: "0".to_string(),
+            home_runs: "0".to_string(),
             diamond_image: RetainedImage::from_image_bytes(
                 "baseball_diamond.png",
                 include_bytes!("images/baseball_diamond.png"),
+            )
+            .unwrap(),
+            helmet_image: RetainedImage::from_image_bytes(
+                "helmet.png",
+                include_bytes!("images/helmet.png"),
             )
             .unwrap(),
             pitcher_label: "P: Seth Loveall".to_string(),
@@ -190,7 +196,7 @@ impl<'a> Default for DeadballApp<'a> {
     }
 }
 
-impl<'a> eframe::App for DeadballApp<'a> {
+impl<'a> eframe::App for DeadballApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // check if other windows are open
         egui::Window::new("Version")
@@ -696,28 +702,55 @@ impl<'a> eframe::App for DeadballApp<'a> {
             });
         });
         egui::CentralPanel::default().show(ctx, |ui| {
+            // update GUI scoreboard values (if game is in progress)
+            if self.game_state.is_some() {
+                let inning_number = self.game_state.as_ref().unwrap().inning.to_string();
+                let inning_top_bottom: &str;
+                match self.game_state.as_ref().unwrap().inning_half {
+                    InningTB::Top => inning_top_bottom = "^",
+                    InningTB::Bottom => inning_top_bottom = "v",
+                }
+                self.current_inning = inning_number + inning_top_bottom;
+                self.away_hits = self.game_state.as_ref().unwrap().hits_team2.to_string();
+                self.away_errors = self.game_state.as_ref().unwrap().errors_team2.to_string();
+                self.away_runs = self.game_state.as_ref().unwrap().runs_team2.to_string();
+                let out_string: String;
+                match self.game_state.as_ref().unwrap().outs {
+                    Outs::None => out_string = "0".to_string(),
+                    Outs::One => out_string = "1".to_string(),
+                    Outs::Two => out_string = "2".to_string(),
+                    Outs::Three => out_string = "3".to_string(),
+                }
+                self.current_outs = out_string;
+                self.home_hits = self.game_state.as_ref().unwrap().hits_team1.to_string();
+                self.home_errors = self.game_state.as_ref().unwrap().errors_team1.to_string();
+                self.home_runs = self.game_state.as_ref().unwrap().runs_team1.to_string();
+
+                // draw runners on base
+                // TODO: position runner icons based on game state
+            }
             // score line
             ui.horizontal(|ui| {
                 ui.label("Inning:");
-                ui.label(self.current_inning);
+                ui.label(&self.current_inning);
                 ui.label("AWAY");
                 ui.label("hits:");
-                ui.label(self.away_hits);
+                ui.label(&self.away_hits);
                 ui.label("errors:");
-                ui.label(self.away_errors);
+                ui.label(&self.away_errors);
                 ui.label("runs:");
-                ui.label(self.away_runs);
+                ui.label(&self.away_runs);
             });
             ui.horizontal(|ui| {
                 ui.label("Outs:");
-                ui.label(self.current_outs);
+                ui.label(&self.current_outs);
                 ui.label("HOME");
                 ui.label("hits:");
-                ui.label(self.home_hits);
+                ui.label(&self.home_hits);
                 ui.label("errors:");
-                ui.label(self.home_errors);
+                ui.label(&self.home_errors);
                 ui.label("runs:");
-                ui.label(self.home_runs);
+                ui.label(&self.home_runs);
             });
             // draw baseball field and label players
             ui.add(egui::Image::new(
