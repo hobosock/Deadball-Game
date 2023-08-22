@@ -7,7 +7,7 @@ use deadball::{
         players::{Player, Position},
         teams::ActiveTeam,
     },
-    core::game_functions::find_by_position,
+    core::game_functions::{find_by_position, RunnersOn},
 };
 
 /*========================================================
@@ -60,4 +60,54 @@ pub fn update_player_labels(team: &ActiveTeam) -> Vec<String> {
         pitcher_label,
     ];
     return labels;
+}
+
+/// returns 3 bools indicating if runners are on each base based on game state
+pub fn runners_on_bool(runners: RunnersOn) -> (bool, bool, bool) {
+    let on_first: bool;
+    let on_second: bool;
+    let on_third: bool;
+    match runners {
+        RunnersOn::Runner000 => {
+            on_first = false;
+            on_second = false;
+            on_third = false;
+        }
+        RunnersOn::Runner100 => {
+            on_first = true;
+            on_second = false;
+            on_third = false;
+        }
+        RunnersOn::Runner010 => {
+            on_first = false;
+            on_second = true;
+            on_third = false;
+        }
+        RunnersOn::Runner001 => {
+            on_first = false;
+            on_second = false;
+            on_third = true;
+        }
+        RunnersOn::Runner110 => {
+            on_first = true;
+            on_second = true;
+            on_third = false;
+        }
+        RunnersOn::Runner101 => {
+            on_first = true;
+            on_second = false;
+            on_third = true;
+        }
+        RunnersOn::Runner011 => {
+            on_first = false;
+            on_second = true;
+            on_third = true;
+        }
+        RunnersOn::Runner111 => {
+            on_first = true;
+            on_second = true;
+            on_third = true;
+        }
+    }
+    return (on_first, on_second, on_third);
 }

@@ -2,9 +2,9 @@ use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
     create_modern_game, init_new_game_state, modern_game_flow, modern_inning_flow, GameModern,
-    GameState, GameStatus, InningTB, Outs,
+    GameState, GameStatus, InningTB, Outs, RunnersOn,
 };
-use gui::gui_functions::update_player_labels;
+use gui::gui_functions::{runners_on_bool, update_player_labels};
 mod gui;
 
 use std::fs;
@@ -703,6 +703,9 @@ impl<'a> eframe::App for DeadballApp {
         });
         egui::CentralPanel::default().show(ctx, |ui| {
             // update GUI scoreboard values (if game is in progress)
+            let mut on_first = false;
+            let mut on_second = false;
+            let mut on_third = false;
             if self.game_state.is_some() {
                 let inning_number = self.game_state.as_ref().unwrap().inning.to_string();
                 let inning_top_bottom: &str;
@@ -725,9 +728,8 @@ impl<'a> eframe::App for DeadballApp {
                 self.home_hits = self.game_state.as_ref().unwrap().hits_team1.to_string();
                 self.home_errors = self.game_state.as_ref().unwrap().errors_team1.to_string();
                 self.home_runs = self.game_state.as_ref().unwrap().runs_team1.to_string();
-
-                // draw runners on base
-                // TODO: position runner icons based on game state
+                (on_first, on_second, on_third) =
+                    runners_on_bool(self.game_state.clone().unwrap().runners);
             }
             // score line
             ui.horizontal(|ui| {
@@ -757,6 +759,43 @@ impl<'a> eframe::App for DeadballApp {
                 self.diamond_image.texture_id(ctx),
                 self.diamond_image.size_vec2() * 0.3,
             ));
+            // draw helmets to indicate runners on base
+            if on_first {
+                ui.put(
+                    Rect {
+                        min: pos2(460.0, 300.0),
+                        max: pos2(560.0, 400.0),
+                    },
+                    eframe::egui::Image::new(
+                        self.helmet_image.texture_id(ctx),
+                        self.helmet_image.size_vec2() * 0.05,
+                    ),
+                );
+            }
+            if on_second {
+                ui.put(
+                    Rect {
+                        min: pos2(400.0, 180.0),
+                        max: pos2(500.0, 280.0),
+                    },
+                    eframe::egui::Image::new(
+                        self.helmet_image.texture_id(ctx),
+                        self.helmet_image.size_vec2() * 0.05,
+                    ),
+                );
+            }
+            if on_third {
+                ui.put(
+                    Rect {
+                        min: pos2(200.0, 270.0),
+                        max: pos2(300.0, 370.0),
+                    },
+                    eframe::egui::Image::new(
+                        self.helmet_image.texture_id(ctx),
+                        self.helmet_image.size_vec2() * 0.05,
+                    ),
+                );
+            }
             // update player labels
             if self.home_team_active.is_some()
                 && self.away_team_active.is_some()
