@@ -364,85 +364,60 @@ pub fn create_modern_game<'a>(
     return Ok(game);
 }
 
-pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState) {
-    let home_team_info = &game.home; // home = team 1
-    let away_team_info = &game.away; // away = team 2
-                                     // ONCE PER GAME
-                                     // ONCE PER INNING HALF
-                                     // check inning
-                                     // check score
-                                     // check number of innings pitched
-                                     // ONCE PER AT BAT
-                                     // check number of outs
-                                     // user input???
-                                     // check at bat position
-                                     // simulate at bat
-                                     // update game state
-    let home_team = &game.home_active;
-    let away_team = &game.away_active;
-
-    loop {
-        // TODO delete these debug print statements once it is fixed
-        println!("{:?}", state);
-        // check top of the 9th at a different place
-        if state.inning > 9 {
-            // check score
-            if state.runs_team1 != state.runs_team2 {
-                state.status = GameStatus::Over;
-            }
+pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState) -> GameState {
+    // TODO: delete these debug print statements once it is fixed
+    println!("{:?}", state);
+    // check top of the 9th at a different place
+    if state.inning > 9 {
+        // check score
+        if state.runs_team1 != state.runs_team2 {
+            state.status = GameStatus::Over;
         }
-        match state.status {
-            GameStatus::NotStarted => {
-                // maybe time for the player to make roster adjustments?
-                // just set first pitcher as active pitcher for now
-                //state.current_pitcher_team1 = &home_team.pitching[0];
-                //state.current_pitcher_team2 = &away_team.pitching[0];
-                state.status = GameStatus::Ongoing;
-                // TODO delete this
-                println!("Play ball!");
-            }
-            GameStatus::Ongoing => match state.inning_half {
-                InningTB::Top => match state.outs {
+    }
+    match state.status {
+        GameStatus::NotStarted => {
+            state.status = GameStatus::Ongoing;
+            // TODO: delete this
+            println!("Play ball!");
+        }
+        GameStatus::Ongoing => match state.inning_half {
+            InningTB::Top => match state.outs {
+                Outs::Three => {
+                    // clean up game state, reset for new inning
+                    state.inning_half = InningTB::Bottom;
+                    state.outs = Outs::None;
+                    state.runners = RunnersOn::Runner000;
+                }
+                _ => {
+                    state = modern_inning_flow(game, state);
+                }
+            },
+            InningTB::Bottom => {
+                match state.outs {
                     Outs::Three => {
-                        // clean up game state, reset for new inning
-                        state.inning_half = InningTB::Bottom;
-                        state.outs = Outs::None;
+                        state.inning_half = InningTB::Top;
                         state.runners = RunnersOn::Runner000;
+                        state.outs = Outs::None; // reset outs
                         state.inning += 1;
                     }
                     _ => {
                         state = modern_inning_flow(game, state);
                     }
-                },
-                InningTB::Bottom => {
-                    match state.outs {
-                        Outs::Three => {
-                            state.inning_half = InningTB::Top;
-                            state.runners = RunnersOn::Runner000;
-                            state.outs = Outs::None; // reset outs
-                            state.inning += 1;
-                        }
-                        _ => {
-                            state = modern_inning_flow(game, state);
-                        }
-                    }
                 }
-            },
-            GameStatus::Over => {
-                // temporary printing of results
-                // TODO print score report?
-                // TODO inning ticks over one final time before game ends, need to fix
-                println!("FINAL SCORE");
-                println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
-                break;
             }
+        },
+        GameStatus::Over => {
+            // temporary printing of results
+            // TODO: print score report?
+            // TODO: inning ticks over one final time before game ends, need to fix
+            println!("FINAL SCORE");
+            println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
         }
     }
+    return state;
 }
 
 pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> GameState {
-    // TODO: hang here and update GUI, wait for player interaction - actually I think I should
-    // jsut delete the loop and call this function over and over
     match state.inning_half {
         InningTB::Top => {
             // should match Bottom arm, just flip the teams - probably a better way to do this
@@ -482,7 +457,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             let mut hit_result = roll(20);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state);
-                            // TODO no DEF roll on crit_hit
+                            // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
                             // hit roll
@@ -495,13 +470,13 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             state = add_runner(state, &1);
                         }
                         AtBatResults::PossibleError => {
-                            // TODO Not sure I am implementing this correctly, see page 29
+                            // TODO: Not sure I am implementing this correctly, see page 29
                             // get position
-                            // TODO get player traits
+                            // TODO: get player traits
                             let def_roll = roll(12);
                             if def_roll <= 2 {
                                 // fielder makes an error
-                                // TODO these kind of match statements are redundant, clean it up
+                                // TODO: these kind of match statements are redundant, clean it up
                                 match state.inning_half {
                                     InningTB::Top => {
                                         state.errors_team1 += 1;
@@ -531,7 +506,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             }
                         }
                         AtBatResults::ProductiveOut1 => {
-                            // TODO only proceed if less than two outs
+                            // TODO: only proceed if less than two outs
                             // if first or outfield, runners on 2nd and 3rd advance
                             // if 2B/SS/3B, runner at first advances and batter is out
                             match state.outs {
@@ -669,7 +644,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                                         //
                                     } else {
                                         // advance batter to first and lead runner is out
-                                        // TODO should this be done for force outs only?
+                                        // TODO: should this be done for force outs only?
                                         match state.runners {
                                             RunnersOn::Runner000 => {}
                                             RunnersOn::Runner100 => {}
@@ -800,7 +775,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             match state.runners {
                                 RunnersOn::Runner110 => {
                                     state.outs = Outs::Three;
-                                    // TODO only say it's a triple play if no outs
+                                    // TODO: only say it's a triple play if no outs
                                 }
                                 RunnersOn::Runner111 => {
                                     state.outs = Outs::Three;
@@ -884,7 +859,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             let mut hit_result = roll(20);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state);
-                            // TODO no DEF roll on crit_hit
+                            // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
                             // hit roll
@@ -897,9 +872,9 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             state = add_runner(state, &1);
                         }
                         AtBatResults::PossibleError => {
-                            // TODO Not sure I am implementing this correctly, see page 29
+                            // TODO: Not sure I am implementing this correctly, see page 29
                             // get position
-                            // TODO get player traits
+                            // TODO: get player traits
                             let def_roll = roll(12);
                             if def_roll <= 2 {
                                 // fielder makes an error
@@ -932,7 +907,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             }
                         }
                         AtBatResults::ProductiveOut1 => {
-                            // TODO only proceed if less than two outs
+                            // TODO: only proceed if less than two outs
                             // if first or outfield, runners on 2nd and 3rd advance
                             // if 2B/SS/3B, runner at first advances and batter is out
                             match state.outs {
@@ -1070,7 +1045,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                                         //
                                     } else {
                                         // advance batter to first and lead runner is out
-                                        // TODO should this be done for force outs only?
+                                        // TODO: should this be done for force outs only?
                                         match state.runners {
                                             RunnersOn::Runner000 => {}
                                             RunnersOn::Runner100 => {}
@@ -1201,7 +1176,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             match state.runners {
                                 RunnersOn::Runner110 => {
                                     state.outs = Outs::Three;
-                                    // TODO only say it's a triple play if no outs
+                                    // TODO: only say it's a triple play if no outs
                                 }
                                 RunnersOn::Runner111 => {
                                     state.outs = Outs::Three;

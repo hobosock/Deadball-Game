@@ -483,7 +483,7 @@ impl<'a> eframe::App for DeadballApp {
                                     self.game_state.as_mut().unwrap().status = GameStatus::Ongoing
                                 }
                                 GameStatus::Ongoing => {
-                                    self.game_state = Some(modern_inning_flow(
+                                    self.game_state = Some(modern_game_flow(
                                         &self.game_modern.clone().unwrap(),
                                         self.game_state.clone().unwrap(),
                                     ));
@@ -494,7 +494,7 @@ impl<'a> eframe::App for DeadballApp {
                         }
                         if self.game_state.is_some() && self.game_modern.is_some() {
                             // TODO: update with ancient game when ready
-                            self.game_state = Some(modern_inning_flow(
+                            self.game_state = Some(modern_game_flow(
                                 &self.game_modern.clone().unwrap(),
                                 self.game_state.clone().unwrap(),
                             ));
@@ -763,36 +763,36 @@ impl<'a> eframe::App for DeadballApp {
             if on_first {
                 ui.put(
                     Rect {
-                        min: pos2(460.0, 300.0),
-                        max: pos2(560.0, 400.0),
+                        min: pos2(490.0, 260.0),
+                        max: pos2(590.0, 360.0),
                     },
                     eframe::egui::Image::new(
                         self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.05,
+                        self.helmet_image.size_vec2() * 0.1,
                     ),
                 );
             }
             if on_second {
                 ui.put(
                     Rect {
-                        min: pos2(400.0, 180.0),
-                        max: pos2(500.0, 280.0),
+                        min: pos2(340.0, 120.0),
+                        max: pos2(440.0, 220.0),
                     },
                     eframe::egui::Image::new(
                         self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.05,
+                        self.helmet_image.size_vec2() * 0.1,
                     ),
                 );
             }
             if on_third {
                 ui.put(
                     Rect {
-                        min: pos2(200.0, 270.0),
-                        max: pos2(300.0, 370.0),
+                        min: pos2(205.0, 270.0),
+                        max: pos2(305.0, 370.0),
                     },
                     eframe::egui::Image::new(
                         self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.05,
+                        self.helmet_image.size_vec2() * 0.1,
                     ),
                 );
             }
@@ -847,8 +847,8 @@ impl<'a> eframe::App for DeadballApp {
             );
             ui.put(
                 Rect {
-                    min: pos2(340.0, 300.0),
-                    max: pos2(440.0, 320.0),
+                    min: pos2(340.0, 305.0),
+                    max: pos2(440.0, 325.0),
                 },
                 eframe::egui::Label::new(
                     RichText::new(&self.pitcher_label)
@@ -859,8 +859,8 @@ impl<'a> eframe::App for DeadballApp {
             );
             ui.put(
                 Rect {
-                    min: pos2(340.0, 480.0),
-                    max: pos2(440.0, 500.0),
+                    min: pos2(340.0, 475.0),
+                    max: pos2(440.0, 495.0),
                 },
                 eframe::egui::Label::new(
                     RichText::new(&self.catcher_label)
@@ -895,8 +895,8 @@ impl<'a> eframe::App for DeadballApp {
             );
             ui.put(
                 Rect {
-                    min: pos2(480.0, 100.0),
-                    max: pos2(580.0, 120.0),
+                    min: pos2(510.0, 100.0),
+                    max: pos2(610.0, 120.0),
                 },
                 eframe::egui::Label::new(
                     RichText::new(&self.rightfield_label)
@@ -907,8 +907,8 @@ impl<'a> eframe::App for DeadballApp {
             );
             ui.put(
                 Rect {
-                    min: pos2(300.0, 100.0),
-                    max: pos2(400.0, 120.0),
+                    min: pos2(330.0, 100.0),
+                    max: pos2(430.0, 120.0),
                 },
                 eframe::egui::Label::new(
                     RichText::new(&self.centerfield_label)
