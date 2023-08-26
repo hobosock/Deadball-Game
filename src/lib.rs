@@ -481,7 +481,7 @@ mod tests {
             quirks: vec![Quirks::OddLeft],
         };
 
-        let test_result = create_modern_game(&team1, &team2, &ballpark);
+        let test_result = create_modern_game(team1.clone(), team2.clone(), ballpark.clone());
         assert!(matches!(
             Err::<GameModern, core::game_functions::TeamError>(TeamError {
                 message: "Home team does not have a complete roster".to_string(),
@@ -502,7 +502,7 @@ mod tests {
             "test".to_string(),
         ];
 
-        let test_result2 = create_modern_game(&team1, &team2, &ballpark);
+        let test_result2 = create_modern_game(team1, team2.clone(), ballpark);
         assert!(matches!(
             Err::<GameModern, core::game_functions::TeamError>(TeamError {
                 message: "Away team is not for the modern era".to_string(),
@@ -589,8 +589,8 @@ mod tests {
             runners: RunnersOn::Runner000,
             batting_team1: 1,
             batting_team2: 1,
-            current_pitcher_team1: &test_player,
-            current_pitcher_team2: &test_player,
+            current_pitcher_team1: test_player.clone(),
+            current_pitcher_team2: test_player.clone(),
             pitched_team1: 1,
             pitched_team2: 1,
             runs_team1: 0,
@@ -658,8 +658,8 @@ mod tests {
             runners: RunnersOn::Runner100,
             batting_team1: 1,
             batting_team2: 1,
-            current_pitcher_team1: &test_player,
-            current_pitcher_team2: &test_player,
+            current_pitcher_team1: test_player.clone(),
+            current_pitcher_team2: test_player.clone(),
             pitched_team1: 1,
             pitched_team2: 1,
             runs_team1: 0,
@@ -723,8 +723,8 @@ mod tests {
             runners: RunnersOn::Runner100,
             batting_team1: 1,
             batting_team2: 1,
-            current_pitcher_team1: &test_player,
-            current_pitcher_team2: &test_player,
+            current_pitcher_team1: test_player.clone(),
+            current_pitcher_team2: test_player.clone(),
             pitched_team1: 1,
             pitched_team2: 1,
             runs_team1: 0,
@@ -806,5 +806,17 @@ mod tests {
             assert_eq!(test_player.pitch_die, read_player.pitch_die);
             assert!(matches!(test_player.traits, traits));
         }
+    }
+
+    // find player by position test
+    #[test]
+    fn test_find_by_position() {
+        let filename = "src/testfiles/game/teams/blue_team.dbt";
+        let contents = fs::read_to_string(filename).unwrap();
+        let team = load_team(contents);
+        let (roster, _, _, _) = load_roster(&team);
+        let second_baseman = find_by_position(Position::Secondbase, &roster).unwrap();
+        assert_eq!(second_baseman.batter_target, 26); // this was easier than actually comparing
+                                                      // name strings or something, lol
     }
 }

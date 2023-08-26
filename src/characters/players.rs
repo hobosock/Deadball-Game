@@ -5,13 +5,13 @@ use std::fs; // needed to read in files
 
 use text_colorizer::*;
 
-use super::teams::Era;
+//use super::teams::Era;
 use crate::core::roll;
 
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Position {
     Pitcher,
     Catcher,
@@ -366,7 +366,6 @@ pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error>
             InjuryLocation::Knee => file_text.push_str(" Knee,"),
             InjuryLocation::Hip => file_text.push_str(" Hip,"),
             InjuryLocation::Head => file_text.push_str(" Head,"),
-            InjuryLocation::Head => file_text.push_str(" Head,"),
             InjuryLocation::Hand => file_text.push_str(" Hand,"),
             InjuryLocation::Back => file_text.push_str(" Back,"),
             InjuryLocation::Foot => file_text.push_str(" Foot,"),
@@ -416,9 +415,9 @@ pub fn load_names() -> (Vec<String>, Vec<String>) {
     return (firstnames, lastnames);
 }
 
-// TODO player generation should take into account target ERA - will fix later
-// TODO might add aging at a later date
-// TODO could add mechanic for farmhand/prospect/veteran/etc.
+// TODO: player generation should take into account target ERA - will fix later
+// TODO: might add aging at a later date
+// TODO: could add mechanic for farmhand/prospect/veteran/etc.
 
 // generates a player name
 pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (String, String) {

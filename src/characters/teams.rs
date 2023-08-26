@@ -16,12 +16,14 @@ use super::players::{generate_name, generate_player, load_player, write_player, 
 ENUM DEFINITIONS
 ==========================================*/
 // TEAM ENUMS
+#[derive(Clone, PartialEq)]
 pub enum Era {
     Ancient,
     Modern,
     None,
 }
 
+#[derive(Clone)]
 pub enum Location {
     MiddleOfNowhere,
     SmallTown,
@@ -31,6 +33,7 @@ pub enum Location {
     None,
 }
 
+#[derive(Clone)]
 pub enum Priority {
     Power,
     Average,
@@ -41,6 +44,7 @@ pub enum Priority {
     None,
 }
 
+#[derive(Clone)]
 pub enum Makeup {
     MostlyProspects,
     Balanced,
@@ -106,6 +110,7 @@ pub enum Background {
 // park name
 // park Location
 
+#[derive(Clone)]
 pub enum StadiumTypeModern {
     JewelBox,
     BaseballPalace,
@@ -122,6 +127,7 @@ pub enum StadiumTypeAncient {
     None,
 }
 
+#[derive(Clone)]
 pub enum Turf {
     Ragged,
     Good,
@@ -129,6 +135,7 @@ pub enum Turf {
     None,
 }
 
+#[derive(Clone)]
 pub enum Roof {
     NoRoof,
     PermanentRoof,
@@ -136,6 +143,7 @@ pub enum Roof {
     None,
 }
 
+#[derive(Clone)]
 pub enum Condition {
     FallingApart,
     Decrepit,
@@ -144,6 +152,7 @@ pub enum Condition {
     None,
 }
 
+#[derive(Clone)]
 pub enum Quirks {
     CozyOutfield,
     ExpansiveOutfield,
@@ -160,6 +169,7 @@ pub enum Quirks {
     None,
 }
 
+#[derive(Clone)]
 pub enum Fanbase {
     Nonexistent,
     Indifferent,
@@ -170,6 +180,7 @@ pub enum Fanbase {
 }
 
 // Manager
+#[derive(Clone)]
 pub enum ManagerLeague {
     Major,
     Minor,
@@ -179,6 +190,7 @@ pub enum ManagerLeague {
 /*==========================================
 STRUCTURES
 ==========================================*/
+#[derive(Clone)]
 pub struct Team {
     pub name: String,
     pub ballpark: String, // file name to *.DBB file
@@ -206,6 +218,7 @@ pub struct Team {
     pub bullpen: Vec<String>,
 }
 
+#[derive(Clone)]
 pub struct BallparkModern {
     pub name: String,
     pub location: Location,
@@ -227,6 +240,7 @@ pub struct BallparkAncient {
 }
 
 // struct for teams in a game - loads player files into Player structs for easier reference
+#[derive(Clone)]
 pub struct ActiveTeam {
     pub roster: Vec<Player>,
     pub bench: Vec<Player>,
