@@ -37,6 +37,7 @@ enum Panel {
     Menu,
     Game,
     Roster,
+    Debug,
 }
 
 /*
@@ -82,6 +83,7 @@ struct DeadballApp {
     about_deadball_window: bool,
     about_app_window: bool,
     create_game_window: bool,
+    debug_window: bool,
     // create game interface
     create_game_era: Era,
     away_team_file: Option<PathBuf>,
@@ -158,6 +160,7 @@ impl<'a> Default for DeadballApp {
             about_deadball_window: false,
             about_app_window: false,
             create_game_window: false,
+            debug_window: false,
             create_game_era: Era::None,
             away_team_file: None,
             away_team_file_dialog: None,
@@ -214,6 +217,12 @@ impl<'a> eframe::App for DeadballApp {
             .open(&mut self.about_app_window)
             .show(ctx, |ui| {
                 ui.label(ABOUT_APP);
+            });
+        egui::Window::new("Debug Mode")
+            .open(&mut self.debug_window)
+            .show(ctx, |ui| {
+                ui.label("placeholder");
+                // TODO: put game state editor here
             });
         egui::Window::new("Create new game")
             .open(&mut self.create_game_window)
@@ -419,6 +428,7 @@ impl<'a> eframe::App for DeadballApp {
                 ui.selectable_value(&mut self.bottom_panel, Panel::Game, "Game");
                 ui.selectable_value(&mut self.bottom_panel, Panel::Menu, "Menu");
                 ui.selectable_value(&mut self.bottom_panel, Panel::Roster, "Roster");
+                ui.selectable_value(&mut self.bottom_panel, Panel::Debug, "Debug");
             });
             ui.separator();
             match self.bottom_panel {
@@ -514,6 +524,13 @@ impl<'a> eframe::App for DeadballApp {
                         }
                         if ui.button("View Team").clicked() {
                             println!("View Team button placeholder.");
+                        }
+                    });
+                }
+                Panel::Debug => {
+                    ui.horizontal(|ui| {
+                        if ui.button("Game").clicked() {
+                            println!("Debug mode in progress.");
                         }
                     });
                 }
