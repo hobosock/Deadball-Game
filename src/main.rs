@@ -1,8 +1,8 @@
 use deadball::characters::{players::*, teams::*};
 use deadball::core::file_locations::*;
 use deadball::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, modern_inning_flow, GameModern,
-    GameState, GameStatus, InningTB, Outs, RunnersOn,
+    create_modern_game, init_new_game_state, modern_game_flow, modern_inning_flow,
+    new_game_state_struct, GameModern, GameState, GameStatus, InningTB, Outs, RunnersOn,
 };
 use gui::gui_functions::{runners_on_bool, update_player_labels};
 mod gui;
@@ -121,6 +121,9 @@ struct DeadballApp {
     game_modern: Option<GameModern>,
     game_state: Option<GameState>,
     // TODO: add ancient game
+    // debug settings
+    debug_state: GameState,
+    debug_game_state_text: String,
 }
 
 impl<'a> Default for DeadballApp {
@@ -195,6 +198,8 @@ impl<'a> Default for DeadballApp {
             ballpark_ancient: None,
             game_modern: None,
             game_state: None,
+            debug_state: new_game_state_struct(),
+            debug_game_state_text: "Not Started".to_string(),
         }
     }
 }
@@ -221,8 +226,37 @@ impl<'a> eframe::App for DeadballApp {
         egui::Window::new("Debug Mode")
             .open(&mut self.debug_window)
             .show(ctx, |ui| {
-                ui.label("placeholder");
                 // TODO: put game state editor here
+                ui.horizontal(|ui| {
+                    ui.label("Game Status:");
+                    egui::ComboBox::from_label("Select status.")
+                        .selected_text(&self.debug_game_state_text)
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.debug_state.status,
+                                GameStatus::NotStarted,
+                                "Not Started",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.status,
+                                GameStatus::Ongoing,
+                                "Ongoing",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.status,
+                                GameStatus::Over,
+                                "Over",
+                            );
+                        })
+                });
+                // update debug game state combo box text
+                match &self.debug_state.status {
+                    GameStatus::NotStarted => {
+                        self.debug_game_state_text = "Not Started".to_string()
+                    }
+                    GameStatus::Ongoing => self.debug_game_state_text = "Ongoing".to_string(),
+                    GameStatus::Over => self.debug_game_state_text = "Over".to_string(),
+                }
             });
         egui::Window::new("Create new game")
             .open(&mut self.create_game_window)
@@ -530,7 +564,7 @@ impl<'a> eframe::App for DeadballApp {
                 Panel::Debug => {
                     ui.horizontal(|ui| {
                         if ui.button("Game").clicked() {
-                            println!("Debug mode in progress.");
+                            self.debug_window = true;
                         }
                     });
                 }

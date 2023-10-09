@@ -425,8 +425,8 @@ pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (Stri
     let len_last = lastnames.len();
     let roll_first = roll(len_first as i32);
     let roll_last = roll(len_last as i32);
-    let first_name = firstnames[roll_first as usize].clone();
-    let last_name = lastnames[roll_last as usize].clone();
+    let first_name = firstnames[(roll_first - 1) as usize].clone();
+    let last_name = lastnames[(roll_last - 1) as usize].clone();
     return (first_name, last_name);
 }
 

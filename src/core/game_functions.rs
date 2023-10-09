@@ -50,7 +50,7 @@ pub enum RunnersOn {
     Runner111,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum GameStatus {
     NotStarted,
     Ongoing,
@@ -1956,4 +1956,39 @@ pub fn find_by_position(position: Position, roster: &Vec<Player>) -> Option<Play
         }
     }
     return None;
+}
+
+/// convenience function to return a default GameState struct
+pub fn new_game_state_struct() -> GameState {
+    let new_state = GameState {
+        status: GameStatus::NotStarted,
+        inning: 1,
+        inning_half: InningTB::Top,
+        outs: Outs::None,
+        runners: RunnersOn::Runner000,
+        batting_team1: 1,
+        batting_team2: 1,
+        current_pitcher_team1: generate_player(
+            PlayerClass::Pitchers,
+            Position::Pitcher,
+            &vec!["Seth".to_string()],
+            &vec!["Loveall".to_string()],
+        ),
+        current_pitcher_team2: generate_player(
+            PlayerClass::Pitchers,
+            Position::Pitcher,
+            &vec!["Seth".to_string()],
+            &vec!["Loveall".to_string()],
+        ),
+        pitched_team1: 0,
+        pitched_team2: 0,
+        runs_team1: 0,
+        runs_team2: 0,
+        hits_team1: 0,
+        hits_team2: 0,
+        errors_team1: 0,
+        errors_team2: 0,
+    };
+
+    return new_state;
 }

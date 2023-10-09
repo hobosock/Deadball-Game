@@ -10,6 +10,9 @@ use rand::Rng;
 FUNCTION DEFINITIONS
 ========================================================*/
 pub fn roll(side: i32) -> i32 {
+    if side == 1 {
+        return 1;
+    }
     let roll = rand::thread_rng().gen_range(1..side);
     roll
 }
