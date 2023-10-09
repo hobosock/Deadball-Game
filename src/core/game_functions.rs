@@ -23,13 +23,13 @@ pub enum AtBatResults {
     MegaOut,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum InningTB {
     Top,
     Bottom,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Outs {
     One,
     Two,
@@ -38,7 +38,7 @@ pub enum Outs {
 }
 
 // each number is base binary (1 is runner on, 0 is no runner)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum RunnersOn {
     Runner000,
     Runner100,

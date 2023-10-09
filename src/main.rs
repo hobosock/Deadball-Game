@@ -122,8 +122,12 @@ struct DeadballApp {
     game_state: Option<GameState>,
     // TODO: add ancient game
     // debug settings
+    debug_copied: bool, // copy game state to debug state first time window is opened
     debug_state: GameState,
     debug_game_state_text: String,
+    debug_inning_half_text: String,
+    debug_outs_text: String,
+    debug_runners_text: String,
 }
 
 impl<'a> Default for DeadballApp {
@@ -198,8 +202,12 @@ impl<'a> Default for DeadballApp {
             ballpark_ancient: None,
             game_modern: None,
             game_state: None,
+            debug_copied: false,
             debug_state: new_game_state_struct(),
             debug_game_state_text: "Not Started".to_string(),
+            debug_inning_half_text: "^".to_string(),
+            debug_outs_text: "None".to_string(),
+            debug_runners_text: "000".to_string(),
         }
     }
 }
@@ -226,6 +234,11 @@ impl<'a> eframe::App for DeadballApp {
         egui::Window::new("Debug Mode")
             .open(&mut self.debug_window)
             .show(ctx, |ui| {
+                // set debug state to current game state (if it exists)
+                if self.game_state.is_some() && self.debug_copied == false {
+                    self.debug_state = self.game_state.clone().unwrap();
+                    self.debug_copied = true;
+                }
                 // TODO: put game state editor here
                 ui.horizontal(|ui| {
                     ui.label("Game Status:");
@@ -249,6 +262,91 @@ impl<'a> eframe::App for DeadballApp {
                             );
                         })
                 });
+                ui.horizontal(|ui| {
+                    ui.label("Inning:");
+                    // TODO: make this work
+                    let inning_response = ui.add(egui::TextEdit::singleline(
+                        &mut self.debug_state.inning.to_string(),
+                    ));
+                    if inning_response.changed() {
+                        // is this needed?
+                    }
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Inning Half:");
+                    egui::ComboBox::from_label("Select inning half.")
+                        .selected_text(self.debug_inning_half_text.clone())
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.debug_state.inning_half,
+                                InningTB::Top,
+                                "^",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.inning_half,
+                                InningTB::Bottom,
+                                "v",
+                            );
+                        });
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Outs:");
+                    egui::ComboBox::from_label("Select outs.")
+                        .selected_text(self.debug_outs_text.clone())
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(&mut self.debug_state.outs, Outs::None, "None");
+                            ui.selectable_value(&mut self.debug_state.outs, Outs::One, "One");
+                            ui.selectable_value(&mut self.debug_state.outs, Outs::Two, "Two");
+                            ui.selectable_value(&mut self.debug_state.outs, Outs::Three, "Three");
+                        });
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Runners On:");
+                    egui::ComboBox::from_label("Select base runners.")
+                        .selected_text(self.debug_runners_text.clone())
+                        .show_ui(ui, |ui| {
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner000,
+                                "000",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner001,
+                                "001",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner010,
+                                "010",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner100,
+                                "100",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner011,
+                                "011",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner110,
+                                "110",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner101,
+                                "101",
+                            );
+                            ui.selectable_value(
+                                &mut self.debug_state.runners,
+                                RunnersOn::Runner111,
+                                "111",
+                            );
+                        });
+                });
                 // update debug game state combo box text
                 match &self.debug_state.status {
                     GameStatus::NotStarted => {
@@ -256,6 +354,34 @@ impl<'a> eframe::App for DeadballApp {
                     }
                     GameStatus::Ongoing => self.debug_game_state_text = "Ongoing".to_string(),
                     GameStatus::Over => self.debug_game_state_text = "Over".to_string(),
+                }
+                // update inning half combo box text
+                match &self.debug_state.inning_half {
+                    InningTB::Top => self.debug_inning_half_text = "^".to_string(),
+                    InningTB::Bottom => self.debug_inning_half_text = "v".to_string(),
+                }
+                // update outs combo box text
+                match &self.debug_state.outs {
+                    Outs::None => self.debug_outs_text = "None".to_string(),
+                    Outs::One => self.debug_outs_text = "One".to_string(),
+                    Outs::Two => self.debug_outs_text = "Two".to_string(),
+                    Outs::Three => self.debug_outs_text = "Three".to_string(),
+                }
+                // update runners on text
+                match &self.debug_state.runners {
+                    RunnersOn::Runner000 => self.debug_runners_text = "000".to_string(),
+                    RunnersOn::Runner001 => self.debug_runners_text = "001".to_string(),
+                    RunnersOn::Runner010 => self.debug_runners_text = "010".to_string(),
+                    RunnersOn::Runner100 => self.debug_runners_text = "100".to_string(),
+                    RunnersOn::Runner011 => self.debug_runners_text = "011".to_string(),
+                    RunnersOn::Runner110 => self.debug_runners_text = "110".to_string(),
+                    RunnersOn::Runner101 => self.debug_runners_text = "101".to_string(),
+                    RunnersOn::Runner111 => self.debug_runners_text = "111".to_string(),
+                }
+                // button to write changes to game state
+                ui.separator();
+                if ui.button("Write Changes").clicked() {
+                    self.game_state = Some(self.debug_state.clone());
                 }
             });
         egui::Window::new("Create new game")
@@ -565,6 +691,7 @@ impl<'a> eframe::App for DeadballApp {
                     ui.horizontal(|ui| {
                         if ui.button("Game").clicked() {
                             self.debug_window = true;
+                            self.debug_copied = false;
                         }
                     });
                 }
