@@ -409,8 +409,44 @@ impl<'a> eframe::App for DeadballApp {
                         });
                 });
                 ui.horizontal(|ui| {
-                    ui.label("Batter Up Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_state.batting_team1.to_string());
+                    ui.label("Batting Team 1:");
+                    ui.text_edit_singleline(&mut self.debug_batting1_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Batting Team 2:");
+                    ui.text_edit_singleline(&mut self.debug_batting2_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Pitched Team 1:");
+                    ui.text_edit_singleline(&mut self.debug_pitched1_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Pitched Team 2:");
+                    ui.text_edit_singleline(&mut self.debug_pitched2_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Runs Team 1:");
+                    ui.text_edit_singleline(&mut self.debug_runs1_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Runs Team 2:");
+                    ui.text_edit_singleline(&mut self.debug_runs2_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Hits Team 1:");
+                    ui.text_edit_singleline(&mut self.debug_hits1_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Hits Team 2:");
+                    ui.text_edit_singleline(&mut self.debug_hits2_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Errors Team 1:");
+                    ui.text_edit_singleline(&mut self.debug_errors1_text);
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Errors Team 2:");
+                    ui.text_edit_singleline(&mut self.debug_errors2_text);
                 });
                 // update debug game state combo box text
                 match &self.debug_state.status {
