@@ -1231,7 +1231,7 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
 pub fn oddity<'b>(
     oddity_result: &i32,
     pitch_result: &i32,
-    game: &'b GameModern,
+    _game: &'b GameModern, // TODO: program oddities
     mut state: GameState,
 ) -> GameState {
     match state.inning_half {
