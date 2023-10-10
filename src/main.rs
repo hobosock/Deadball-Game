@@ -125,6 +125,7 @@ struct DeadballApp {
     debug_copied: bool, // copy game state to debug state first time window is opened
     debug_state: GameState,
     debug_game_state_text: String,
+    debug_inning_text: String,
     debug_inning_half_text: String,
     debug_outs_text: String,
     debug_runners_text: String,
@@ -205,6 +206,7 @@ impl<'a> Default for DeadballApp {
             debug_copied: false,
             debug_state: new_game_state_struct(),
             debug_game_state_text: "Not Started".to_string(),
+            debug_inning_text: "1".to_string(),
             debug_inning_half_text: "^".to_string(),
             debug_outs_text: "None".to_string(),
             debug_runners_text: "000".to_string(),
@@ -214,6 +216,11 @@ impl<'a> Default for DeadballApp {
 
 impl<'a> eframe::App for DeadballApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // app state updates
+        match self.debug_inning_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.inning = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
         // check if other windows are open
         egui::Window::new("Version")
             .open(&mut self.version_window)
@@ -238,8 +245,8 @@ impl<'a> eframe::App for DeadballApp {
                 if self.game_state.is_some() && self.debug_copied == false {
                     self.debug_state = self.game_state.clone().unwrap();
                     self.debug_copied = true;
+                    self.debug_inning_text = self.debug_state.inning.clone().to_string();
                 }
-                // TODO: put game state editor here
                 ui.horizontal(|ui| {
                     ui.label("Game Status:");
                     egui::ComboBox::from_label("Select status.")
@@ -264,13 +271,7 @@ impl<'a> eframe::App for DeadballApp {
                 });
                 ui.horizontal(|ui| {
                     ui.label("Inning:");
-                    // TODO: make this work
-                    let inning_response = ui.add(egui::TextEdit::singleline(
-                        &mut self.debug_state.inning.to_string(),
-                    ));
-                    if inning_response.changed() {
-                        // is this needed?
-                    }
+                    ui.text_edit_singleline(&mut self.debug_inning_text);
                 });
                 ui.horizontal(|ui| {
                     ui.label("Inning Half:");
@@ -346,6 +347,10 @@ impl<'a> eframe::App for DeadballApp {
                                 "111",
                             );
                         });
+                });
+                ui.horizontal(|ui| {
+                    ui.label("Batter Up Team 1:");
+                    ui.text_edit_singleline(&mut self.debug_state.batting_team1.to_string());
                 });
                 // update debug game state combo box text
                 match &self.debug_state.status {
