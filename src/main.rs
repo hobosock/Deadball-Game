@@ -129,6 +129,16 @@ struct DeadballApp {
     debug_inning_half_text: String,
     debug_outs_text: String,
     debug_runners_text: String,
+    debug_batting1_text: String,
+    debug_batting2_text: String,
+    debug_pitched1_text: String,
+    debug_pitched2_text: String,
+    debug_runs1_text: String,
+    debug_runs2_text: String,
+    debug_hits1_text: String,
+    debug_hits2_text: String,
+    debug_errors1_text: String,
+    debug_errors2_text: String,
 }
 
 impl<'a> Default for DeadballApp {
@@ -210,6 +220,16 @@ impl<'a> Default for DeadballApp {
             debug_inning_half_text: "^".to_string(),
             debug_outs_text: "None".to_string(),
             debug_runners_text: "000".to_string(),
+            debug_batting1_text: "1".to_string(),
+            debug_batting2_text: "1".to_string(),
+            debug_pitched1_text: "0".to_string(),
+            debug_pitched2_text: "0".to_string(),
+            debug_runs1_text: "0".to_string(),
+            debug_runs2_text: "0".to_string(),
+            debug_hits1_text: "0".to_string(),
+            debug_hits2_text: "0".to_string(),
+            debug_errors1_text: "0".to_string(),
+            debug_errors2_text: "0".to_string(),
         }
     }
 }
@@ -219,6 +239,46 @@ impl<'a> eframe::App for DeadballApp {
         // app state updates
         match self.debug_inning_text.parse::<u32>() {
             Ok(inning) => self.debug_state.inning = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_batting1_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.batting_team1 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_batting2_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.batting_team2 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_pitched1_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.pitched_team1 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_pitched2_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.pitched_team2 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_runs1_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.runs_team1 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_runs2_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.runs_team2 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_hits1_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.hits_team1 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_hits2_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.hits_team2 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_errors1_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.errors_team1 = inning,
+            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
+        }
+        match self.debug_errors2_text.parse::<u32>() {
+            Ok(inning) => self.debug_state.errors_team2 = inning,
             Err(_) => {} // don't do anything if user is typing, weird characters, etc.
         }
         // check if other windows are open
