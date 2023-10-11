@@ -2,27 +2,11 @@
  * IMPORTS
  * ===========================================================================================*/
 // LOCAL IMPORTS
-use deadball::characters::{players::*, teams::*};
-//use deadball::core::file_locations::*;
-use deadball::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct, GameModern,
-    GameState, GameStatus, InningTB, Outs, RunnersOn,
-};
 use gui::app::*;
-use gui::gui_functions::{runners_on_bool, update_player_labels};
 mod gui;
 
-use std::fs;
-
 // EXTERNAL IMPORTS
-use eframe::{
-    egui,
-    epaint::{pos2, Color32},
-};
-use egui::{Rect, RichText};
-use egui_extras::RetainedImage;
-use egui_file::FileDialog;
-use std::path::PathBuf;
+use eframe::egui;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
