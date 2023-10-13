@@ -14,7 +14,7 @@ use std::fs;
 
 // EXTERNAL IMPORTS
 use eframe::{
-    egui::{self, Context, Ui},
+    egui::{self, Context},
     epaint::{pos2, Color32},
 };
 use egui::{Rect, RichText};
@@ -230,442 +230,16 @@ impl<'a> eframe::App for DeadballApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // app state updates
         update_debug_textedits(self);
-        // check if other windows are open
+        // draw other windows (if needed)
         draw_version_window(ctx, self);
         draw_about_deadball_window(ctx, self);
         draw_about_app_window(ctx, self);
-        draw_debug_window(self, ctx);
-        egui::Window::new("Create new game")
-            .open(&mut self.create_game_window)
-            .show(ctx, |ui| {
-                // selectable value for game era
-                ui.horizontal(|ui| {
-                    ui.label("Era:");
-                    ui.selectable_value(&mut self.create_game_era, Era::None, "None");
-                    ui.selectable_value(&mut self.create_game_era, Era::Modern, "Modern");
-                    ui.selectable_value(&mut self.create_game_era, Era::Ancient, "Ancient");
-                });
-                // file dialog for away team
-                ui.horizontal(|ui| {
-                    ui.label("Away Team:");
-                    if let Some(away_file) = &mut self.away_team_file {
-                        ui.label(format!("{:?}", away_file));
-                    } else {
-                        ui.label("None");
-                    }
-                    if ui.button("Open").clicked() {
-                        let mut dialog = FileDialog::open_file(self.away_team_file.clone());
-                        dialog.open();
-                        self.away_team_file_dialog = Some(dialog);
-                    }
-                    if let Some(dialog) = &mut self.away_team_file_dialog {
-                        if dialog.show(ctx).selected() {
-                            if let Some(file) = dialog.path() {
-                                self.away_team_file = Some(file);
-                            }
-                        }
-                    }
-                });
-                // file dialog for home team
-                ui.horizontal(|ui| {
-                    ui.label("Home Team:");
-                    if let Some(home_file) = &mut self.home_team_file {
-                        ui.label(format!("{:?}", home_file));
-                    } else {
-                        ui.label("None");
-                    }
-                    if ui.button("Open").clicked() {
-                        let mut dialog = FileDialog::open_file(self.home_team_file.clone());
-                        dialog.open();
-                        self.home_team_file_dialog = Some(dialog);
-                    }
-                    if let Some(dialog) = &mut self.home_team_file_dialog {
-                        if dialog.show(ctx).selected() {
-                            if let Some(file) = dialog.path() {
-                                self.home_team_file = Some(file);
-                            }
-                        }
-                    }
-                });
-                // file dialog for ball park
-                ui.horizontal(|ui| {
-                    ui.label("Ballpark: ");
-                    if let Some(ballpark_file) = &mut self.ballpark_file {
-                        ui.label(format!("{:?}", ballpark_file));
-                    } else {
-                        ui.label("None");
-                    }
-                    if ui.button("Open").clicked() {
-                        let mut dialog = FileDialog::open_file(self.ballpark_file.clone());
-                        dialog.open();
-                        self.ballpark_file_dialog = Some(dialog);
-                    }
-                    if let Some(dialog) = &mut self.ballpark_file_dialog {
-                        if dialog.show(ctx).selected() {
-                            if let Some(file) = dialog.path() {
-                                self.ballpark_file = Some(file);
-                            }
-                        }
-                    }
-                });
-                ui.separator();
-                // button to create game and return to main screen
-                self.create_game_error = "".to_owned();
-                if ui.button("Create").clicked() {
-                    // check and make sure options are set properly
-                    if self.away_team_file.is_some()
-                        && self.home_team_file.is_some()
-                        && self.ballpark_file.is_some()
-                    {
-                        // try to load teams and ballpark files
-                        match fs::read_to_string(&self.away_team_file.as_ref().unwrap().as_path()) {
-                            Ok(contents) => {
-                                self.away_team = Some(load_team(contents));
-                            }
-                            Err(err) => {
-                                self.create_game_error = self.create_game_error.clone()
-                                    + "Failed to read Away team file."
-                                    + &format!("{:?}", err);
-                            }
-                        }
-                        match fs::read_to_string(&self.home_team_file.as_ref().unwrap().as_path()) {
-                            Ok(contents) => {
-                                self.home_team = Some(load_team(contents));
-                            }
-                            Err(err) => {
-                                self.create_game_error = self.create_game_error.clone()
-                                    + "Failed to read Home team file."
-                                    + &format!("{:?}", err);
-                            }
-                        }
-                        match self.create_game_era {
-                            Era::Modern => {
-                                match fs::read_to_string(
-                                    &self.ballpark_file.as_ref().unwrap().as_path(),
-                                ) {
-                                    Ok(contents) => {
-                                        self.ballpark_modern = Some(load_park_modern(contents));
-                                    }
-                                    Err(err) => {
-                                        self.create_game_error = self.create_game_error.clone()
-                                            + "Failed to read Ballpark file."
-                                            + &format!("{:?}", err);
-                                    }
-                                }
-                            }
-                            Era::Ancient => {
-                                match fs::read_to_string(
-                                    &self.ballpark_file.as_ref().unwrap().as_path(),
-                                ) {
-                                    Ok(contents) => {
-                                        self.ballpark_ancient = Some(load_park_ancient(contents));
-                                    }
-                                    Err(err) => {
-                                        self.create_game_error = self.create_game_error.clone()
-                                            + "Failed to read Ballpark file."
-                                            + &format!("{:?}", err);
-                                    }
-                                }
-                            }
-                            Era::None => {
-                                self.create_game_error =
-                                    self.create_game_error.clone() + "Please select an Era.";
-                            }
-                        }
-                    } else {
-                        // update error message and display error window
-                        if self.away_team_file.is_none() {
-                            self.create_game_error = self.create_game_error.clone()
-                                + "Must select a *.dbt file for away team.\n";
-                        }
-                        if self.home_team_file.is_none() {
-                            self.create_game_error = self.create_game_error.clone()
-                                + "Must select a *.dbt file for home team.\n";
-                        }
-                        if self.ballpark_file.is_none() {
-                            self.create_game_error = self.create_game_error.clone()
-                                + "Must select a *.dbb file for ballpark.\n";
-                        }
-                    }
-                    match self.create_game_era {
-                        Era::Modern => {
-                            if self.away_team.is_some()
-                                && self.home_team.is_some()
-                                && self.ballpark_modern.is_some()
-                            {
-                                match create_modern_game(
-                                    self.home_team.clone().unwrap(),
-                                    self.away_team.clone().unwrap(),
-                                    self.ballpark_modern.clone().unwrap(),
-                                ) {
-                                    Ok(game) => {
-                                        self.game_modern = Some(game);
-                                        self.home_team_active = Some(
-                                            self.game_modern.clone().unwrap().home_active.clone(),
-                                        );
-                                        self.away_team_active = Some(
-                                            self.game_modern.clone().unwrap().away_active.clone(),
-                                        );
-                                        //TODO: make the window close after successfully generating a game
-                                    }
-                                    Err(err) => {
-                                        self.create_game_error =
-                                            self.create_game_error.clone() + &format!("{:?}", err)
-                                    }
-                                }
-                            }
-                        }
-                        Era::Ancient => {
-                            if self.away_team.is_some()
-                                && self.home_team.is_some()
-                                && self.ballpark_ancient.is_some()
-                            {}
-                        }
-                        Era::None => {
-                            self.create_game_error =
-                                self.create_game_error.clone() + "Please select an Era.";
-                        }
-                    }
-                }
-                // if everything loaded okay, generate game
-                ui.add(eframe::egui::Label::new(
-                    RichText::new(&self.create_game_error).color(Color32::RED),
-                ));
-            });
+        draw_debug_window(ctx, self);
+        draw_create_new_game(ctx, self);
 
         // main window
-        egui::TopBottomPanel::bottom("Control Panel").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.bottom_panel, Panel::Game, "Game");
-                ui.selectable_value(&mut self.bottom_panel, Panel::Menu, "Menu");
-                ui.selectable_value(&mut self.bottom_panel, Panel::Roster, "Roster");
-                ui.selectable_value(&mut self.bottom_panel, Panel::Debug, "Debug");
-            });
-            ui.separator();
-            match self.bottom_panel {
-                Panel::Menu => {
-                    ui.horizontal(|ui| {
-                        ui.menu_button("Game", |ui| {
-                            if ui.button("Create Game").clicked() {
-                                self.create_game_window = true;
-                                ui.close_menu();
-                            }
-                            if ui.button("Start Game").clicked() {
-                                // check if there are active teams loaded
-                                if self.home_team_active.is_some()
-                                    && self.away_team_active.is_some()
-                                {
-                                    self.game_state = Some(init_new_game_state(
-                                        self.home_team_active.clone().unwrap().pitching[0].clone(),
-                                        self.away_team_active.clone().unwrap().pitching[0].clone(),
-                                    ));
-                                } else {
-                                    println!("Load teams first.");
-                                }
-                            }
-                            if ui.button("Load Game").clicked() {
-                                // TODO: add load game feature (need to add save game feature first)
-                                println!("Load game feature has not yet been added.");
-                                ui.close_menu();
-                            }
-                            if ui.button("Save Game").clicked() {
-                                // TODO: add save game feature
-                                println!("Save game feature has not been added yet.");
-                            }
-                        });
-                        ui.menu_button("About", |ui| {
-                            if ui.button("Version").clicked() {
-                                self.version_window = true;
-                                ui.close_menu();
-                            }
-                            if ui.button("Help").clicked() {
-                                // TODO: add help window
-                                println!("No help menu available at this time.");
-                                ui.close_menu();
-                            }
-                            if ui.button("About Deadball").clicked() {
-                                self.about_deadball_window = true;
-                                ui.close_menu();
-                            }
-                            if ui.button("About This App").clicked() {
-                                self.about_app_window = true;
-                                ui.close_menu();
-                            }
-                        })
-                    });
-                }
-                Panel::Game => {
-                    if ui.button("Next At Bat").clicked() {
-                        // TODO: this could be cleaner
-                        if self.game_state.is_some() && self.game_modern.is_some() {
-                            // TODO: update with ancient game when ready
-                            match self.game_state.clone().unwrap().status {
-                                GameStatus::NotStarted => {
-                                    self.game_state.as_mut().unwrap().status = GameStatus::Ongoing
-                                }
-                                GameStatus::Ongoing => {
-                                    self.game_state = Some(modern_game_flow(
-                                        &self.game_modern.clone().unwrap(),
-                                        self.game_state.clone().unwrap(),
-                                    ));
-                                    println!("{:?}", self.game_state);
-                                }
-                                GameStatus::Over => {}
-                            }
-                        }
-                        if self.game_state.is_some() && self.game_modern.is_some() {
-                            // TODO: update with ancient game when ready
-                            self.game_state = Some(modern_game_flow(
-                                &self.game_modern.clone().unwrap(),
-                                self.game_state.clone().unwrap(),
-                            ));
-                            println!("{:?}", self.game_state);
-                        } else {
-                            println!("Need to initialize a game first.");
-                        }
-                    }
-                }
-                Panel::Roster => {
-                    ui.horizontal(|ui| {
-                        if ui.button("Batting Order").clicked() {
-                            println!("Batting Order button placeholder.");
-                        }
-                        if ui.button("Bullpen").clicked() {
-                            println!("Bullpen button placeholder.");
-                        }
-                        if ui.button("View Team").clicked() {
-                            println!("View Team button placeholder.");
-                        }
-                    });
-                }
-                Panel::Debug => {
-                    ui.horizontal(|ui| {
-                        if ui.button("Game").clicked() {
-                            self.debug_window = true;
-                            self.debug_copied = false;
-                        }
-                    });
-                }
-            }
-        });
-        egui::SidePanel::left("Away Team").show(ctx, |ui| {
-            ui.heading(&self.away_team_name);
-            let away_name1: String;
-            let away_name2: String;
-            let away_name3: String;
-            let away_name4: String;
-            let away_name5: String;
-            let away_name6: String;
-            let away_name7: String;
-            let away_name8: String;
-            let away_name9: String;
-            if self.away_team.is_some() {
-                let away_team = self.away_team.as_ref().unwrap();
-                let away_team_active = self.game_modern.clone().unwrap().away_active;
-                self.away_team_name = away_team.name.to_string();
-                self.away_batter1 = Some(away_team_active.roster[0].clone());
-                self.away_batter2 = Some(away_team_active.roster[1].clone());
-                self.away_batter3 = Some(away_team_active.roster[2].clone());
-                self.away_batter4 = Some(away_team_active.roster[3].clone());
-                self.away_batter5 = Some(away_team_active.roster[4].clone());
-                self.away_batter6 = Some(away_team_active.roster[5].clone());
-                self.away_batter7 = Some(away_team_active.roster[6].clone());
-                self.away_batter8 = Some(away_team_active.roster[7].clone());
-                self.away_batter9 = Some(away_team_active.pitching[0].clone());
-                away_name1 = format!(
-                    "{} {}",
-                    self.away_batter1.clone().unwrap().first_name,
-                    self.away_batter1.clone().unwrap().last_name
-                );
-                away_name2 = format!(
-                    "{} {}",
-                    self.away_batter2.clone().unwrap().first_name,
-                    self.away_batter2.clone().unwrap().last_name
-                );
-                away_name3 = format!(
-                    "{} {}",
-                    self.away_batter3.clone().unwrap().first_name,
-                    self.away_batter3.clone().unwrap().last_name
-                );
-                away_name4 = format!(
-                    "{} {}",
-                    self.away_batter4.clone().unwrap().first_name,
-                    self.away_batter4.clone().unwrap().last_name
-                );
-                away_name5 = format!(
-                    "{} {}",
-                    self.away_batter5.clone().unwrap().first_name,
-                    self.away_batter5.clone().unwrap().last_name
-                );
-                away_name6 = format!(
-                    "{} {}",
-                    self.away_batter6.clone().unwrap().first_name,
-                    self.away_batter6.clone().unwrap().last_name
-                );
-                away_name7 = format!(
-                    "{} {}",
-                    self.away_batter7.clone().unwrap().first_name,
-                    self.away_batter7.clone().unwrap().last_name
-                );
-                away_name8 = format!(
-                    "{} {}",
-                    self.away_batter8.clone().unwrap().first_name,
-                    self.away_batter8.clone().unwrap().last_name
-                );
-                away_name9 = format!(
-                    "{} {}",
-                    self.away_batter9.clone().unwrap().first_name,
-                    self.away_batter9.clone().unwrap().last_name
-                );
-            } else {
-                away_name1 = "None".to_string();
-                away_name2 = "None".to_string();
-                away_name3 = "None".to_string();
-                away_name4 = "None".to_string();
-                away_name5 = "None".to_string();
-                away_name6 = "None".to_string();
-                away_name7 = "None".to_string();
-                away_name8 = "None".to_string();
-                away_name9 = "None".to_string();
-            }
-            ui.horizontal(|ui| {
-                ui.label("1. ");
-                ui.label(away_name1);
-                // TODO: figure out a way to put baseball icon to indicate current batter
-            });
-            ui.horizontal(|ui| {
-                ui.label("2. ");
-                ui.label(away_name2);
-            });
-            ui.horizontal(|ui| {
-                ui.label("3. ");
-                ui.label(away_name3);
-            });
-            ui.horizontal(|ui| {
-                ui.label("4. ");
-                ui.label(away_name4);
-            });
-            ui.horizontal(|ui| {
-                ui.label("5. ");
-                ui.label(away_name5);
-            });
-            ui.horizontal(|ui| {
-                ui.label("6. ");
-                ui.label(away_name6);
-            });
-            ui.horizontal(|ui| {
-                ui.label("7. ");
-                ui.label(away_name7);
-            });
-            ui.horizontal(|ui| {
-                ui.label("8. ");
-                ui.label(away_name8);
-            });
-            ui.horizontal(|ui| {
-                ui.label("9. ");
-                ui.label(away_name9);
-            });
-        });
+        draw_bottom_panel(ctx, self);
+        draw_left_panel(ctx, self);
         egui::SidePanel::right("Home Team").show(ctx, |ui| {
             ui.heading(&self.home_team_name);
             if self.home_team.is_some() {
@@ -1039,7 +613,7 @@ fn draw_about_app_window(ctx: &Context, app: &mut DeadballApp) {
         });
 }
 
-fn draw_debug_window(app: &mut DeadballApp, ctx: &Context) {
+fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Debug Mode")
         .open(&mut app.debug_window)
         .show(ctx, |ui| {
@@ -1217,4 +791,439 @@ fn draw_debug_window(app: &mut DeadballApp, ctx: &Context) {
                 app.game_state = Some(app.debug_state.clone());
             }
         });
+}
+
+/// renders the new game window
+fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
+    egui::Window::new("Create new game")
+        .open(&mut app.create_game_window)
+        .show(ctx, |ui| {
+            // selectable value for game era
+            ui.horizontal(|ui| {
+                ui.label("Era:");
+                ui.selectable_value(&mut app.create_game_era, Era::None, "None");
+                ui.selectable_value(&mut app.create_game_era, Era::Modern, "Modern");
+                ui.selectable_value(&mut app.create_game_era, Era::Ancient, "Ancient");
+            });
+            // file dialog for away team
+            ui.horizontal(|ui| {
+                ui.label("Away Team:");
+                if let Some(away_file) = &mut app.away_team_file {
+                    ui.label(format!("{:?}", away_file));
+                } else {
+                    ui.label("None");
+                }
+                if ui.button("Open").clicked() {
+                    let mut dialog = FileDialog::open_file(app.away_team_file.clone());
+                    dialog.open();
+                    app.away_team_file_dialog = Some(dialog);
+                }
+                if let Some(dialog) = &mut app.away_team_file_dialog {
+                    if dialog.show(ctx).selected() {
+                        if let Some(file) = dialog.path() {
+                            app.away_team_file = Some(file);
+                        }
+                    }
+                }
+            });
+            // file dialog for home team
+            ui.horizontal(|ui| {
+                ui.label("Home Team:");
+                if let Some(home_file) = &mut app.home_team_file {
+                    ui.label(format!("{:?}", home_file));
+                } else {
+                    ui.label("None");
+                }
+                if ui.button("Open").clicked() {
+                    let mut dialog = FileDialog::open_file(app.home_team_file.clone());
+                    dialog.open();
+                    app.home_team_file_dialog = Some(dialog);
+                }
+                if let Some(dialog) = &mut app.home_team_file_dialog {
+                    if dialog.show(ctx).selected() {
+                        if let Some(file) = dialog.path() {
+                            app.home_team_file = Some(file);
+                        }
+                    }
+                }
+            });
+            // file dialog for ball park
+            ui.horizontal(|ui| {
+                ui.label("Ballpark: ");
+                if let Some(ballpark_file) = &mut app.ballpark_file {
+                    ui.label(format!("{:?}", ballpark_file));
+                } else {
+                    ui.label("None");
+                }
+                if ui.button("Open").clicked() {
+                    let mut dialog = FileDialog::open_file(app.ballpark_file.clone());
+                    dialog.open();
+                    app.ballpark_file_dialog = Some(dialog);
+                }
+                if let Some(dialog) = &mut app.ballpark_file_dialog {
+                    if dialog.show(ctx).selected() {
+                        if let Some(file) = dialog.path() {
+                            app.ballpark_file = Some(file);
+                        }
+                    }
+                }
+            });
+            ui.separator();
+            // button to create game and return to main screen
+            app.create_game_error = "".to_owned();
+            if ui.button("Create").clicked() {
+                // check and make sure options are set properly
+                if app.away_team_file.is_some()
+                    && app.home_team_file.is_some()
+                    && app.ballpark_file.is_some()
+                {
+                    // try to load teams and ballpark files
+                    match fs::read_to_string(&app.away_team_file.as_ref().unwrap().as_path()) {
+                        Ok(contents) => {
+                            app.away_team = Some(load_team(contents));
+                        }
+                        Err(err) => {
+                            app.create_game_error = app.create_game_error.clone()
+                                + "Failed to read Away team file."
+                                + &format!("{:?}", err);
+                        }
+                    }
+                    match fs::read_to_string(&app.home_team_file.as_ref().unwrap().as_path()) {
+                        Ok(contents) => {
+                            app.home_team = Some(load_team(contents));
+                        }
+                        Err(err) => {
+                            app.create_game_error = app.create_game_error.clone()
+                                + "Failed to read Home team file."
+                                + &format!("{:?}", err);
+                        }
+                    }
+                    match app.create_game_era {
+                        Era::Modern => {
+                            match fs::read_to_string(&app.ballpark_file.as_ref().unwrap().as_path())
+                            {
+                                Ok(contents) => {
+                                    app.ballpark_modern = Some(load_park_modern(contents));
+                                }
+                                Err(err) => {
+                                    app.create_game_error = app.create_game_error.clone()
+                                        + "Failed to read Ballpark file."
+                                        + &format!("{:?}", err);
+                                }
+                            }
+                        }
+                        Era::Ancient => {
+                            match fs::read_to_string(&app.ballpark_file.as_ref().unwrap().as_path())
+                            {
+                                Ok(contents) => {
+                                    app.ballpark_ancient = Some(load_park_ancient(contents));
+                                }
+                                Err(err) => {
+                                    app.create_game_error = app.create_game_error.clone()
+                                        + "Failed to read Ballpark file."
+                                        + &format!("{:?}", err);
+                                }
+                            }
+                        }
+                        Era::None => {
+                            app.create_game_error =
+                                app.create_game_error.clone() + "Please select an Era.";
+                        }
+                    }
+                } else {
+                    // update error message and display error window
+                    if app.away_team_file.is_none() {
+                        app.create_game_error = app.create_game_error.clone()
+                            + "Must select a *.dbt file for away team.\n";
+                    }
+                    if app.home_team_file.is_none() {
+                        app.create_game_error = app.create_game_error.clone()
+                            + "Must select a *.dbt file for home team.\n";
+                    }
+                    if app.ballpark_file.is_none() {
+                        app.create_game_error = app.create_game_error.clone()
+                            + "Must select a *.dbb file for ballpark.\n";
+                    }
+                }
+                match app.create_game_era {
+                    Era::Modern => {
+                        if app.away_team.is_some()
+                            && app.home_team.is_some()
+                            && app.ballpark_modern.is_some()
+                        {
+                            match create_modern_game(
+                                app.home_team.clone().unwrap(),
+                                app.away_team.clone().unwrap(),
+                                app.ballpark_modern.clone().unwrap(),
+                            ) {
+                                Ok(game) => {
+                                    app.game_modern = Some(game);
+                                    app.home_team_active =
+                                        Some(app.game_modern.clone().unwrap().home_active.clone());
+                                    app.away_team_active =
+                                        Some(app.game_modern.clone().unwrap().away_active.clone());
+                                    //TODO: make the window close after successfully generating a game
+                                }
+                                Err(err) => {
+                                    app.create_game_error =
+                                        app.create_game_error.clone() + &format!("{:?}", err)
+                                }
+                            }
+                        }
+                    }
+                    Era::Ancient => {
+                        if app.away_team.is_some()
+                            && app.home_team.is_some()
+                            && app.ballpark_ancient.is_some()
+                        {}
+                    }
+                    Era::None => {
+                        app.create_game_error =
+                            app.create_game_error.clone() + "Please select an Era.";
+                    }
+                }
+            }
+            // if everything loaded okay, generate game
+            ui.add(eframe::egui::Label::new(
+                RichText::new(&app.create_game_error).color(Color32::RED),
+            ));
+        });
+}
+
+/// renders the bottom panel
+fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
+    egui::TopBottomPanel::bottom("Control Panel").show(ctx, |ui| {
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut app.bottom_panel, Panel::Game, "Game");
+            ui.selectable_value(&mut app.bottom_panel, Panel::Menu, "Menu");
+            ui.selectable_value(&mut app.bottom_panel, Panel::Roster, "Roster");
+            ui.selectable_value(&mut app.bottom_panel, Panel::Debug, "Debug");
+        });
+        ui.separator();
+        match app.bottom_panel {
+            Panel::Menu => {
+                ui.horizontal(|ui| {
+                    ui.menu_button("Game", |ui| {
+                        if ui.button("Create Game").clicked() {
+                            app.create_game_window = true;
+                            ui.close_menu();
+                        }
+                        if ui.button("Start Game").clicked() {
+                            // check if there are active teams loaded
+                            if app.home_team_active.is_some() && app.away_team_active.is_some() {
+                                app.game_state = Some(init_new_game_state(
+                                    app.home_team_active.clone().unwrap().pitching[0].clone(),
+                                    app.away_team_active.clone().unwrap().pitching[0].clone(),
+                                ));
+                            } else {
+                                println!("Load teams first.");
+                            }
+                        }
+                        if ui.button("Load Game").clicked() {
+                            // TODO: add load game feature (need to add save game feature first)
+                            println!("Load game feature has not yet been added.");
+                            ui.close_menu();
+                        }
+                        if ui.button("Save Game").clicked() {
+                            // TODO: add save game feature
+                            println!("Save game feature has not been added yet.");
+                        }
+                    });
+                    ui.menu_button("About", |ui| {
+                        if ui.button("Version").clicked() {
+                            app.version_window = true;
+                            ui.close_menu();
+                        }
+                        if ui.button("Help").clicked() {
+                            // TODO: add help window
+                            println!("No help menu available at this time.");
+                            ui.close_menu();
+                        }
+                        if ui.button("About Deadball").clicked() {
+                            app.about_deadball_window = true;
+                            ui.close_menu();
+                        }
+                        if ui.button("About This App").clicked() {
+                            app.about_app_window = true;
+                            ui.close_menu();
+                        }
+                    })
+                });
+            }
+            Panel::Game => {
+                if ui.button("Next At Bat").clicked() {
+                    // TODO: this could be cleaner
+                    if app.game_state.is_some() && app.game_modern.is_some() {
+                        // TODO: update with ancient game when ready
+                        match app.game_state.clone().unwrap().status {
+                            GameStatus::NotStarted => {
+                                app.game_state.as_mut().unwrap().status = GameStatus::Ongoing
+                            }
+                            GameStatus::Ongoing => {
+                                app.game_state = Some(modern_game_flow(
+                                    &app.game_modern.clone().unwrap(),
+                                    app.game_state.clone().unwrap(),
+                                ));
+                                println!("{:?}", app.game_state);
+                            }
+                            GameStatus::Over => {}
+                        }
+                    }
+                    if app.game_state.is_some() && app.game_modern.is_some() {
+                        // TODO: update with ancient game when ready
+                        app.game_state = Some(modern_game_flow(
+                            &app.game_modern.clone().unwrap(),
+                            app.game_state.clone().unwrap(),
+                        ));
+                        println!("{:?}", app.game_state);
+                    } else {
+                        println!("Need to initialize a game first.");
+                    }
+                }
+            }
+            Panel::Roster => {
+                ui.horizontal(|ui| {
+                    if ui.button("Batting Order").clicked() {
+                        println!("Batting Order button placeholder.");
+                    }
+                    if ui.button("Bullpen").clicked() {
+                        println!("Bullpen button placeholder.");
+                    }
+                    if ui.button("View Team").clicked() {
+                        println!("View Team button placeholder.");
+                    }
+                });
+            }
+            Panel::Debug => {
+                ui.horizontal(|ui| {
+                    if ui.button("Game").clicked() {
+                        app.debug_window = true;
+                        app.debug_copied = false;
+                    }
+                });
+            }
+        }
+    });
+}
+
+/// render left panel
+fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
+    egui::SidePanel::left("Away Team").show(ctx, |ui| {
+        ui.heading(&app.away_team_name);
+        let away_name1: String;
+        let away_name2: String;
+        let away_name3: String;
+        let away_name4: String;
+        let away_name5: String;
+        let away_name6: String;
+        let away_name7: String;
+        let away_name8: String;
+        let away_name9: String;
+        if app.away_team.is_some() {
+            let away_team = app.away_team.as_ref().unwrap();
+            let away_team_active = app.game_modern.clone().unwrap().away_active;
+            app.away_team_name = away_team.name.to_string();
+            app.away_batter1 = Some(away_team_active.roster[0].clone());
+            app.away_batter2 = Some(away_team_active.roster[1].clone());
+            app.away_batter3 = Some(away_team_active.roster[2].clone());
+            app.away_batter4 = Some(away_team_active.roster[3].clone());
+            app.away_batter5 = Some(away_team_active.roster[4].clone());
+            app.away_batter6 = Some(away_team_active.roster[5].clone());
+            app.away_batter7 = Some(away_team_active.roster[6].clone());
+            app.away_batter8 = Some(away_team_active.roster[7].clone());
+            app.away_batter9 = Some(away_team_active.pitching[0].clone());
+            away_name1 = format!(
+                "{} {}",
+                app.away_batter1.clone().unwrap().first_name,
+                app.away_batter1.clone().unwrap().last_name
+            );
+            away_name2 = format!(
+                "{} {}",
+                app.away_batter2.clone().unwrap().first_name,
+                app.away_batter2.clone().unwrap().last_name
+            );
+            away_name3 = format!(
+                "{} {}",
+                app.away_batter3.clone().unwrap().first_name,
+                app.away_batter3.clone().unwrap().last_name
+            );
+            away_name4 = format!(
+                "{} {}",
+                app.away_batter4.clone().unwrap().first_name,
+                app.away_batter4.clone().unwrap().last_name
+            );
+            away_name5 = format!(
+                "{} {}",
+                app.away_batter5.clone().unwrap().first_name,
+                app.away_batter5.clone().unwrap().last_name
+            );
+            away_name6 = format!(
+                "{} {}",
+                app.away_batter6.clone().unwrap().first_name,
+                app.away_batter6.clone().unwrap().last_name
+            );
+            away_name7 = format!(
+                "{} {}",
+                app.away_batter7.clone().unwrap().first_name,
+                app.away_batter7.clone().unwrap().last_name
+            );
+            away_name8 = format!(
+                "{} {}",
+                app.away_batter8.clone().unwrap().first_name,
+                app.away_batter8.clone().unwrap().last_name
+            );
+            away_name9 = format!(
+                "{} {}",
+                app.away_batter9.clone().unwrap().first_name,
+                app.away_batter9.clone().unwrap().last_name
+            );
+        } else {
+            away_name1 = "None".to_string();
+            away_name2 = "None".to_string();
+            away_name3 = "None".to_string();
+            away_name4 = "None".to_string();
+            away_name5 = "None".to_string();
+            away_name6 = "None".to_string();
+            away_name7 = "None".to_string();
+            away_name8 = "None".to_string();
+            away_name9 = "None".to_string();
+        }
+        ui.horizontal(|ui| {
+            ui.label("1. ");
+            ui.label(away_name1);
+            // TODO: figure out a way to put baseball icon to indicate current batter
+        });
+        ui.horizontal(|ui| {
+            ui.label("2. ");
+            ui.label(away_name2);
+        });
+        ui.horizontal(|ui| {
+            ui.label("3. ");
+            ui.label(away_name3);
+        });
+        ui.horizontal(|ui| {
+            ui.label("4. ");
+            ui.label(away_name4);
+        });
+        ui.horizontal(|ui| {
+            ui.label("5. ");
+            ui.label(away_name5);
+        });
+        ui.horizontal(|ui| {
+            ui.label("6. ");
+            ui.label(away_name6);
+        });
+        ui.horizontal(|ui| {
+            ui.label("7. ");
+            ui.label(away_name7);
+        });
+        ui.horizontal(|ui| {
+            ui.label("8. ");
+            ui.label(away_name8);
+        });
+        ui.horizontal(|ui| {
+            ui.label("9. ");
+            ui.label(away_name9);
+        });
+    });
 }
