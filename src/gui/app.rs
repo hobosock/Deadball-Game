@@ -14,7 +14,7 @@ use std::fs;
 
 // EXTERNAL IMPORTS
 use eframe::{
-    egui::{self, Ui},
+    egui::{self, Context, Ui},
     epaint::{pos2, Color32},
 };
 use egui::{Rect, RichText};
@@ -231,208 +231,10 @@ impl<'a> eframe::App for DeadballApp {
         // app state updates
         update_debug_textedits(self);
         // check if other windows are open
-        egui::Window::new("Version")
-            .open(&mut self.version_window)
-            .show(ctx, |ui| {
-                draw_version_window(ui);
-            });
-        egui::Window::new("About Deadball Game")
-            .open(&mut self.about_deadball_window)
-            .show(ctx, |ui| {
-                draw_about_deadball_window(ui);
-            });
-        egui::Window::new("About this app")
-            .open(&mut self.about_app_window)
-            .show(ctx, |ui| {
-                draw_about_app_window(ui);
-            });
-        egui::Window::new("Debug Mode")
-            .open(&mut self.debug_window)
-            .show(ctx, |ui| {
-                // set debug state to current game state (if it exists)
-                if self.game_state.is_some() && self.debug_copied == false {
-                    self.debug_state = self.game_state.clone().unwrap();
-                    self.debug_copied = true;
-                    self.debug_inning_text = self.debug_state.inning.clone().to_string();
-                }
-                ui.horizontal(|ui| {
-                    ui.label("Game Status:");
-                    egui::ComboBox::from_label("Select status.")
-                        .selected_text(&self.debug_game_state_text)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.debug_state.status,
-                                GameStatus::NotStarted,
-                                "Not Started",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.status,
-                                GameStatus::Ongoing,
-                                "Ongoing",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.status,
-                                GameStatus::Over,
-                                "Over",
-                            );
-                        })
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Inning:");
-                    ui.text_edit_singleline(&mut self.debug_inning_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Inning Half:");
-                    egui::ComboBox::from_label("Select inning half.")
-                        .selected_text(self.debug_inning_half_text.clone())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.debug_state.inning_half,
-                                InningTB::Top,
-                                "^",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.inning_half,
-                                InningTB::Bottom,
-                                "v",
-                            );
-                        });
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Outs:");
-                    egui::ComboBox::from_label("Select outs.")
-                        .selected_text(self.debug_outs_text.clone())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::None, "None");
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::One, "One");
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::Two, "Two");
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::Three, "Three");
-                        });
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Runners On:");
-                    egui::ComboBox::from_label("Select base runners.")
-                        .selected_text(self.debug_runners_text.clone())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner000,
-                                "000",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner001,
-                                "001",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner010,
-                                "010",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner100,
-                                "100",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner011,
-                                "011",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner110,
-                                "110",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner101,
-                                "101",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner111,
-                                "111",
-                            );
-                        });
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Batting Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_batting1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Batting Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_batting2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Pitched Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_pitched1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Pitched Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_pitched2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Runs Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_runs1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Runs Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_runs2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Hits Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_hits1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Hits Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_hits2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Errors Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_errors1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Errors Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_errors2_text);
-                });
-                // update debug game state combo box text
-                match &self.debug_state.status {
-                    GameStatus::NotStarted => {
-                        self.debug_game_state_text = "Not Started".to_string()
-                    }
-                    GameStatus::Ongoing => self.debug_game_state_text = "Ongoing".to_string(),
-                    GameStatus::Over => self.debug_game_state_text = "Over".to_string(),
-                }
-                // update inning half combo box text
-                match &self.debug_state.inning_half {
-                    InningTB::Top => self.debug_inning_half_text = "^".to_string(),
-                    InningTB::Bottom => self.debug_inning_half_text = "v".to_string(),
-                }
-                // update outs combo box text
-                match &self.debug_state.outs {
-                    Outs::None => self.debug_outs_text = "None".to_string(),
-                    Outs::One => self.debug_outs_text = "One".to_string(),
-                    Outs::Two => self.debug_outs_text = "Two".to_string(),
-                    Outs::Three => self.debug_outs_text = "Three".to_string(),
-                }
-                // update runners on text
-                match &self.debug_state.runners {
-                    RunnersOn::Runner000 => self.debug_runners_text = "000".to_string(),
-                    RunnersOn::Runner001 => self.debug_runners_text = "001".to_string(),
-                    RunnersOn::Runner010 => self.debug_runners_text = "010".to_string(),
-                    RunnersOn::Runner100 => self.debug_runners_text = "100".to_string(),
-                    RunnersOn::Runner011 => self.debug_runners_text = "011".to_string(),
-                    RunnersOn::Runner110 => self.debug_runners_text = "110".to_string(),
-                    RunnersOn::Runner101 => self.debug_runners_text = "101".to_string(),
-                    RunnersOn::Runner111 => self.debug_runners_text = "111".to_string(),
-                }
-                // button to write changes to game state
-                ui.separator();
-                if ui.button("Write Changes").clicked() {
-                    self.game_state = Some(self.debug_state.clone());
-                }
-            });
+        draw_version_window(ctx, self);
+        draw_about_deadball_window(ctx, self);
+        draw_about_app_window(ctx, self);
+        draw_debug_window(self, ctx);
         egui::Window::new("Create new game")
             .open(&mut self.create_game_window)
             .show(ctx, |ui| {
@@ -1210,153 +1012,209 @@ fn update_debug_textedits(app: &mut DeadballApp) {
 }
 
 /// populates ui for the version window
-fn draw_version_window(ui: &mut Ui) {
-    ui.label("Version 0.1");
+fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
+    egui::Window::new("Version")
+        .open(&mut app.version_window)
+        .show(ctx, |ui| {
+            ui.label("Version 0.1");
+        });
 }
 
 // populates ui for the "About Deadball Game" window
-fn draw_about_deadball_window(ui: &mut Ui) {
-    ui.label(ABOUT_DEABALL);
-    ui.hyperlink("http://wmakers.net/deadball");
+fn draw_about_deadball_window(ctx: &Context, app: &mut DeadballApp) {
+    egui::Window::new("About Deadball Game")
+        .open(&mut app.about_deadball_window)
+        .show(ctx, |ui| {
+            ui.label(ABOUT_DEABALL);
+            ui.hyperlink("http://wmakers.net/deadball");
+        });
 }
 
 // populates ui for the "About this app" window
-fn draw_about_app_window(ui: &mut Ui) {
-    ui.label(ABOUT_APP);
+fn draw_about_app_window(ctx: &Context, app: &mut DeadballApp) {
+    egui::Window::new("About this app")
+        .open(&mut app.about_app_window)
+        .show(ctx, |ui| {
+            ui.label(ABOUT_APP);
+        });
 }
 
-fn draw_debug_window(ui: &mut Ui, app: &mut DeadballApp) {
-    // set debug state to current game state (if it exists)
-    if app.game_state.is_some() && app.debug_copied == false {
-        app.debug_state = app.game_state.clone().unwrap();
-        app.debug_copied = true;
-        app.debug_inning_text = app.debug_state.inning.clone().to_string();
-    }
-    ui.horizontal(|ui| {
-        ui.label("Game Status:");
-        egui::ComboBox::from_label("Select status.")
-            .selected_text(&app.debug_game_state_text)
-            .show_ui(ui, |ui| {
-                ui.selectable_value(
-                    &mut app.debug_state.status,
-                    GameStatus::NotStarted,
-                    "Not Started",
-                );
-                ui.selectable_value(&mut app.debug_state.status, GameStatus::Ongoing, "Ongoing");
-                ui.selectable_value(&mut app.debug_state.status, GameStatus::Over, "Over");
-            })
-    });
-    ui.horizontal(|ui| {
-        ui.label("Inning:");
-        ui.text_edit_singleline(&mut app.debug_inning_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Inning Half:");
-        egui::ComboBox::from_label("Select inning half.")
-            .selected_text(app.debug_inning_half_text.clone())
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut app.debug_state.inning_half, InningTB::Top, "^");
-                ui.selectable_value(&mut app.debug_state.inning_half, InningTB::Bottom, "v");
+fn draw_debug_window(app: &mut DeadballApp, ctx: &Context) {
+    egui::Window::new("Debug Mode")
+        .open(&mut app.debug_window)
+        .show(ctx, |ui| {
+            // set debug state to current game state (if it exists)
+            if app.game_state.is_some() && app.debug_copied == false {
+                app.debug_state = app.game_state.clone().unwrap();
+                app.debug_copied = true;
+                app.debug_inning_text = app.debug_state.inning.clone().to_string();
+            }
+            ui.horizontal(|ui| {
+                ui.label("Game Status:");
+                egui::ComboBox::from_label("Select status.")
+                    .selected_text(&app.debug_game_state_text)
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut app.debug_state.status,
+                            GameStatus::NotStarted,
+                            "Not Started",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.status,
+                            GameStatus::Ongoing,
+                            "Ongoing",
+                        );
+                        ui.selectable_value(&mut app.debug_state.status, GameStatus::Over, "Over");
+                    })
             });
-    });
-    ui.horizontal(|ui| {
-        ui.label("Outs:");
-        egui::ComboBox::from_label("Select outs.")
-            .selected_text(app.debug_outs_text.clone())
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut app.debug_state.outs, Outs::None, "None");
-                ui.selectable_value(&mut app.debug_state.outs, Outs::One, "One");
-                ui.selectable_value(&mut app.debug_state.outs, Outs::Two, "Two");
-                ui.selectable_value(&mut app.debug_state.outs, Outs::Three, "Three");
+            ui.horizontal(|ui| {
+                ui.label("Inning:");
+                ui.text_edit_singleline(&mut app.debug_inning_text);
             });
-    });
-    ui.horizontal(|ui| {
-        ui.label("Runners On:");
-        egui::ComboBox::from_label("Select base runners.")
-            .selected_text(app.debug_runners_text.clone())
-            .show_ui(ui, |ui| {
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner000, "000");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner001, "001");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner010, "010");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner100, "100");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner011, "011");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner110, "110");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner101, "101");
-                ui.selectable_value(&mut app.debug_state.runners, RunnersOn::Runner111, "111");
+            ui.horizontal(|ui| {
+                ui.label("Inning Half:");
+                egui::ComboBox::from_label("Select inning half.")
+                    .selected_text(app.debug_inning_half_text.clone())
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut app.debug_state.inning_half, InningTB::Top, "^");
+                        ui.selectable_value(
+                            &mut app.debug_state.inning_half,
+                            InningTB::Bottom,
+                            "v",
+                        );
+                    });
             });
-    });
-    ui.horizontal(|ui| {
-        ui.label("Batting Team 1:");
-        ui.text_edit_singleline(&mut app.debug_batting1_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Batting Team 2:");
-        ui.text_edit_singleline(&mut app.debug_batting2_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Pitched Team 1:");
-        ui.text_edit_singleline(&mut app.debug_pitched1_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Pitched Team 2:");
-        ui.text_edit_singleline(&mut app.debug_pitched2_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Runs Team 1:");
-        ui.text_edit_singleline(&mut app.debug_runs1_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Runs Team 2:");
-        ui.text_edit_singleline(&mut app.debug_runs2_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Hits Team 1:");
-        ui.text_edit_singleline(&mut app.debug_hits1_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Hits Team 2:");
-        ui.text_edit_singleline(&mut app.debug_hits2_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Errors Team 1:");
-        ui.text_edit_singleline(&mut app.debug_errors1_text);
-    });
-    ui.horizontal(|ui| {
-        ui.label("Errors Team 2:");
-        ui.text_edit_singleline(&mut app.debug_errors2_text);
-    });
-    // update debug game state combo box text
-    match &app.debug_state.status {
-        GameStatus::NotStarted => app.debug_game_state_text = "Not Started".to_string(),
-        GameStatus::Ongoing => app.debug_game_state_text = "Ongoing".to_string(),
-        GameStatus::Over => app.debug_game_state_text = "Over".to_string(),
-    }
-    // update inning half combo box text
-    match &app.debug_state.inning_half {
-        InningTB::Top => app.debug_inning_half_text = "^".to_string(),
-        InningTB::Bottom => app.debug_inning_half_text = "v".to_string(),
-    }
-    // update outs combo box text
-    match &app.debug_state.outs {
-        Outs::None => app.debug_outs_text = "None".to_string(),
-        Outs::One => app.debug_outs_text = "One".to_string(),
-        Outs::Two => app.debug_outs_text = "Two".to_string(),
-        Outs::Three => app.debug_outs_text = "Three".to_string(),
-    }
-    // update runners on text
-    match &app.debug_state.runners {
-        RunnersOn::Runner000 => app.debug_runners_text = "000".to_string(),
-        RunnersOn::Runner001 => app.debug_runners_text = "001".to_string(),
-        RunnersOn::Runner010 => app.debug_runners_text = "010".to_string(),
-        RunnersOn::Runner100 => app.debug_runners_text = "100".to_string(),
-        RunnersOn::Runner011 => app.debug_runners_text = "011".to_string(),
-        RunnersOn::Runner110 => app.debug_runners_text = "110".to_string(),
-        RunnersOn::Runner101 => app.debug_runners_text = "101".to_string(),
-        RunnersOn::Runner111 => app.debug_runners_text = "111".to_string(),
-    }
-    // button to write changes to game state
-    ui.separator();
-    if ui.button("Write Changes").clicked() {
-        app.game_state = Some(app.debug_state.clone());
-    }
+            ui.horizontal(|ui| {
+                ui.label("Outs:");
+                egui::ComboBox::from_label("Select outs.")
+                    .selected_text(app.debug_outs_text.clone())
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(&mut app.debug_state.outs, Outs::None, "None");
+                        ui.selectable_value(&mut app.debug_state.outs, Outs::One, "One");
+                        ui.selectable_value(&mut app.debug_state.outs, Outs::Two, "Two");
+                        ui.selectable_value(&mut app.debug_state.outs, Outs::Three, "Three");
+                    });
+            });
+            ui.horizontal(|ui| {
+                ui.label("Runners On:");
+                egui::ComboBox::from_label("Select base runners.")
+                    .selected_text(app.debug_runners_text.clone())
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner000,
+                            "000",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner001,
+                            "001",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner010,
+                            "010",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner100,
+                            "100",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner011,
+                            "011",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner110,
+                            "110",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner101,
+                            "101",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_state.runners,
+                            RunnersOn::Runner111,
+                            "111",
+                        );
+                    });
+            });
+            ui.horizontal(|ui| {
+                ui.label("Batting Team 1:");
+                ui.text_edit_singleline(&mut app.debug_batting1_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Batting Team 2:");
+                ui.text_edit_singleline(&mut app.debug_batting2_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Pitched Team 1:");
+                ui.text_edit_singleline(&mut app.debug_pitched1_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Pitched Team 2:");
+                ui.text_edit_singleline(&mut app.debug_pitched2_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Runs Team 1:");
+                ui.text_edit_singleline(&mut app.debug_runs1_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Runs Team 2:");
+                ui.text_edit_singleline(&mut app.debug_runs2_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Hits Team 1:");
+                ui.text_edit_singleline(&mut app.debug_hits1_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Hits Team 2:");
+                ui.text_edit_singleline(&mut app.debug_hits2_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Errors Team 1:");
+                ui.text_edit_singleline(&mut app.debug_errors1_text);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Errors Team 2:");
+                ui.text_edit_singleline(&mut app.debug_errors2_text);
+            });
+            // update debug game state combo box text
+            match &app.debug_state.status {
+                GameStatus::NotStarted => app.debug_game_state_text = "Not Started".to_string(),
+                GameStatus::Ongoing => app.debug_game_state_text = "Ongoing".to_string(),
+                GameStatus::Over => app.debug_game_state_text = "Over".to_string(),
+            }
+            // update inning half combo box text
+            match &app.debug_state.inning_half {
+                InningTB::Top => app.debug_inning_half_text = "^".to_string(),
+                InningTB::Bottom => app.debug_inning_half_text = "v".to_string(),
+            }
+            // update outs combo box text
+            match &app.debug_state.outs {
+                Outs::None => app.debug_outs_text = "None".to_string(),
+                Outs::One => app.debug_outs_text = "One".to_string(),
+                Outs::Two => app.debug_outs_text = "Two".to_string(),
+                Outs::Three => app.debug_outs_text = "Three".to_string(),
+            }
+            // update runners on text
+            match &app.debug_state.runners {
+                RunnersOn::Runner000 => app.debug_runners_text = "000".to_string(),
+                RunnersOn::Runner001 => app.debug_runners_text = "001".to_string(),
+                RunnersOn::Runner010 => app.debug_runners_text = "010".to_string(),
+                RunnersOn::Runner100 => app.debug_runners_text = "100".to_string(),
+                RunnersOn::Runner011 => app.debug_runners_text = "011".to_string(),
+                RunnersOn::Runner110 => app.debug_runners_text = "110".to_string(),
+                RunnersOn::Runner101 => app.debug_runners_text = "101".to_string(),
+                RunnersOn::Runner111 => app.debug_runners_text = "111".to_string(),
+            }
+            // button to write changes to game state
+            ui.separator();
+            if ui.button("Write Changes").clicked() {
+                app.game_state = Some(app.debug_state.clone());
+            }
+        });
 }
