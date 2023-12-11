@@ -1,9 +1,19 @@
 use rand::Rng;
 
 pub struct DebugConfig {
-    mode: bool,
-    rolls: Vec<i32>,
-    roll_index: usize,
+    pub mode: bool,
+    pub rolls: Vec<i32>,
+    pub roll_index: usize,
+}
+
+impl Default for DebugConfig {
+    fn default() -> Self {
+        Self {
+            mode: false,
+            rolls: vec![0],
+            roll_index: 0,
+        }
+    }
 }
 
 pub fn debug_roll(config: &mut DebugConfig, side: i32) -> i32 {

@@ -4,7 +4,10 @@
 // LOCAL IMPORTS
 use deadball::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
-use crate::gui::gui_functions::{runners_on_bool, update_player_labels};
+use crate::{
+    debug::DebugConfig,
+    gui::gui_functions::{runners_on_bool, update_player_labels},
+};
 use deadball::core::game_functions::{
     create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct, GameModern,
     GameState, GameStatus, InningTB, Outs, RunnersOn,
@@ -76,6 +79,7 @@ pub struct DeadballApp {
     about_app_window: bool,
     create_game_window: bool,
     debug_window: bool,
+    debug_roll_window: bool,
     // create game interface
     create_game_era: Era,
     away_team_file: Option<PathBuf>,
@@ -131,6 +135,7 @@ pub struct DeadballApp {
     debug_hits2_text: String,
     debug_errors1_text: String,
     debug_errors2_text: String,
+    debug_roll_state: DebugConfig,
 }
 
 impl<'a> Default for DeadballApp {
@@ -171,6 +176,7 @@ impl<'a> Default for DeadballApp {
             about_app_window: false,
             create_game_window: false,
             debug_window: false,
+            debug_roll_window: false,
             create_game_era: Era::None,
             away_team_file: None,
             away_team_file_dialog: None,
@@ -222,6 +228,7 @@ impl<'a> Default for DeadballApp {
             debug_hits2_text: "0".to_string(),
             debug_errors1_text: "0".to_string(),
             debug_errors2_text: "0".to_string(),
+            debug_roll_state: DebugConfig::default(),
         }
     }
 }
@@ -236,6 +243,7 @@ impl<'a> eframe::App for DeadballApp {
         draw_about_app_window(ctx, self);
         draw_debug_window(ctx, self);
         draw_create_new_game(ctx, self);
+        draw_debug_roll_window(ctx, self);
 
         // main window
         draw_bottom_panel(ctx, self);
@@ -730,6 +738,21 @@ fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
         });
 }
 
+fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
+    egui::Window::new("Roll Debug Mode")
+        .open(&mut app.debug_roll_window)
+        .show(ctx, |ui| {
+            // interface here
+            // check box to enable/disable debug roll mode
+            // text box to enter values
+            // button to add value to vector
+            // button to clear vector
+            // vector printed on screen
+            ui.checkbox(&mut app.debug_roll_state.mode, "Enable roll override.")
+                .on_hover_text("Check to replace rolls with predetermined values.");
+        });
+}
+
 /// renders the new game window
 fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Create new game")
@@ -1036,6 +1059,9 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                     if ui.button("Game").clicked() {
                         app.debug_window = true;
                         app.debug_copied = false;
+                    }
+                    if ui.button("Roll").clicked() {
+                        app.debug_roll_window = true;
                     }
                 });
             }
