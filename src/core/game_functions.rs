@@ -5,6 +5,7 @@ use std::fs;
 use text_colorizer::*;
 
 use crate::characters::{players::*, teams::*};
+use crate::gui::debug;
 
 use super::roll;
 
@@ -364,7 +365,11 @@ pub fn create_modern_game<'a>(
     return Ok(game);
 }
 
-pub fn modern_game_flow<'a>(game: &'a GameModern, mut state: GameState) -> GameState {
+pub fn modern_game_flow<'a>(
+    game: &'a GameModern,
+    mut state: GameState,
+    debug: DebugConfig,
+) -> GameState {
     // TODO: delete these debug print statements once it is fixed
     println!("{:?}", state);
     // check top of the 9th at a different place

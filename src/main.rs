@@ -3,7 +3,7 @@
  * ===========================================================================================*/
 // LOCAL IMPORTS
 use gui::app::*;
-mod debug;
+pub mod debug;
 mod gui;
 
 // EXTERNAL IMPORTS
