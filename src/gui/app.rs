@@ -136,6 +136,7 @@ pub struct DeadballApp {
     debug_errors1_text: String,
     debug_errors2_text: String,
     debug_roll_state: DebugConfig,
+    debug_roll_text: String,
 }
 
 impl<'a> Default for DeadballApp {
@@ -229,6 +230,7 @@ impl<'a> Default for DeadballApp {
             debug_errors1_text: "0".to_string(),
             debug_errors2_text: "0".to_string(),
             debug_roll_state: DebugConfig::default(),
+            debug_roll_text: "0".to_string(),
         }
     }
 }
@@ -742,14 +744,39 @@ fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Roll Debug Mode")
         .open(&mut app.debug_roll_window)
         .show(ctx, |ui| {
-            // interface here
-            // check box to enable/disable debug roll mode
-            // text box to enter values
-            // button to add value to vector
-            // button to clear vector
-            // vector printed on screen
             ui.checkbox(&mut app.debug_roll_state.mode, "Enable roll override.")
                 .on_hover_text("Check to replace rolls with predetermined values.");
+            ui.horizontal(|ui| {
+                ui.text_edit_singleline(&mut app.debug_roll_text);
+                if ui
+                    .button("Add")
+                    .on_hover_text("Add value to roll list.")
+                    .clicked()
+                {
+                    if app.debug_roll_state.rolls.len() == 1 && app.debug_roll_state.rolls[0] == 0 {
+                        if let Ok(val) = app.debug_roll_text.parse::<i32>() {
+                            app.debug_roll_state.rolls[0] = val;
+                        }
+                    } else {
+                        if let Ok(val) = app.debug_roll_text.parse::<i32>() {
+                            app.debug_roll_state.rolls.push(val);
+                        }
+                    }
+                }
+                if ui
+                    .button("Clear")
+                    .on_hover_text("Clear roll list.")
+                    .clicked()
+                {
+                    app.debug_roll_state.rolls = vec![0];
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label("Rolls:");
+                for roll in app.debug_roll_state.rolls.iter() {
+                    ui.label(roll.to_string());
+                }
+            });
         });
 }
 
