@@ -4,10 +4,9 @@ MODULE INCLUSIONS
 use std::fs;
 use text_colorizer::*;
 
-use crate::characters::{players::*, teams::*};
-use crate::gui::debug;
-
 use super::roll;
+use crate::characters::{players::*, teams::*};
+use crate::gui::debug::{debug_roll, DebugConfig};
 
 /*========================================================
 ENUM DEFINITIONS
