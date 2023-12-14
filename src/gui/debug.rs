@@ -1,5 +1,6 @@
 use rand::Rng;
 
+#[derive(Clone)]
 pub struct DebugConfig {
     pub mode: bool,
     pub rolls: Vec<i32>,
@@ -24,6 +25,7 @@ pub fn debug_roll(config: &mut DebugConfig, side: i32) -> i32 {
         // make sure enough rolls were specified, if not rng like normal
         if config.rolls.len() > config.roll_index {
             roll = config.rolls[config.roll_index];
+            config.roll_index += 1; // increment index for next roll
         } else {
             roll = rand::thread_rng().gen_range(1..side);
         }

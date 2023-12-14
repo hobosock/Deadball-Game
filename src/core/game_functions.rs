@@ -367,7 +367,7 @@ pub fn create_modern_game<'a>(
 pub fn modern_game_flow<'a>(
     game: &'a GameModern,
     mut state: GameState,
-    debug: DebugConfig,
+    mut debug: DebugConfig,
 ) -> GameState {
     // TODO: delete these debug print statements once it is fixed
     println!("{:?}", state);
@@ -393,7 +393,7 @@ pub fn modern_game_flow<'a>(
                     state.runners = RunnersOn::Runner000;
                 }
                 _ => {
-                    state = modern_inning_flow(game, state);
+                    state = modern_inning_flow(game, state, debug);
                 }
             },
             InningTB::Bottom => {
@@ -405,7 +405,7 @@ pub fn modern_game_flow<'a>(
                         state.inning += 1;
                     }
                     _ => {
-                        state = modern_inning_flow(game, state);
+                        state = modern_inning_flow(game, state, debug);
                     }
                 }
             }
@@ -421,7 +421,11 @@ pub fn modern_game_flow<'a>(
     return state;
 }
 
-pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> GameState {
+pub fn modern_inning_flow<'a>(
+    game: &'a GameModern,
+    mut state: GameState,
+    mut debug: DebugConfig,
+) -> GameState {
     match state.inning_half {
         InningTB::Top => {
             // should match Bottom arm, just flip the teams - probably a better way to do this
@@ -435,11 +439,23 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                     let pd = state.current_pitcher_team1.pitch_die;
                     let mut pitch_result: i32;
                     if pd > 0 {
-                        pitch_result = roll(pd);
+                        if debug.mode {
+                            pitch_result = debug_roll(&mut debug, pd);
+                        } else {
+                            pitch_result = roll(pd);
+                        }
                     } else {
-                        pitch_result = -1 * roll(pd.abs());
+                        if debug.mode {
+                            pitch_result = -1 * debug_roll(&mut debug, pd.abs());
+                        } else {
+                            pitch_result = -1 * roll(pd.abs());
+                        }
                     }
-                    pitch_result += roll(100);
+                    if debug.mode {
+                        pitch_result += debug_roll(&mut debug, 100);
+                    } else {
+                        pitch_result += roll(100);
+                    }
                     let swing_result = at_bat(
                         game.home_active.batting_order[state.batting_team2 as usize].batter_target,
                         game.home_active.batting_order[state.batting_team2 as usize].on_base_target,
@@ -453,19 +469,35 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
 
                     match swing_result {
                         AtBatResults::Oddity => {
-                            let oddity_result = roll(10) + roll(10);
+                            let oddity_result: i32;
+                            if debug.mode {
+                                oddity_result =
+                                    debug_roll(&mut debug, 10) + debug_roll(&mut debug, 10);
+                            } else {
+                                oddity_result = roll(10) + roll(10);
+                            }
                             state = oddity(&oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
-                            let mut hit_result = roll(20);
+                            let mut hit_result: i32;
+                            if debug.mode {
+                                hit_result = debug_roll(&mut debug, 20);
+                            } else {
+                                hit_result = roll(20);
+                            }
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
                             // hit roll
-                            let hit_result = roll(20);
+                            let hit_result: i32;
+                            if debug.mode {
+                                hit_result = debug_roll(&mut debug, 20);
+                            } else {
+                                hit_result = roll(20);
+                            }
                             state = hit_table(&hit_result, state);
                         }
                         AtBatResults::Walk => {
@@ -477,7 +509,12 @@ pub fn modern_inning_flow<'a>(game: &'a GameModern, mut state: GameState) -> Gam
                             // TODO: Not sure I am implementing this correctly, see page 29
                             // get position
                             // TODO: get player traits
-                            let def_roll = roll(12);
+                            let def_roll: i32;
+                            if debug.mode {
+                                def_roll = debug_roll(&mut debug, 12);
+                            } else {
+                                def_roll = roll(12);
+                            }
                             if def_roll <= 2 {
                                 // fielder makes an error
                                 // TODO: these kind of match statements are redundant, clean it up
