@@ -302,7 +302,7 @@ pub fn load_player(contents: String) -> Player {
 }
 
 // writes a Player struct to a *.DBP file
-// TODO - shouldn't this take a reference to a player struct?
+// TODO: - shouldn't this take a reference to a player struct?
 pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("First Name: ");
@@ -419,7 +419,7 @@ pub fn load_names() -> (Vec<String>, Vec<String>) {
 // TODO: might add aging at a later date
 // TODO: could add mechanic for farmhand/prospect/veteran/etc.
 
-// generates a player name
+/// generates a player name
 pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (String, String) {
     let len_first = firstnames.len();
     let len_last = lastnames.len();
@@ -430,7 +430,7 @@ pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (Stri
     return (first_name, last_name);
 }
 
-// generates handedness
+/// generates handedness
 pub fn generate_handedness(player_type: &PlayerClass) -> Handedness {
     let hand: Handedness;
     match player_type {
@@ -466,7 +466,7 @@ pub fn generate_handedness(player_type: &PlayerClass) -> Handedness {
     return hand;
 }
 
-// generate batter target and on base target
+/// generate batter target and on base target
 pub fn generate_batter_target(player_type: &PlayerClass) -> (i32, i32) {
     let bt: i32;
     match player_type {
@@ -484,7 +484,7 @@ pub fn generate_batter_target(player_type: &PlayerClass) -> (i32, i32) {
     return (bt, ot);
 }
 
-// generate pitch die
+/// generate pitch die
 pub fn generate_pitch_die(player_type: &PlayerClass) -> i32 {
     let pd: i32;
     match player_type {
@@ -506,7 +506,8 @@ pub fn generate_pitch_die(player_type: &PlayerClass) -> i32 {
     }
     return pd;
 }
-// generate traits
+
+/// generate traits
 pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     let mut traits: Vec<Traits> = vec![];
     // roll for chance of 2 traits
@@ -517,7 +518,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     } else {
         num_traits = 1;
     }
-    // TODO could clean this up so only a single none is written, but it doesn't matter that much
+    // TODO: could clean this up so only a single none is written, but it doesn't matter that much
     // so I'm not going to worry about it right now
     for _i in 0..num_traits {
         let result = roll(10) + roll(10);
@@ -574,7 +575,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     return traits;
 }
 
-// generates a new player in struct format
+/// generates a new player in struct format
 pub fn generate_player(
     player_type: PlayerClass,
     //era: &Era,

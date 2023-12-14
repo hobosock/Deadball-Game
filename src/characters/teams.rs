@@ -253,7 +253,7 @@ pub struct ActiveTeam {
 FUNCTIONS
 ==========================================*/
 
-// load team file *.DBT
+/// load team file *.DBT
 pub fn load_team(contents: String) -> Team {
     // initialize variables for all the different fields
     let mut name = String::new();
@@ -459,7 +459,7 @@ pub fn load_team(contents: String) -> Team {
     team_data
 }
 
-// write team file *.DBT
+/// write team file *.DBT
 pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("TEAM: ");
@@ -571,6 +571,7 @@ pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
     write_result
 }
 
+/// load modern park baseball file
 pub fn load_park_modern(contents: String) -> BallparkModern {
     // initialize fields
     let mut name = String::new();
@@ -690,6 +691,7 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
     park_data
 }
 
+/// writes modern park struct to text file
 pub fn write_ballpark_modern(data: &BallparkModern, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("NAME: ");
@@ -759,6 +761,7 @@ pub fn write_ballpark_modern(data: &BallparkModern, filename: &str) -> Result<()
     return write_result;
 }
 
+/// loads ancient era park from text file to struct
 pub fn load_park_ancient(contents: String) -> BallparkAncient {
     // initialize fields
     let mut name = String::new();
@@ -853,6 +856,7 @@ pub fn load_park_ancient(contents: String) -> BallparkAncient {
     park_data
 }
 
+/// writes ancient era ballpark struct to text file
 pub fn write_ballpark_ancient(
     data: &BallparkAncient,
     filename: &str,
@@ -909,6 +913,7 @@ pub fn write_ballpark_ancient(
     return write_result;
 }
 
+/// turns a Team struct into separate vectors for fielders/bench/pitcher/bullpen
 pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<Player>) {
     let mut roster = Vec::new();
     let mut bench = Vec::new();
@@ -959,7 +964,7 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
     return (roster, bench, pitcher, bullpen);
 }
 
-// generate ballpark names - two words, CSV for each? some kind of name and then park type
+/// generate ballpark names - two words, CSV for each? some kind of name and then park type
 pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> String {
     let len1 = name1.len();
     let len2 = name2.len();
@@ -971,14 +976,14 @@ pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> Strin
     return name;
 }
 
-// generate manager - can borrow a lot from player gen function
+/// generate manager - can borrow a lot from player gen function
 pub fn generate_manager(firstnames: &Vec<String>, lastnames: &Vec<String>) -> String {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     let name = first_name + &last_name;
     return name;
 }
 
-// generate logo
+/// generate logo
 pub fn generate_logo(logos: &Vec<String>) -> String {
     let len1 = logos.len();
     let roll1 = roll(len1 as i32);
@@ -986,7 +991,7 @@ pub fn generate_logo(logos: &Vec<String>) -> String {
     return logo;
 }
 
-// generate location
+/// generate location
 pub fn generate_location() -> Location {
     let result = roll(5);
     let location: Location;
@@ -1014,7 +1019,7 @@ pub fn generate_location(locations: Vec<String>) -> String {
 }
 */
 
-// generate mascot
+/// generate mascot
 pub fn generate_mascot(mascots: &Vec<String>) -> String {
     let len1 = mascots.len();
     let roll1 = roll(len1 as i32);
@@ -1022,7 +1027,8 @@ pub fn generate_mascot(mascots: &Vec<String>) -> String {
     return mascot;
 }
 
-// generate priority - TODO make it impact player ages and traits?
+//TODO: make it impact player ages and traits?
+/// generate team priority
 pub fn generate_priority() -> Priority {
     let result = roll(7);
     let priority: Priority;
@@ -1047,7 +1053,7 @@ pub fn generate_priority() -> Priority {
     return priority;
 }
 
-// generate makeup - same TODO
+/// generate makeup - same TODO
 pub fn generate_makeup() -> Makeup {
     let result = roll(4);
     let makeup: Makeup;
@@ -1066,7 +1072,7 @@ pub fn generate_makeup() -> Makeup {
     return makeup;
 }
 
-// generate fanbase
+/// generate fanbase
 pub fn generate_fanbase() -> Fanbase {
     let result = roll(5);
     let fanbase: Fanbase;
@@ -1087,7 +1093,7 @@ pub fn generate_fanbase() -> Fanbase {
     return fanbase;
 }
 
-// generate manager position
+/// generate manager position
 pub fn generate_manager_position() -> Position {
     let result = roll(10);
     let position: Position;
@@ -1115,7 +1121,7 @@ pub fn generate_manager_position() -> Position {
     return position;
 }
 
-// generate manager league
+/// generate manager league
 pub fn generate_league(position: &Position) -> ManagerLeague {
     let league: ManagerLeague;
     match position {
@@ -1133,13 +1139,14 @@ pub fn generate_league(position: &Position) -> ManagerLeague {
     }
     return league;
 }
-// generate retired - just roll
+
+/// generate retired - just roll
 pub fn generate_retired() -> i32 {
     let result = roll(30);
     return result;
 }
 
-// generate personality
+/// generate personality
 pub fn generate_personality(personalities: &Vec<String>) -> String {
     let len1 = personalities.len();
     let result = roll(len1 as i32);
@@ -1199,7 +1206,7 @@ pub fn generate_personality() -> Personality {
 }
 */
 
-// generate motto???
+/// generate motto???
 pub fn generate_motto(mottos: &Vec<String>) -> String {
     let len1 = mottos.len();
     let roll1 = roll(len1 as i32);
@@ -1207,7 +1214,7 @@ pub fn generate_motto(mottos: &Vec<String>) -> String {
     return motto;
 }
 
-// generate owner background
+/// generate owner background
 pub fn generate_background(backgrounds: &Vec<String>) -> String {
     let len1 = backgrounds.len();
     let roll1 = roll(len1 as i32);
@@ -1266,7 +1273,7 @@ pub fn generate_background() -> Background {
 }
 */
 
-// generate park type functions
+/// generate park type functions
 pub fn generate_ancient_park_type() -> StadiumTypeAncient {
     let result = roll(3);
     let park_type: StadiumTypeAncient;
@@ -1283,6 +1290,7 @@ pub fn generate_ancient_park_type() -> StadiumTypeAncient {
     return park_type;
 }
 
+/// generate a modern park type
 pub fn generate_modern_park_type() -> StadiumTypeModern {
     let result = roll(5);
     let park_type: StadiumTypeModern;
@@ -1303,7 +1311,7 @@ pub fn generate_modern_park_type() -> StadiumTypeModern {
     return park_type;
 }
 
-//generate condition function
+/// generate condition function
 pub fn generate_ballpark_condition(era: Era) -> Condition {
     let mut result = roll(20);
     let condition: Condition;
@@ -1324,11 +1332,11 @@ pub fn generate_ballpark_condition(era: Era) -> Condition {
     return condition;
 }
 
-// generate turf function
+/// generate turf function
 pub fn generate_turf() -> Turf {
     let result = roll(20);
     let turf: Turf;
-    // TODO make turf impact steals, etc.
+    // TODO: make turf impact steals, etc.
     if result <= 2 {
         turf = Turf::Ragged;
         // -1 to steal and infield defense
@@ -1342,11 +1350,11 @@ pub fn generate_turf() -> Turf {
     return turf;
 }
 
-// generate roof function
+/// generate roof function
 pub fn generate_roof() -> Roof {
     let result = roll(20);
     let roof: Roof;
-    // TODO make roof impact play
+    // TODO: make roof impact play
     if result <= 13 {
         roof = Roof::NoRoof;
     } else if result >= 14 && result <= 15 {
@@ -1358,8 +1366,8 @@ pub fn generate_roof() -> Roof {
     return roof;
 }
 
-// generate ballpark quirks functions
-// TODO make quirks impact play
+/// generate ballpark quirks functions
+// TODO: make quirks impact play
 pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
     let mut quirks: Vec<Quirks> = vec![];
     if quirk_num == 0 {
@@ -1398,7 +1406,7 @@ pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
     return quirks;
 }
 
-// generate ballpark functions
+/// generate ballpark functions
 pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> BallparkAncient {
     // generate info
     let park_type = generate_ancient_park_type();
@@ -1423,7 +1431,7 @@ pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Ba
         }
     }
     let condition = generate_ballpark_condition(Era::Ancient);
-    // TODO influence fanbase
+    // TODO: influence fanbase
     // quirk roll - match stadium type for number of rolls
 
     // build struct
@@ -1438,6 +1446,7 @@ pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Ba
     return ballpark;
 }
 
+/// generate a modern ballpark struct
 pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> BallparkModern {
     // generate info
     let park_type = generate_modern_park_type();
@@ -1475,7 +1484,7 @@ pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Bal
             turf = generate_turf();
             roof = generate_roof();
             quirk_num = 0;
-            // TODO generate turf for other stadium types???
+            // TODO: generate turf for other stadium types???
         }
         StadiumTypeModern::BaseballPalace => {
             capacity = 50000;
@@ -1485,7 +1494,7 @@ pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Bal
         }
     }
     let condition = generate_ballpark_condition(Era::Modern);
-    // TODO influence fanbase
+    // TODO: influence fanbase
     // quirk roll - match stadium type for number of rolls
 
     // build struct
@@ -1502,8 +1511,8 @@ pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Bal
     return ballpark;
 }
 
-// generate team function
-// TODO combine inputs - load all the csv databases into a vector or array, makes it easier to pass into functions
+/// generate team function
+// TODO: combine inputs - load all the csv databases into a vector or array, makes it easier to pass into functions
 // probably need to be references as well
 pub fn generate_team(
     era: Era,
@@ -1536,7 +1545,7 @@ pub fn generate_team(
     // create player structs, then write to files - it's the filenames that need to be stored in
     // the team struct
     for i in 0..starters_num {
-        // TODO IDK what to do here, should always be 8 position players so I'm just going to hard
+        // TODO: IDK what to do here, should always be 8 position players so I'm just going to hard
         // code for now
         if i == 0 {
             position = Position::Catcher;
@@ -1692,7 +1701,7 @@ pub fn generate_team(
     // build team struct
     let new_team = Team {
         name: name.to_string(),
-        ballpark: ballpark_string, // TODO auto generate or user define
+        ballpark: ballpark_string, // TODO: auto generate or user define
         manager: manager_name,
         logo: generate_logo(logos),
         era: era,

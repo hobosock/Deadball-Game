@@ -173,6 +173,7 @@ pub struct TeamError {
 /*========================================================
 FUNCTION DEFINITIONS
 ========================================================*/
+/// takes MSS and batter targets, return AtBatResults enum
 pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatResults {
     let mut at_bat_result = AtBatResults::MegaOut;
 
@@ -201,6 +202,7 @@ pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatR
     at_bat_result
 }
 
+/// creates a GameModern struct
 pub fn create_modern_game<'a>(
     home: Team,
     away: Team,
@@ -364,6 +366,7 @@ pub fn create_modern_game<'a>(
     return Ok(game);
 }
 
+/// call to enter core game logic loop
 pub fn modern_game_flow<'a>(
     game: &'a GameModern,
     mut state: GameState,
@@ -421,6 +424,7 @@ pub fn modern_game_flow<'a>(
     return state;
 }
 
+/// runs each half inning
 pub fn modern_inning_flow<'a>(
     game: &'a GameModern,
     mut state: GameState,
@@ -1301,7 +1305,7 @@ pub fn modern_inning_flow<'a>(
     }
 }
 
-// rolls on the oddity table and updates game state
+/// rolls on the oddity table and updates game state
 pub fn oddity<'b>(
     oddity_result: &i32,
     pitch_result: &i32,
@@ -1392,7 +1396,7 @@ pub fn oddity<'b>(
     }
 }
 
-// bumps hit roll up a level on the hit table
+/// bumps hit roll up a level on the hit table
 pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
     // based on 2E Deadball quick reference hit table
     let mut crit_result: i32 = *hit_result;
@@ -1413,7 +1417,7 @@ pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
     return crit_result;
 }
 
-// rolls on the hit table and updates game state accordingly
+/// rolls on the hit table and updates game state accordingly
 pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
     // 1. defense roll (if needed)
     // 2. advance runners
@@ -1628,9 +1632,9 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
     }
 }
 
-// TODO find position player function - finds player info based on position and inning
+// TODO: find position player function - finds player info based on position and inning
 
-// defense roll function - rolls on the defense table and updates game state
+/// defense roll function - rolls on the defense table and updates game state
 pub fn defense<'b>(
     mut state: GameState,
     def_result: &i32,
@@ -1710,7 +1714,7 @@ pub fn defense<'b>(
         return (state, advance, base);
     }
 }
-// advance runners function - handles base runners and scoring after a hit/etc.
+/// advance runners function - handles base runners and scoring after a hit/etc.
 // for now I think the best way is to handle advancing runners first, then add the batter after
 pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState {
     if *advance_num == 1 {
@@ -1891,7 +1895,7 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
     }
 }
 
-// gets number of runners on base
+/// gets number of runners on base
 pub fn runnerson(state: &GameState) -> u32 {
     match state.runners {
         RunnersOn::Runner000 => {
@@ -1921,7 +1925,7 @@ pub fn runnerson(state: &GameState) -> u32 {
     }
 }
 
-// function to put a hitter onto the bases
+/// function to put a hitter onto the bases
 // certain conditions shouldn't come up ever, so just skip them
 pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
     match state.runners {
@@ -1990,13 +1994,14 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
     }
 }
 
-// function to get last digit of swing_result - used for determining which fielder makes the out
+/// function to get last digit of swing_result - used for determining which fielder makes the out
 pub fn get_swing_position(pitch_result: &i32) -> i32 {
     let last_digit = *pitch_result % 10;
     return last_digit;
 }
 
-// convenience function to initialize a game state struct
+// TODO: fn default under struct definition instead?
+/// convenience function to initialize a game state struct
 pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> GameState {
     let game_state = GameState {
         status: GameStatus::NotStarted,
