@@ -1050,6 +1050,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                 app.game_state = Some(modern_game_flow(
                                     &app.game_modern.clone().unwrap(),
                                     app.game_state.clone().unwrap(),
+                                    app.debug_roll_state.clone(),
                                 ));
                                 println!("{:?}", app.game_state);
                             }
@@ -1061,6 +1062,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                         app.game_state = Some(modern_game_flow(
                             &app.game_modern.clone().unwrap(),
                             app.game_state.clone().unwrap(),
+                            app.debug_roll_state.clone(),
                         ));
                         println!("{:?}", app.game_state);
                     } else {
