@@ -155,6 +155,7 @@ mod tests {
 
     //use crate::core::gameFunctions::atBatResults;
     use crate::core::{game_functions, roll};
+    use crate::gui::debug::{debug_roll, DebugConfig};
     use crate::{
         characters::players::*, characters::teams::*, core::file_locations::*,
         core::game_functions::*,
@@ -946,5 +947,61 @@ mod tests {
         let second_baseman = find_by_position(Position::Secondbase, &roster).unwrap();
         assert_eq!(second_baseman.batter_target, 26); // this was easier than actually comparing
                                                       // name strings or something, lol
+    }
+
+    // debug_roll test
+    #[test]
+    fn test_debug_roll() {
+        let mut config = DebugConfig {
+            mode: true,
+            rolls: vec![12, 15, 20],
+            roll_index: 0,
+        };
+        let result1 = debug_roll(&mut config, 10);
+        let result2 = debug_roll(&mut config, 10);
+        let result3 = debug_roll(&mut config, 10);
+        assert_eq!(result1, 12);
+        assert_eq!(result2, 15);
+        assert_eq!(result3, 20);
+    }
+
+    /*
+    // oddity test
+    #[test]
+    fn test_oddity() {
+        let odd = oddity(&1, &1, &game, state);
+    }
+    */
+
+    /*
+    // hit_table test
+    #[test]
+    fn test_hit_table() {
+        let mut state = GameState { status: GameStatus::Ongoing, inning: 1, inning_half: InningTB::Top, outs: Outs::One, runners: RunnersOn::Runner000, batting_team1: (), batting_team2: (), current_pitcher_team1: (), current_pitcher_team2: (), pitched_team1: (), pitched_team2: (), runs_team1: (), runs_team2: (), hits_team1: (), hits_team2: (), errors_team1: (), errors_team2: () };
+        let hit_result = hit_table(&1, state);
+    }
+    */
+
+    // get_swing_position()
+    #[test]
+    fn test_get_swing_position() {
+        let mut position = get_swing_position(&31);
+        assert_eq!(position, 1);
+        position = get_swing_position(&42);
+        assert_eq!(position, 2);
+        position = get_swing_position(&53);
+        assert_eq!(position, 3);
+        position = get_swing_position(&64);
+        assert_eq!(position, 4);
+        position = get_swing_position(&75);
+        assert_eq!(position, 5);
+        position = get_swing_position(&86);
+        assert_eq!(position, 6);
+        position = get_swing_position(&17);
+        assert_eq!(position, 7);
+        position = get_swing_position(&28);
+        assert_eq!(position, 8);
+        position = get_swing_position(&39);
+        assert_eq!(position, 9);
     }
 }
