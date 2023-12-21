@@ -1,1216 +1,16 @@
-use deadball::characters::{players::*, teams::*};
-use deadball::core::file_locations::*;
-use deadball::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, modern_inning_flow,
-    new_game_state_struct, GameModern, GameState, GameStatus, InningTB, Outs, RunnersOn,
-};
-use gui::gui_functions::{runners_on_bool, update_player_labels};
-mod gui;
-
-use std::fs;
-
 /*==============================================================================================
  * IMPORTS
  * ===========================================================================================*/
-use eframe::{
-    egui,
-    epaint::{pos2, Color32},
-};
-use egui::{Rect, RichText};
-use egui_extras::RetainedImage;
-use egui_file::FileDialog;
-use std::path::PathBuf;
+// LOCAL IMPORTS
+mod characters;
+mod core;
+mod gui;
+//use characters::*;
+//use core::*;
+use gui::app::*;
 
-/*==============================================================================================
- * CONSTANTS
- * ===========================================================================================*/
-const ABOUT_DEABALL: &str =
-    "Deadball: Baseball With Dice is a tabletop game developed by W.M. Akers.  For more information about the game, or to purchase the rules, please visit the Deadball website.";
-
-const ABOUT_APP: &str = "This application was developed as practice with the Rust programming language.  All credit goes to the creator of Deadball, W.M. Akers.  Please purchase and consult the official rulebooks for questions about game mechanics.";
-
-/*==============================================================================================
- * ENUMS
- * ===========================================================================================*/
-#[derive(PartialEq, Eq)]
-enum Panel {
-    Menu,
-    Game,
-    Roster,
-    Debug,
-}
-
-/*
-impl Default for Panel {
-    fn default() -> Self {
-        Self::Menu
-    }
-}
-*/
-
-/*==============================================================================================
- * STRUCTS
- * ===========================================================================================*/
-struct DeadballApp {
-    // score information
-    current_inning: String,
-    current_outs: String,
-    away_hits: String,
-    away_errors: String,
-    away_runs: String,
-    home_hits: String,
-    home_errors: String,
-    home_runs: String,
-    // ballfield interface
-    diamond_image: RetainedImage,
-    helmet_image: RetainedImage,
-    pitcher_label: String,
-    catcher_label: String,
-    firstbase_label: String,
-    secondbase_label: String,
-    shortstop_label: String,
-    thirdbase_label: String,
-    rightfield_label: String,
-    centerfield_label: String,
-    leftfield_label: String,
-    // batting order interface
-    away_team_name: String,
-    home_team_name: String,
-    // menu/controls interface
-    bottom_panel: Panel,
-    // tracking for other windows
-    version_window: bool,
-    about_deadball_window: bool,
-    about_app_window: bool,
-    create_game_window: bool,
-    debug_window: bool,
-    // create game interface
-    create_game_era: Era,
-    away_team_file: Option<PathBuf>,
-    away_team_file_dialog: Option<FileDialog>,
-    home_team_file: Option<PathBuf>,
-    home_team_file_dialog: Option<FileDialog>,
-    ballpark_file: Option<PathBuf>,
-    ballpark_file_dialog: Option<FileDialog>,
-    create_game_error: String,
-    // game data
-    away_team: Option<Team>,
-    away_team_active: Option<ActiveTeam>,
-    away_batter1: Option<Player>,
-    away_batter2: Option<Player>,
-    away_batter3: Option<Player>,
-    away_batter4: Option<Player>,
-    away_batter5: Option<Player>,
-    away_batter6: Option<Player>,
-    away_batter7: Option<Player>,
-    away_batter8: Option<Player>,
-    away_batter9: Option<Player>,
-    home_team: Option<Team>,
-    home_team_active: Option<ActiveTeam>,
-    home_batter1: String,
-    home_batter2: String,
-    home_batter3: String,
-    home_batter4: String,
-    home_batter5: String,
-    home_batter6: String,
-    home_batter7: String,
-    home_batter8: String,
-    home_batter9: String,
-    ballpark_modern: Option<BallparkModern>,
-    ballpark_ancient: Option<BallparkAncient>,
-    game_modern: Option<GameModern>,
-    game_state: Option<GameState>,
-    // TODO: add ancient game
-    // debug settings
-    debug_copied: bool, // copy game state to debug state first time window is opened
-    debug_state: GameState,
-    debug_game_state_text: String,
-    debug_inning_text: String,
-    debug_inning_half_text: String,
-    debug_outs_text: String,
-    debug_runners_text: String,
-    debug_batting1_text: String,
-    debug_batting2_text: String,
-    debug_pitched1_text: String,
-    debug_pitched2_text: String,
-    debug_runs1_text: String,
-    debug_runs2_text: String,
-    debug_hits1_text: String,
-    debug_hits2_text: String,
-    debug_errors1_text: String,
-    debug_errors2_text: String,
-}
-
-impl<'a> Default for DeadballApp {
-    fn default() -> Self {
-        Self {
-            current_inning: "1^".to_string(),
-            current_outs: "0".to_string(),
-            away_hits: "0".to_string(),
-            away_errors: "0".to_string(),
-            away_runs: "0".to_string(),
-            home_hits: "0".to_string(),
-            home_errors: "0".to_string(),
-            home_runs: "0".to_string(),
-            diamond_image: RetainedImage::from_image_bytes(
-                "baseball_diamond.png",
-                include_bytes!("images/baseball_diamond.png"),
-            )
-            .unwrap(),
-            helmet_image: RetainedImage::from_image_bytes(
-                "helmet.png",
-                include_bytes!("images/helmet.png"),
-            )
-            .unwrap(),
-            pitcher_label: "P: Seth Loveall".to_string(),
-            catcher_label: "C: Seth Loveall".to_string(),
-            firstbase_label: "1B: Seth Loveall".to_string(),
-            secondbase_label: "2B: Seth Loveall".to_string(),
-            shortstop_label: "SS: Seth Loveall".to_string(),
-            thirdbase_label: "3B: Seth Loveall".to_string(),
-            rightfield_label: "RF: Seth Loveall".to_string(),
-            centerfield_label: "CF: Seth Loveall".to_string(),
-            leftfield_label: "LF: Seth Loveall".to_string(),
-            away_team_name: "Away Team".to_owned(),
-            home_team_name: "Home Team".to_owned(),
-            bottom_panel: Panel::Menu,
-            version_window: false,
-            about_deadball_window: false,
-            about_app_window: false,
-            create_game_window: false,
-            debug_window: false,
-            create_game_era: Era::None,
-            away_team_file: None,
-            away_team_file_dialog: None,
-            home_team_file: None,
-            home_team_file_dialog: None,
-            ballpark_file: None,
-            ballpark_file_dialog: None,
-            create_game_error: "".to_owned(),
-            away_team: None,
-            away_team_active: None,
-            away_batter1: None,
-            away_batter2: None,
-            away_batter3: None,
-            away_batter4: None,
-            away_batter5: None,
-            away_batter6: None,
-            away_batter7: None,
-            away_batter8: None,
-            away_batter9: None,
-            home_team: None,
-            home_team_active: None,
-            home_batter1: "None".to_string(),
-            home_batter2: "None".to_string(),
-            home_batter3: "None".to_string(),
-            home_batter4: "None".to_string(),
-            home_batter5: "None".to_string(),
-            home_batter6: "None".to_string(),
-            home_batter7: "None".to_string(),
-            home_batter8: "None".to_string(),
-            home_batter9: "None".to_string(),
-            ballpark_modern: None,
-            ballpark_ancient: None,
-            game_modern: None,
-            game_state: None,
-            debug_copied: false,
-            debug_state: new_game_state_struct(),
-            debug_game_state_text: "Not Started".to_string(),
-            debug_inning_text: "1".to_string(),
-            debug_inning_half_text: "^".to_string(),
-            debug_outs_text: "None".to_string(),
-            debug_runners_text: "000".to_string(),
-            debug_batting1_text: "1".to_string(),
-            debug_batting2_text: "1".to_string(),
-            debug_pitched1_text: "0".to_string(),
-            debug_pitched2_text: "0".to_string(),
-            debug_runs1_text: "0".to_string(),
-            debug_runs2_text: "0".to_string(),
-            debug_hits1_text: "0".to_string(),
-            debug_hits2_text: "0".to_string(),
-            debug_errors1_text: "0".to_string(),
-            debug_errors2_text: "0".to_string(),
-        }
-    }
-}
-
-impl<'a> eframe::App for DeadballApp {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // app state updates
-        match self.debug_inning_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.inning = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_batting1_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.batting_team1 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_batting2_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.batting_team2 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_pitched1_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.pitched_team1 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_pitched2_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.pitched_team2 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_runs1_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.runs_team1 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_runs2_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.runs_team2 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_hits1_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.hits_team1 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_hits2_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.hits_team2 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_errors1_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.errors_team1 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        match self.debug_errors2_text.parse::<u32>() {
-            Ok(inning) => self.debug_state.errors_team2 = inning,
-            Err(_) => {} // don't do anything if user is typing, weird characters, etc.
-        }
-        // check if other windows are open
-        egui::Window::new("Version")
-            .open(&mut self.version_window)
-            .show(ctx, |ui| {
-                ui.label("Version 0.1");
-            });
-        egui::Window::new("About Deadball Game")
-            .open(&mut self.about_deadball_window)
-            .show(ctx, |ui| {
-                ui.label(ABOUT_DEABALL);
-                ui.hyperlink("http://wmakers.net/deadball");
-            });
-        egui::Window::new("About this app")
-            .open(&mut self.about_app_window)
-            .show(ctx, |ui| {
-                ui.label(ABOUT_APP);
-            });
-        egui::Window::new("Debug Mode")
-            .open(&mut self.debug_window)
-            .show(ctx, |ui| {
-                // set debug state to current game state (if it exists)
-                if self.game_state.is_some() && self.debug_copied == false {
-                    self.debug_state = self.game_state.clone().unwrap();
-                    self.debug_copied = true;
-                    self.debug_inning_text = self.debug_state.inning.clone().to_string();
-                }
-                ui.horizontal(|ui| {
-                    ui.label("Game Status:");
-                    egui::ComboBox::from_label("Select status.")
-                        .selected_text(&self.debug_game_state_text)
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.debug_state.status,
-                                GameStatus::NotStarted,
-                                "Not Started",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.status,
-                                GameStatus::Ongoing,
-                                "Ongoing",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.status,
-                                GameStatus::Over,
-                                "Over",
-                            );
-                        })
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Inning:");
-                    ui.text_edit_singleline(&mut self.debug_inning_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Inning Half:");
-                    egui::ComboBox::from_label("Select inning half.")
-                        .selected_text(self.debug_inning_half_text.clone())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.debug_state.inning_half,
-                                InningTB::Top,
-                                "^",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.inning_half,
-                                InningTB::Bottom,
-                                "v",
-                            );
-                        });
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Outs:");
-                    egui::ComboBox::from_label("Select outs.")
-                        .selected_text(self.debug_outs_text.clone())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::None, "None");
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::One, "One");
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::Two, "Two");
-                            ui.selectable_value(&mut self.debug_state.outs, Outs::Three, "Three");
-                        });
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Runners On:");
-                    egui::ComboBox::from_label("Select base runners.")
-                        .selected_text(self.debug_runners_text.clone())
-                        .show_ui(ui, |ui| {
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner000,
-                                "000",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner001,
-                                "001",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner010,
-                                "010",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner100,
-                                "100",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner011,
-                                "011",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner110,
-                                "110",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner101,
-                                "101",
-                            );
-                            ui.selectable_value(
-                                &mut self.debug_state.runners,
-                                RunnersOn::Runner111,
-                                "111",
-                            );
-                        });
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Batting Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_batting1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Batting Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_batting2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Pitched Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_pitched1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Pitched Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_pitched2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Runs Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_runs1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Runs Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_runs2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Hits Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_hits1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Hits Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_hits2_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Errors Team 1:");
-                    ui.text_edit_singleline(&mut self.debug_errors1_text);
-                });
-                ui.horizontal(|ui| {
-                    ui.label("Errors Team 2:");
-                    ui.text_edit_singleline(&mut self.debug_errors2_text);
-                });
-                // update debug game state combo box text
-                match &self.debug_state.status {
-                    GameStatus::NotStarted => {
-                        self.debug_game_state_text = "Not Started".to_string()
-                    }
-                    GameStatus::Ongoing => self.debug_game_state_text = "Ongoing".to_string(),
-                    GameStatus::Over => self.debug_game_state_text = "Over".to_string(),
-                }
-                // update inning half combo box text
-                match &self.debug_state.inning_half {
-                    InningTB::Top => self.debug_inning_half_text = "^".to_string(),
-                    InningTB::Bottom => self.debug_inning_half_text = "v".to_string(),
-                }
-                // update outs combo box text
-                match &self.debug_state.outs {
-                    Outs::None => self.debug_outs_text = "None".to_string(),
-                    Outs::One => self.debug_outs_text = "One".to_string(),
-                    Outs::Two => self.debug_outs_text = "Two".to_string(),
-                    Outs::Three => self.debug_outs_text = "Three".to_string(),
-                }
-                // update runners on text
-                match &self.debug_state.runners {
-                    RunnersOn::Runner000 => self.debug_runners_text = "000".to_string(),
-                    RunnersOn::Runner001 => self.debug_runners_text = "001".to_string(),
-                    RunnersOn::Runner010 => self.debug_runners_text = "010".to_string(),
-                    RunnersOn::Runner100 => self.debug_runners_text = "100".to_string(),
-                    RunnersOn::Runner011 => self.debug_runners_text = "011".to_string(),
-                    RunnersOn::Runner110 => self.debug_runners_text = "110".to_string(),
-                    RunnersOn::Runner101 => self.debug_runners_text = "101".to_string(),
-                    RunnersOn::Runner111 => self.debug_runners_text = "111".to_string(),
-                }
-                // button to write changes to game state
-                ui.separator();
-                if ui.button("Write Changes").clicked() {
-                    self.game_state = Some(self.debug_state.clone());
-                }
-            });
-        egui::Window::new("Create new game")
-            .open(&mut self.create_game_window)
-            .show(ctx, |ui| {
-                // selectable value for game era
-                ui.horizontal(|ui| {
-                    ui.label("Era:");
-                    ui.selectable_value(&mut self.create_game_era, Era::None, "None");
-                    ui.selectable_value(&mut self.create_game_era, Era::Modern, "Modern");
-                    ui.selectable_value(&mut self.create_game_era, Era::Ancient, "Ancient");
-                });
-                // file dialog for away team
-                ui.horizontal(|ui| {
-                    ui.label("Away Team:");
-                    if let Some(away_file) = &mut self.away_team_file {
-                        ui.label(format!("{:?}", away_file));
-                    } else {
-                        ui.label("None");
-                    }
-                    if ui.button("Open").clicked() {
-                        let mut dialog = FileDialog::open_file(self.away_team_file.clone());
-                        dialog.open();
-                        self.away_team_file_dialog = Some(dialog);
-                    }
-                    if let Some(dialog) = &mut self.away_team_file_dialog {
-                        if dialog.show(ctx).selected() {
-                            if let Some(file) = dialog.path() {
-                                self.away_team_file = Some(file);
-                            }
-                        }
-                    }
-                });
-                // file dialog for home team
-                ui.horizontal(|ui| {
-                    ui.label("Home Team:");
-                    if let Some(home_file) = &mut self.home_team_file {
-                        ui.label(format!("{:?}", home_file));
-                    } else {
-                        ui.label("None");
-                    }
-                    if ui.button("Open").clicked() {
-                        let mut dialog = FileDialog::open_file(self.home_team_file.clone());
-                        dialog.open();
-                        self.home_team_file_dialog = Some(dialog);
-                    }
-                    if let Some(dialog) = &mut self.home_team_file_dialog {
-                        if dialog.show(ctx).selected() {
-                            if let Some(file) = dialog.path() {
-                                self.home_team_file = Some(file);
-                            }
-                        }
-                    }
-                });
-                // file dialog for ball park
-                ui.horizontal(|ui| {
-                    ui.label("Ballpark: ");
-                    if let Some(ballpark_file) = &mut self.ballpark_file {
-                        ui.label(format!("{:?}", ballpark_file));
-                    } else {
-                        ui.label("None");
-                    }
-                    if ui.button("Open").clicked() {
-                        let mut dialog = FileDialog::open_file(self.ballpark_file.clone());
-                        dialog.open();
-                        self.ballpark_file_dialog = Some(dialog);
-                    }
-                    if let Some(dialog) = &mut self.ballpark_file_dialog {
-                        if dialog.show(ctx).selected() {
-                            if let Some(file) = dialog.path() {
-                                self.ballpark_file = Some(file);
-                            }
-                        }
-                    }
-                });
-                ui.separator();
-                // button to create game and return to main screen
-                self.create_game_error = "".to_owned();
-                if ui.button("Create").clicked() {
-                    // check and make sure options are set properly
-                    if self.away_team_file.is_some()
-                        && self.home_team_file.is_some()
-                        && self.ballpark_file.is_some()
-                    {
-                        // try to load teams and ballpark files
-                        match fs::read_to_string(&self.away_team_file.as_ref().unwrap().as_path()) {
-                            Ok(contents) => {
-                                self.away_team = Some(load_team(contents));
-                            }
-                            Err(err) => {
-                                self.create_game_error = self.create_game_error.clone()
-                                    + "Failed to read Away team file."
-                                    + &format!("{:?}", err);
-                            }
-                        }
-                        match fs::read_to_string(&self.home_team_file.as_ref().unwrap().as_path()) {
-                            Ok(contents) => {
-                                self.home_team = Some(load_team(contents));
-                            }
-                            Err(err) => {
-                                self.create_game_error = self.create_game_error.clone()
-                                    + "Failed to read Home team file."
-                                    + &format!("{:?}", err);
-                            }
-                        }
-                        match self.create_game_era {
-                            Era::Modern => {
-                                match fs::read_to_string(
-                                    &self.ballpark_file.as_ref().unwrap().as_path(),
-                                ) {
-                                    Ok(contents) => {
-                                        self.ballpark_modern = Some(load_park_modern(contents));
-                                    }
-                                    Err(err) => {
-                                        self.create_game_error = self.create_game_error.clone()
-                                            + "Failed to read Ballpark file."
-                                            + &format!("{:?}", err);
-                                    }
-                                }
-                            }
-                            Era::Ancient => {
-                                match fs::read_to_string(
-                                    &self.ballpark_file.as_ref().unwrap().as_path(),
-                                ) {
-                                    Ok(contents) => {
-                                        self.ballpark_ancient = Some(load_park_ancient(contents));
-                                    }
-                                    Err(err) => {
-                                        self.create_game_error = self.create_game_error.clone()
-                                            + "Failed to read Ballpark file."
-                                            + &format!("{:?}", err);
-                                    }
-                                }
-                            }
-                            Era::None => {
-                                self.create_game_error =
-                                    self.create_game_error.clone() + "Please select an Era.";
-                            }
-                        }
-                    } else {
-                        // update error message and display error window
-                        if self.away_team_file.is_none() {
-                            self.create_game_error = self.create_game_error.clone()
-                                + "Must select a *.dbt file for away team.\n";
-                        }
-                        if self.home_team_file.is_none() {
-                            self.create_game_error = self.create_game_error.clone()
-                                + "Must select a *.dbt file for home team.\n";
-                        }
-                        if self.ballpark_file.is_none() {
-                            self.create_game_error = self.create_game_error.clone()
-                                + "Must select a *.dbb file for ballpark.\n";
-                        }
-                    }
-                    match self.create_game_era {
-                        Era::Modern => {
-                            if self.away_team.is_some()
-                                && self.home_team.is_some()
-                                && self.ballpark_modern.is_some()
-                            {
-                                match create_modern_game(
-                                    self.home_team.clone().unwrap(),
-                                    self.away_team.clone().unwrap(),
-                                    self.ballpark_modern.clone().unwrap(),
-                                ) {
-                                    Ok(game) => {
-                                        self.game_modern = Some(game);
-                                        self.home_team_active = Some(
-                                            self.game_modern.clone().unwrap().home_active.clone(),
-                                        );
-                                        self.away_team_active = Some(
-                                            self.game_modern.clone().unwrap().away_active.clone(),
-                                        );
-                                        //TODO: make the window close after successfully generating a game
-                                    }
-                                    Err(err) => {
-                                        self.create_game_error =
-                                            self.create_game_error.clone() + &format!("{:?}", err)
-                                    }
-                                }
-                            }
-                        }
-                        Era::Ancient => {
-                            if self.away_team.is_some()
-                                && self.home_team.is_some()
-                                && self.ballpark_ancient.is_some()
-                            {}
-                        }
-                        Era::None => {
-                            self.create_game_error =
-                                self.create_game_error.clone() + "Please select an Era.";
-                        }
-                    }
-                }
-                // if everything loaded okay, generate game
-                ui.add(eframe::egui::Label::new(
-                    RichText::new(&self.create_game_error).color(Color32::RED),
-                ));
-            });
-
-        // main window
-        egui::TopBottomPanel::bottom("Control Panel").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.selectable_value(&mut self.bottom_panel, Panel::Game, "Game");
-                ui.selectable_value(&mut self.bottom_panel, Panel::Menu, "Menu");
-                ui.selectable_value(&mut self.bottom_panel, Panel::Roster, "Roster");
-                ui.selectable_value(&mut self.bottom_panel, Panel::Debug, "Debug");
-            });
-            ui.separator();
-            match self.bottom_panel {
-                Panel::Menu => {
-                    ui.horizontal(|ui| {
-                        ui.menu_button("Game", |ui| {
-                            if ui.button("Create Game").clicked() {
-                                self.create_game_window = true;
-                                ui.close_menu();
-                            }
-                            if ui.button("Start Game").clicked() {
-                                // check if there are active teams loaded
-                                if self.home_team_active.is_some()
-                                    && self.away_team_active.is_some()
-                                {
-                                    self.game_state = Some(init_new_game_state(
-                                        self.home_team_active.clone().unwrap().pitching[0].clone(),
-                                        self.away_team_active.clone().unwrap().pitching[0].clone(),
-                                    ));
-                                } else {
-                                    println!("Load teams first.");
-                                }
-                            }
-                            if ui.button("Load Game").clicked() {
-                                // TODO: add load game feature (need to add save game feature first)
-                                println!("Load game feature has not yet been added.");
-                                ui.close_menu();
-                            }
-                            if ui.button("Save Game").clicked() {
-                                // TODO: add save game feature
-                                println!("Save game feature has not been added yet.");
-                            }
-                        });
-                        ui.menu_button("About", |ui| {
-                            if ui.button("Version").clicked() {
-                                self.version_window = true;
-                                ui.close_menu();
-                            }
-                            if ui.button("Help").clicked() {
-                                // TODO: add help window
-                                println!("No help menu available at this time.");
-                                ui.close_menu();
-                            }
-                            if ui.button("About Deadball").clicked() {
-                                self.about_deadball_window = true;
-                                ui.close_menu();
-                            }
-                            if ui.button("About This App").clicked() {
-                                self.about_app_window = true;
-                                ui.close_menu();
-                            }
-                        })
-                    });
-                }
-                Panel::Game => {
-                    if ui.button("Next At Bat").clicked() {
-                        // TODO: this could be cleaner
-                        if self.game_state.is_some() && self.game_modern.is_some() {
-                            // TODO: update with ancient game when ready
-                            match self.game_state.clone().unwrap().status {
-                                GameStatus::NotStarted => {
-                                    self.game_state.as_mut().unwrap().status = GameStatus::Ongoing
-                                }
-                                GameStatus::Ongoing => {
-                                    self.game_state = Some(modern_game_flow(
-                                        &self.game_modern.clone().unwrap(),
-                                        self.game_state.clone().unwrap(),
-                                    ));
-                                    println!("{:?}", self.game_state);
-                                }
-                                GameStatus::Over => {}
-                            }
-                        }
-                        if self.game_state.is_some() && self.game_modern.is_some() {
-                            // TODO: update with ancient game when ready
-                            self.game_state = Some(modern_game_flow(
-                                &self.game_modern.clone().unwrap(),
-                                self.game_state.clone().unwrap(),
-                            ));
-                            println!("{:?}", self.game_state);
-                        } else {
-                            println!("Need to initialize a game first.");
-                        }
-                    }
-                }
-                Panel::Roster => {
-                    ui.horizontal(|ui| {
-                        if ui.button("Batting Order").clicked() {
-                            println!("Batting Order button placeholder.");
-                        }
-                        if ui.button("Bullpen").clicked() {
-                            println!("Bullpen button placeholder.");
-                        }
-                        if ui.button("View Team").clicked() {
-                            println!("View Team button placeholder.");
-                        }
-                    });
-                }
-                Panel::Debug => {
-                    ui.horizontal(|ui| {
-                        if ui.button("Game").clicked() {
-                            self.debug_window = true;
-                            self.debug_copied = false;
-                        }
-                    });
-                }
-            }
-        });
-        egui::SidePanel::left("Away Team").show(ctx, |ui| {
-            ui.heading(&self.away_team_name);
-            let away_name1: String;
-            let away_name2: String;
-            let away_name3: String;
-            let away_name4: String;
-            let away_name5: String;
-            let away_name6: String;
-            let away_name7: String;
-            let away_name8: String;
-            let away_name9: String;
-            if self.away_team.is_some() {
-                let away_team = self.away_team.as_ref().unwrap();
-                let away_team_active = self.game_modern.clone().unwrap().away_active;
-                self.away_team_name = away_team.name.to_string();
-                self.away_batter1 = Some(away_team_active.roster[0].clone());
-                self.away_batter2 = Some(away_team_active.roster[1].clone());
-                self.away_batter3 = Some(away_team_active.roster[2].clone());
-                self.away_batter4 = Some(away_team_active.roster[3].clone());
-                self.away_batter5 = Some(away_team_active.roster[4].clone());
-                self.away_batter6 = Some(away_team_active.roster[5].clone());
-                self.away_batter7 = Some(away_team_active.roster[6].clone());
-                self.away_batter8 = Some(away_team_active.roster[7].clone());
-                self.away_batter9 = Some(away_team_active.pitching[0].clone());
-                away_name1 = format!(
-                    "{} {}",
-                    self.away_batter1.clone().unwrap().first_name,
-                    self.away_batter1.clone().unwrap().last_name
-                );
-                away_name2 = format!(
-                    "{} {}",
-                    self.away_batter2.clone().unwrap().first_name,
-                    self.away_batter2.clone().unwrap().last_name
-                );
-                away_name3 = format!(
-                    "{} {}",
-                    self.away_batter3.clone().unwrap().first_name,
-                    self.away_batter3.clone().unwrap().last_name
-                );
-                away_name4 = format!(
-                    "{} {}",
-                    self.away_batter4.clone().unwrap().first_name,
-                    self.away_batter4.clone().unwrap().last_name
-                );
-                away_name5 = format!(
-                    "{} {}",
-                    self.away_batter5.clone().unwrap().first_name,
-                    self.away_batter5.clone().unwrap().last_name
-                );
-                away_name6 = format!(
-                    "{} {}",
-                    self.away_batter6.clone().unwrap().first_name,
-                    self.away_batter6.clone().unwrap().last_name
-                );
-                away_name7 = format!(
-                    "{} {}",
-                    self.away_batter7.clone().unwrap().first_name,
-                    self.away_batter7.clone().unwrap().last_name
-                );
-                away_name8 = format!(
-                    "{} {}",
-                    self.away_batter8.clone().unwrap().first_name,
-                    self.away_batter8.clone().unwrap().last_name
-                );
-                away_name9 = format!(
-                    "{} {}",
-                    self.away_batter9.clone().unwrap().first_name,
-                    self.away_batter9.clone().unwrap().last_name
-                );
-            } else {
-                away_name1 = "None".to_string();
-                away_name2 = "None".to_string();
-                away_name3 = "None".to_string();
-                away_name4 = "None".to_string();
-                away_name5 = "None".to_string();
-                away_name6 = "None".to_string();
-                away_name7 = "None".to_string();
-                away_name8 = "None".to_string();
-                away_name9 = "None".to_string();
-            }
-            ui.horizontal(|ui| {
-                ui.label("1. ");
-                ui.label(away_name1);
-                // TODO: figure out a way to put baseball icon to indicate current batter
-            });
-            ui.horizontal(|ui| {
-                ui.label("2. ");
-                ui.label(away_name2);
-            });
-            ui.horizontal(|ui| {
-                ui.label("3. ");
-                ui.label(away_name3);
-            });
-            ui.horizontal(|ui| {
-                ui.label("4. ");
-                ui.label(away_name4);
-            });
-            ui.horizontal(|ui| {
-                ui.label("5. ");
-                ui.label(away_name5);
-            });
-            ui.horizontal(|ui| {
-                ui.label("6. ");
-                ui.label(away_name6);
-            });
-            ui.horizontal(|ui| {
-                ui.label("7. ");
-                ui.label(away_name7);
-            });
-            ui.horizontal(|ui| {
-                ui.label("8. ");
-                ui.label(away_name8);
-            });
-            ui.horizontal(|ui| {
-                ui.label("9. ");
-                ui.label(away_name9);
-            });
-        });
-        egui::SidePanel::right("Home Team").show(ctx, |ui| {
-            ui.heading(&self.home_team_name);
-            if self.home_team.is_some() {
-                let home_team = self.home_team.as_ref().unwrap();
-                self.home_team_name = home_team.name.to_string();
-                self.home_batter1 = format!(
-                    "{} {}",
-                    self.game_modern.clone().unwrap().home_active.roster[0].first_name,
-                    self.game_modern.clone().unwrap().home_active.roster[0].last_name
-                );
-                let batter2 = &self.game_modern.clone().unwrap().home_active.roster[1];
-                self.home_batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
-                let batter3 = &self.game_modern.clone().unwrap().home_active.roster[2];
-                self.home_batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
-                let batter4 = &self.game_modern.clone().unwrap().home_active.roster[3];
-                self.home_batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
-                let batter5 = &self.game_modern.clone().unwrap().home_active.roster[4];
-                self.home_batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
-                let batter6 = &self.game_modern.clone().unwrap().home_active.roster[5];
-                self.home_batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
-                let batter7 = &self.game_modern.clone().unwrap().home_active.roster[6];
-                self.home_batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
-                let batter8 = &self.game_modern.clone().unwrap().home_active.roster[7];
-                self.home_batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
-                let batter9 = &self.game_modern.clone().unwrap().home_active.pitching[0];
-                self.home_batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
-            }
-            ui.horizontal(|ui| {
-                ui.label("1. ");
-                ui.label(&self.home_batter1);
-            });
-            ui.horizontal(|ui| {
-                ui.label("2. ");
-                ui.label(&self.home_batter2);
-            });
-            ui.horizontal(|ui| {
-                ui.label("3. ");
-                ui.label(&self.home_batter3);
-            });
-            ui.horizontal(|ui| {
-                ui.label("4. ");
-                ui.label(&self.home_batter4);
-            });
-            ui.horizontal(|ui| {
-                ui.label("5. ");
-                ui.label(&self.home_batter5);
-            });
-            ui.horizontal(|ui| {
-                ui.label("6. ");
-                ui.label(&self.home_batter6);
-            });
-            ui.horizontal(|ui| {
-                ui.label("7. ");
-                ui.label(&self.home_batter7);
-            });
-            ui.horizontal(|ui| {
-                ui.label("8. ");
-                ui.label(&self.home_batter8);
-            });
-            ui.horizontal(|ui| {
-                ui.label("9. ");
-                ui.label(&self.home_batter9);
-            });
-        });
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // update GUI scoreboard values (if game is in progress)
-            let mut on_first = false;
-            let mut on_second = false;
-            let mut on_third = false;
-            if self.game_state.is_some() {
-                let inning_number = self.game_state.as_ref().unwrap().inning.to_string();
-                let inning_top_bottom: &str;
-                match self.game_state.as_ref().unwrap().inning_half {
-                    InningTB::Top => inning_top_bottom = "^",
-                    InningTB::Bottom => inning_top_bottom = "v",
-                }
-                self.current_inning = inning_number + inning_top_bottom;
-                self.away_hits = self.game_state.as_ref().unwrap().hits_team2.to_string();
-                self.away_errors = self.game_state.as_ref().unwrap().errors_team2.to_string();
-                self.away_runs = self.game_state.as_ref().unwrap().runs_team2.to_string();
-                let out_string: String;
-                match self.game_state.as_ref().unwrap().outs {
-                    Outs::None => out_string = "0".to_string(),
-                    Outs::One => out_string = "1".to_string(),
-                    Outs::Two => out_string = "2".to_string(),
-                    Outs::Three => out_string = "3".to_string(),
-                }
-                self.current_outs = out_string;
-                self.home_hits = self.game_state.as_ref().unwrap().hits_team1.to_string();
-                self.home_errors = self.game_state.as_ref().unwrap().errors_team1.to_string();
-                self.home_runs = self.game_state.as_ref().unwrap().runs_team1.to_string();
-                (on_first, on_second, on_third) =
-                    runners_on_bool(self.game_state.clone().unwrap().runners);
-            }
-            // score line
-            ui.horizontal(|ui| {
-                ui.label("Inning:");
-                ui.label(&self.current_inning);
-                ui.label("AWAY");
-                ui.label("hits:");
-                ui.label(&self.away_hits);
-                ui.label("errors:");
-                ui.label(&self.away_errors);
-                ui.label("runs:");
-                ui.label(&self.away_runs);
-            });
-            ui.horizontal(|ui| {
-                ui.label("Outs:");
-                ui.label(&self.current_outs);
-                ui.label("HOME");
-                ui.label("hits:");
-                ui.label(&self.home_hits);
-                ui.label("errors:");
-                ui.label(&self.home_errors);
-                ui.label("runs:");
-                ui.label(&self.home_runs);
-            });
-            // draw baseball field and label players
-            ui.add(egui::Image::new(
-                self.diamond_image.texture_id(ctx),
-                self.diamond_image.size_vec2() * 0.3,
-            ));
-            // draw helmets to indicate runners on base
-            if on_first {
-                ui.put(
-                    Rect {
-                        min: pos2(490.0, 260.0),
-                        max: pos2(590.0, 360.0),
-                    },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
-                );
-            }
-            if on_second {
-                ui.put(
-                    Rect {
-                        min: pos2(340.0, 120.0),
-                        max: pos2(440.0, 220.0),
-                    },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
-                );
-            }
-            if on_third {
-                ui.put(
-                    Rect {
-                        min: pos2(205.0, 270.0),
-                        max: pos2(305.0, 370.0),
-                    },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
-                );
-            }
-            // update player labels
-            if self.home_team_active.is_some()
-                && self.away_team_active.is_some()
-                && self.game_state.is_some()
-            {
-                let labels: Vec<String>;
-                match self.game_state.as_ref().unwrap().inning_half {
-                    InningTB::Top => {
-                        labels = update_player_labels(&self.home_team_active.as_ref().unwrap());
-                    }
-                    InningTB::Bottom => {
-                        labels = update_player_labels(&self.away_team_active.as_ref().unwrap());
-                    }
-                }
-                self.firstbase_label = labels[0].clone();
-                self.secondbase_label = labels[1].clone();
-                self.shortstop_label = labels[2].clone();
-                self.thirdbase_label = labels[3].clone();
-                self.catcher_label = labels[4].clone();
-                self.leftfield_label = labels[5].clone();
-                self.centerfield_label = labels[6].clone();
-                self.rightfield_label = labels[7].clone();
-                self.pitcher_label = labels[8].clone();
-            }
-            // put player names
-            ui.put(
-                Rect {
-                    min: pos2(460.0, 260.0),
-                    max: pos2(560.0, 280.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.firstbase_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(400.0, 180.0),
-                    max: pos2(500.0, 200.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.secondbase_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(340.0, 305.0),
-                    max: pos2(440.0, 325.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.pitcher_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(340.0, 475.0),
-                    max: pos2(440.0, 495.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.catcher_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(200.0, 270.0),
-                    max: pos2(300.0, 290.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.thirdbase_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(240.0, 200.0),
-                    max: pos2(340.0, 220.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.shortstop_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(510.0, 100.0),
-                    max: pos2(610.0, 120.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.rightfield_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(330.0, 100.0),
-                    max: pos2(430.0, 120.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.centerfield_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-            ui.put(
-                Rect {
-                    min: pos2(160.0, 100.0),
-                    max: pos2(260.0, 120.0),
-                },
-                eframe::egui::Label::new(
-                    RichText::new(&self.leftfield_label)
-                        .color(Color32::BLACK)
-                        .strong()
-                        .background_color(Color32::WHITE), //.size(16.0),
-                ),
-            );
-        });
-    }
-}
+// EXTERNAL IMPORTS
+use eframe::egui;
 
 fn main() -> Result<(), eframe::Error> {
     let options = eframe::NativeOptions {
@@ -1342,4 +142,866 @@ fn main() -> Result<(), eframe::Error> {
     let mut game_state = init_new_game_state(&pitcher1[0], &pitcher2[0]);
     modern_game_flow(&game, game_state);
     */
+}
+
+/*========================================================
+TESTS
+========================================================*/
+#[allow(unused_imports)]
+#[allow(unused_variables)]
+#[cfg(test)]
+mod tests {
+    use std::{fs, vec};
+
+    //use crate::core::gameFunctions::atBatResults;
+    use crate::core::{game_functions, roll};
+    use crate::gui::debug::{debug_roll, DebugConfig};
+    use crate::{
+        characters::players::*, characters::teams::*, core::file_locations::*,
+        core::game_functions::*,
+    };
+
+    use super::*;
+
+    #[test]
+    fn dice_roll_check() {
+        // kind of hard to test that the dice rolls are random, but this should at least test that they are within expected range
+        let side = 100;
+        let test_roll = roll(side);
+        assert!(
+            test_roll <= side && test_roll >= 1,
+            "dice roll is outside of expected bounds"
+        );
+    }
+
+    #[test]
+    fn at_bat_hit_check() {
+        let on_base_target = 40;
+        let bat_target = 32;
+        let pitch_result = 20;
+        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result);
+        assert!(matches!(game_functions::AtBatResults::Hit, at_bat_result));
+    }
+
+    #[test]
+    fn at_bat_out_check() {
+        let on_base_target = 40;
+        let bat_target = 32;
+        let pitch_result = 78;
+        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result);
+        assert!(matches!(game_functions::AtBatResults::Out, at_bat_result));
+    }
+
+    #[test]
+    fn load_player_file() {
+        let player_file_path = "src/testfiles/sample_player.dbp".to_string();
+        let contents = fs::read_to_string(player_file_path).unwrap();
+        let test_player = load_player(contents);
+        let test_name = test_player.first_name;
+        let test_last = test_player.last_name;
+        let test_pos = test_player.position;
+        let test_hand = test_player.handedness;
+        let test_bt = test_player.batter_target;
+        let test_obt = test_player.on_base_target;
+        let test_pd = test_player.pitch_die;
+        let test_trait = test_player.traits;
+        let test_loc = test_player.injury_location;
+        let test_sev = test_player.injury_severity;
+
+        assert!(matches!("Seth".to_string(), test_name));
+        let temp = test_name.clone();
+        assert!(matches!("Seth".to_string(), temp));
+        assert!(matches!("Loveall".to_string(), test_last));
+        assert!(matches!(Position::Shortstop, test_pos));
+        assert!(matches!(Handedness::Right, test_hand));
+        assert_eq!(32, test_bt);
+        assert_eq!(40, test_obt);
+        assert_eq!(-8, test_pd);
+        assert!(matches!(vec![Traits::ContactHitter], test_trait));
+        assert!(matches!(vec![InjuryLocation::None], test_loc));
+        assert!(matches!(vec![InjurySeverity::Uninjured], test_sev));
+
+        let player2_file_path = "src/testfiles/sample2.dbp".to_string();
+        let contents2 = fs::read_to_string(player2_file_path).unwrap();
+        let test_player2 = load_player(contents2);
+        let test_nick2 = test_player2.nickname;
+        let test_loc2 = test_player2.injury_location;
+        let test_sev2 = test_player2.injury_severity;
+        assert!(matches!("Bruh".to_string(), test_nick2));
+        assert!(matches!(vec![InjuryLocation::Shoulder], test_loc2));
+        assert!(matches!(vec![InjurySeverity::Minor], test_sev2));
+    }
+
+    #[test]
+    fn write_player_file() {
+        let test_player = Player {
+            first_name: "Seth".to_string(),
+            last_name: "Loveall".to_string(),
+            nickname: "Seth Loveall".to_string(),
+            position: Position::Shortstop,
+            handedness: Handedness::Right,
+            batter_target: 32,
+            on_base_target: 40,
+            pitch_die: -8,
+            traits: vec![
+                Traits::ContactHitter,
+                Traits::PowerHitter,
+                Traits::GreatDefender,
+            ],
+            injury_location: vec![
+                InjuryLocation::Shoulder,
+                InjuryLocation::Wrist,
+                InjuryLocation::Hamstring,
+            ],
+            injury_severity: vec![
+                InjurySeverity::Uninjured,
+                InjurySeverity::Minor,
+                InjurySeverity::Superficial,
+            ],
+        };
+        let filename = "src/testfiles/write_test.dbp";
+        let write_result = write_player(&test_player, filename);
+
+        let contents = fs::read_to_string(filename).unwrap();
+        let test_player = load_player(contents);
+        let test_first = test_player.first_name;
+        let test_last = test_player.last_name;
+        let test_nick = test_player.nickname;
+        let test_pos = test_player.position;
+        let test_hand = test_player.handedness;
+        let test_bt = test_player.batter_target;
+        let test_obt = test_player.on_base_target;
+        let test_pd = test_player.pitch_die;
+        let test_trait = test_player.traits;
+        let test_loc = test_player.injury_location;
+        let test_sev = test_player.injury_severity;
+
+        assert!(matches!("Seth".to_string(), test_first));
+        assert!(matches!("Loveall".to_string(), test_last));
+        assert!(matches!("Seth Loveall".to_string(), test_nick));
+        assert!(matches!(Position::Shortstop, test_pos));
+        assert!(matches!(Handedness::Right, test_hand));
+        assert_eq!(32, test_bt);
+        assert_eq!(40, test_obt);
+        assert_eq!(-8, test_pd);
+        assert!(matches!(
+            vec![
+                Traits::ContactHitter,
+                Traits::PowerHitter,
+                Traits::GreatDefender
+            ],
+            test_trait
+        ));
+        assert!(matches!(
+            vec![
+                InjuryLocation::Shoulder,
+                InjuryLocation::Wrist,
+                InjuryLocation::Hamstring
+            ],
+            test_loc
+        ));
+        assert!(matches!(
+            vec![
+                InjurySeverity::Uninjured,
+                InjurySeverity::Minor,
+                InjurySeverity::Superficial
+            ],
+            test_sev
+        ));
+    }
+
+    #[test]
+    fn test_load_team() {
+        let team_file_path = "src/testfiles/detroit_steam_hammers.dbt".to_string();
+        let contents = fs::read_to_string(team_file_path).unwrap();
+
+        let test_team = load_team(contents);
+        let test_name = test_team.name;
+        let test_ballpark = test_team.ballpark;
+        let test_manager = test_team.manager;
+        let test_logo = test_team.logo;
+        let test_era = test_team.era;
+        let test_location = test_team.location;
+        let test_mascot = test_team.mascot;
+        let test_priority = test_team.priority;
+        let test_makeup = test_team.makeup;
+        let test_years = test_team.years;
+        let test_championship = test_team.championship;
+        let test_fanbase = test_team.fanbase;
+        let test_manager_position = test_team.manager_position;
+        let test_manager_league = test_team.manager_league;
+        let test_retired = test_team.retired;
+        let test_personality = test_team.personality;
+        let test_daring = test_team.daring;
+        let test_motto = test_team.motto;
+        let test_owner_background = test_team.owner_background;
+        let test_owner_personality = test_team.owner_personality;
+        let test_roster = test_team.roster;
+
+        assert!(matches!("Detroit Steam Hammers".to_string(), test_name));
+        assert!(matches!(
+            "src/testfiles/railyard.dbb".to_string(),
+            test_ballpark
+        ));
+        assert!(matches!("none".to_string(), test_logo));
+        assert!(matches!(Era::Modern, test_era));
+        assert!(matches!(Location::Metropolis, test_location));
+        assert!(matches!("Train".to_string(), test_mascot));
+        assert!(matches!(Priority::StartingPitching, test_priority));
+        assert!(matches!(Makeup::MostlyProspects, test_makeup));
+        assert_eq!(11, test_years);
+        assert_eq!(7, test_championship);
+        assert!(matches!(Fanbase::Loyal, test_fanbase));
+        assert!(matches!("Fastball Mike".to_string(), test_manager));
+        assert!(matches!(Position::Pitcher, test_manager_position));
+        assert!(matches!(ManagerLeague::Major, test_manager_league));
+        assert_eq!(22, test_retired);
+        assert!(matches!("Sincere".to_string(), test_personality));
+        assert_eq!(12, test_daring);
+        assert!(matches!(
+            "Score more runs than the other guy.".to_string(),
+            test_motto
+        ));
+        assert!(matches!(
+            "Venture Capitalist".to_string(),
+            test_owner_background
+        ));
+        assert!(matches!("Boastful".to_string(), test_owner_personality));
+        assert!(matches!(
+            vec![
+                "src/testfiles/sample_player.dbp".to_string(),
+                "src/testfiles/sample2.dbp".to_string(),
+            ],
+            test_roster
+        ));
+    }
+
+    #[test]
+    fn test_write_team() {
+        let test_team = Team {
+            name: "Test Team".to_string(),
+            ballpark: "Test Ballpark".to_string(),
+            manager: "Test Manager".to_string(),
+            logo: "Test Logo".to_string(),
+            era: Era::Modern,
+            location: Location::Metropolis,
+            mascot: "Test Mascot".to_string(),
+            priority: Priority::Power,
+            makeup: Makeup::Balanced,
+            years: 10i32,
+            championship: 10i32,
+            fanbase: Fanbase::Loyal,
+            manager_position: Position::Pitcher,
+            manager_league: ManagerLeague::Major,
+            retired: 10i32,
+            personality: "Test Personality".to_string(),
+            daring: 10i32,
+            motto: "Test Motto".to_string(),
+            owner_background: "Test Background".to_string(),
+            owner_personality: "Test Personality".to_string(),
+            roster: vec![
+                "test1".to_string(),
+                "test2".to_string(),
+                "test3".to_string(),
+            ],
+            bench: vec!["test4".to_string()],
+            pitcher: vec!["test5".to_string()],
+            bullpen: vec!["test6".to_string()],
+        };
+
+        let filename = "src/testfiles/write_team_test.dbt";
+        let write_result = write_team(test_team, filename);
+
+        let contents = fs::read_to_string(filename).unwrap();
+        let read_team = load_team(contents);
+        let test_name = read_team.name;
+        let test_ballpark = read_team.ballpark;
+        let test_manager = read_team.manager;
+        let test_logo = read_team.logo;
+        let test_era = read_team.era;
+        let test_location = read_team.location;
+        let test_mascot = read_team.mascot;
+        let test_priority = read_team.priority;
+        let test_makeup = read_team.makeup;
+        let test_years = read_team.years;
+        let test_championship = read_team.championship;
+        let test_fanbase = read_team.fanbase;
+        let test_manager_position = read_team.manager_position;
+        let test_manager_league = read_team.manager_league;
+        let test_retired = read_team.retired;
+        let test_personality = read_team.personality;
+        let test_daring = read_team.daring;
+        let test_motto = read_team.motto;
+        let test_owner_background = read_team.owner_background;
+        let test_owner_personality = read_team.owner_personality;
+        let test_roster = read_team.roster;
+        let test_bench = read_team.bench;
+        let test_pitcher = read_team.pitcher;
+        let test_bullpen = read_team.bullpen;
+
+        assert!(matches!("Test Team".to_string(), test_name));
+        assert!(matches!("Test Ballpark".to_string(), test_ballpark));
+        assert!(matches!("Test Manager".to_string(), test_ballpark));
+        assert!(matches!("Test Logo".to_string(), test_manager));
+        assert!(matches!(Era::Modern, test_era));
+        assert!(matches!(Location::Metropolis, test_location));
+        assert!(matches!("Test Mascot".to_string(), test_mascot));
+        assert!(matches!(Priority::Power, test_priority));
+        assert!(matches!(Makeup::Balanced, test_makeup));
+        assert_eq!(10i32, test_years);
+        assert_eq!(10i32, test_championship);
+        assert!(matches!(Fanbase::Loyal, test_fanbase));
+        assert!(matches!(Position::Pitcher, test_manager_position));
+        assert!(matches!(ManagerLeague::Major, test_manager_league));
+        assert_eq!(10i32, test_retired);
+        assert!(matches!("Test Personality".to_string(), test_personality));
+        assert_eq!(10i32, test_daring);
+        assert!(matches!("Test Motto".to_string(), test_motto));
+        assert!(matches!(
+            "Test Background".to_string(),
+            test_owner_background
+        ));
+        assert!(matches!(
+            "Test Personality".to_string(),
+            test_owner_personality
+        ));
+        assert!(matches!(
+            vec![
+                "test1".to_string(),
+                "test2".to_string(),
+                "test3".to_string()
+            ],
+            test_roster
+        ));
+        assert!(matches!(vec!["test4".to_string()], test_bench));
+        assert!(matches!(vec!["test5".to_string()], test_pitcher));
+        let temp = &test_bullpen[0].trim();
+        assert!(matches!("test6".to_string(), temp));
+    }
+
+    #[test]
+    fn test_load_park() {
+        let park_file_path = "src/testfiles/railyard.dbb".to_string();
+        let contents = fs::read_to_string(park_file_path).unwrap();
+
+        let test_park_modern = load_park_modern(contents);
+        let modern_name = test_park_modern.name;
+        let modern_location = test_park_modern.location;
+        let modern_type = test_park_modern.park_type;
+        let modern_capacity = test_park_modern.capacity;
+        let modern_turf = test_park_modern.turf;
+        let modern_roof = test_park_modern.roof;
+        let modern_condition = test_park_modern.condition;
+        let modern_quirks = test_park_modern.quirks;
+
+        assert!(matches!("The Railyard".to_string(), modern_name));
+        assert!(matches!(Location::Metropolis, modern_location));
+        assert!(matches!(StadiumTypeModern::Retro, modern_type));
+        assert_eq!(43000i32, modern_capacity);
+        assert!(matches!(Turf::Good, modern_turf));
+        assert!(matches!(Roof::PermanentRoof, modern_roof));
+        assert!(matches!(Condition::Decrepit, modern_condition));
+        assert!(matches!(vec![Quirks::ExpansiveOutfield], modern_quirks));
+
+        let ancient_file_path = "src/testfiles/mayfair_park.dbb".to_string();
+        let ancient_contents = fs::read_to_string(ancient_file_path).unwrap();
+
+        let test_park_ancient = load_park_ancient(ancient_contents);
+        let ancient_name = test_park_ancient.name;
+        let ancient_location = test_park_ancient.location;
+        let ancient_type = test_park_ancient.park_type;
+        let ancient_capacity = test_park_ancient.capacity;
+        let ancient_condition = test_park_ancient.condition;
+        let ancient_quirks = test_park_ancient.quirks;
+
+        assert!(matches!("Mayfair Park".to_string(), ancient_name));
+        assert!(matches!(Location::SmallCity, ancient_location));
+        assert!(matches!(
+            StadiumTypeAncient::WoodFramePavilion,
+            ancient_type
+        ));
+        assert_eq!(25000i32, ancient_capacity);
+        assert!(matches!(Condition::WellWorn, ancient_condition));
+        assert!(matches!(
+            vec![Quirks::ShortRight, Quirks::Beautiful],
+            ancient_quirks
+        ));
+    }
+
+    #[test]
+    fn test_write_park() {
+        //
+    }
+
+    #[test]
+    fn test_create_modern_game() {
+        let mut team1 = Team {
+            name: "Test 1".to_string(),
+            ballpark: "test".to_string(),
+            manager: "test".to_string(),
+            logo: "test".to_string(),
+            era: Era::Modern,
+            location: Location::SmallTown,
+            mascot: "test".to_string(),
+            priority: Priority::Power,
+            makeup: Makeup::Balanced,
+            years: 1i32,
+            championship: 1i32,
+            fanbase: Fanbase::Loyal,
+            manager_position: Position::Shortstop,
+            manager_league: ManagerLeague::Major,
+            retired: 1i32,
+            personality: "test".to_string(),
+            daring: 1i32,
+            motto: "test".to_string(),
+            owner_background: "test".to_string(),
+            owner_personality: "test".to_string(),
+            roster: vec!["test".to_string(), "test".to_string(), "test".to_string()],
+            bench: vec!["test".to_string()],
+            pitcher: vec!["test".to_string()],
+            bullpen: vec!["test".to_string()],
+        };
+
+        let mut team2 = Team {
+            name: "Test 2".to_string(),
+            ballpark: "test".to_string(),
+            manager: "test".to_string(),
+            logo: "test".to_string(),
+            era: Era::Ancient,
+            location: Location::SmallTown,
+            mascot: "test".to_string(),
+            priority: Priority::Power,
+            makeup: Makeup::Balanced,
+            years: 1i32,
+            championship: 1i32,
+            fanbase: Fanbase::Loyal,
+            manager_position: Position::Shortstop,
+            manager_league: ManagerLeague::Major,
+            retired: 1i32,
+            personality: "test".to_string(),
+            daring: 1i32,
+            motto: "test".to_string(),
+            owner_background: "test".to_string(),
+            owner_personality: "test".to_string(),
+            roster: vec![
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+                "test".to_string(),
+            ],
+            bench: vec!["test".to_string()],
+            pitcher: vec!["test".to_string()],
+            bullpen: vec!["test".to_string()],
+        };
+
+        let ballpark = BallparkModern {
+            name: "test".to_string(),
+            location: Location::SmallTown,
+            park_type: StadiumTypeModern::Retro,
+            capacity: 1i32,
+            turf: Turf::Good,
+            roof: Roof::None,
+            condition: Condition::WellWorn,
+            quirks: vec![Quirks::OddLeft],
+        };
+
+        let test_result = create_modern_game(team1.clone(), team2.clone(), ballpark.clone());
+        assert!(matches!(
+            Err::<GameModern, core::game_functions::TeamError>(TeamError {
+                message: "Home team does not have a complete roster".to_string(),
+                team: "Test 1".to_string()
+            }),
+            test_result
+        ));
+
+        team1.roster = vec![
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+        ];
+
+        let test_result2 = create_modern_game(team1, team2.clone(), ballpark);
+        assert!(matches!(
+            Err::<GameModern, core::game_functions::TeamError>(TeamError {
+                message: "Away team is not for the modern era".to_string(),
+                team: "Test 2".to_string()
+            }),
+            test_result2
+        ));
+
+        team2.era = Era::Modern;
+
+        /*
+        let test_result3 = create_modern_game(&team1, &team2, &ballpark).unwrap();
+        assert!(matches!(
+            GameModern {
+                home: &team1,
+                away: &team2,
+                ballpark: &ballpark,
+                home_active: _,
+                away_active: _,
+            },
+            test_result3
+        ));
+        */
+    }
+
+    #[test]
+    fn test_load_roster() {
+        let filename = "src/testfiles/detroit_steam_hammers.dbt";
+        let contents = fs::read_to_string(filename).unwrap();
+        let read_team = load_team(contents);
+        let test_roster = &read_team.roster;
+        let test_bench = &read_team.bench;
+        let test_pitcher = &read_team.pitcher;
+        let test_bullpen = &read_team.bullpen;
+    }
+
+    // critical hit function test
+    #[test]
+    fn test_crit_hit() {
+        let r1 = crit_hit(&1);
+        assert_eq!(r1, 18);
+
+        let r2 = crit_hit(&8);
+        assert_eq!(r2, 18);
+
+        let r3 = crit_hit(&5);
+        assert_eq!(r3, 15);
+
+        let r4 = crit_hit(&3);
+        assert_eq!(r4, 17);
+
+        let r5 = crit_hit(&4);
+        assert_eq!(r5, 16);
+
+        let r6 = crit_hit(&16);
+        assert_eq!(r6, 19);
+
+        let r7 = crit_hit(&19);
+        assert_eq!(r7, 19);
+    }
+
+    // runnerson function test
+    #[test]
+    fn test_runnerson() {
+        // create pitcher to fill in game state for test
+        let test_player = Player {
+            first_name: "".to_string(),
+            last_name: "".to_string(),
+            nickname: "".to_string(),
+            position: Position::Pitcher,
+            handedness: Handedness::Right,
+            batter_target: 12,
+            on_base_target: 18,
+            pitch_die: 4,
+            traits: vec![Traits::None],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![InjurySeverity::Uninjured],
+        };
+        let mut state = GameState {
+            status: GameStatus::Ongoing,
+            inning: 1,
+            inning_half: InningTB::Bottom,
+            outs: Outs::Two,
+            runners: RunnersOn::Runner000,
+            batting_team1: 1,
+            batting_team2: 1,
+            current_pitcher_team1: test_player.clone(),
+            current_pitcher_team2: test_player.clone(),
+            pitched_team1: 1,
+            pitched_team2: 1,
+            runs_team1: 0,
+            runs_team2: 0,
+            hits_team1: 0,
+            hits_team2: 0,
+            errors_team1: 0,
+            errors_team2: 0,
+        };
+
+        let r1 = runnerson(&state);
+        assert_eq!(r1, 0);
+
+        state.runners = RunnersOn::Runner100;
+        let r2 = runnerson(&state);
+        assert_eq!(r2, 1);
+
+        state.runners = RunnersOn::Runner010;
+        let r3 = runnerson(&state);
+        assert_eq!(r3, 1);
+
+        state.runners = RunnersOn::Runner001;
+        let r4 = runnerson(&state);
+        assert_eq!(r4, 1);
+
+        state.runners = RunnersOn::Runner110;
+        let r5 = runnerson(&state);
+        assert_eq!(r5, 2);
+
+        state.runners = RunnersOn::Runner101;
+        let r6 = runnerson(&state);
+        assert_eq!(r6, 2);
+
+        state.runners = RunnersOn::Runner011;
+        let r7 = runnerson(&state);
+        assert_eq!(r7, 2);
+
+        state.runners = RunnersOn::Runner111;
+        let r8 = runnerson(&state);
+        assert_eq!(r8, 3);
+    }
+
+    // runners_advance test function
+    #[test]
+    fn test_runners_advance() {
+        // create test structures
+        let test_player = Player {
+            first_name: "".to_string(),
+            last_name: "".to_string(),
+            nickname: "".to_string(),
+            position: Position::Pitcher,
+            handedness: Handedness::Right,
+            batter_target: 12,
+            on_base_target: 18,
+            pitch_die: 4,
+            traits: vec![Traits::None],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![InjurySeverity::Uninjured],
+        };
+        let mut state = GameState {
+            status: GameStatus::Ongoing,
+            inning: 1,
+            inning_half: InningTB::Bottom,
+            outs: Outs::Two,
+            runners: RunnersOn::Runner100,
+            batting_team1: 1,
+            batting_team2: 1,
+            current_pitcher_team1: test_player.clone(),
+            current_pitcher_team2: test_player.clone(),
+            pitched_team1: 1,
+            pitched_team2: 1,
+            runs_team1: 0,
+            runs_team2: 0,
+            hits_team1: 0,
+            hits_team2: 0,
+            errors_team1: 0,
+            errors_team2: 0,
+        };
+
+        state = runners_advance(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner010));
+
+        state = runners_advance(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner001));
+
+        state = runners_advance(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 1);
+
+        state.runners = RunnersOn::Runner100;
+        state = runners_advance(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner001));
+
+        state = runners_advance(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 2);
+
+        state.runners = RunnersOn::Runner011;
+        state = runners_advance(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 4);
+
+        state.runners = RunnersOn::Runner110;
+        state = runners_advance(state, &3);
+        assert!(matches!(state.runners, RunnersOn::Runner000));
+        assert_eq!(state.runs_team1, 6);
+    }
+
+    // add_runner test function
+    #[test]
+    fn test_add_runners() {
+        let test_player = Player {
+            first_name: "".to_string(),
+            last_name: "".to_string(),
+            nickname: "".to_string(),
+            position: Position::Pitcher,
+            handedness: Handedness::Right,
+            batter_target: 12,
+            on_base_target: 18,
+            pitch_die: 4,
+            traits: vec![Traits::None],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![InjurySeverity::Uninjured],
+        };
+        let mut state = GameState {
+            status: GameStatus::Ongoing,
+            inning: 1,
+            inning_half: InningTB::Bottom,
+            outs: Outs::Two,
+            runners: RunnersOn::Runner100,
+            batting_team1: 1,
+            batting_team2: 1,
+            current_pitcher_team1: test_player.clone(),
+            current_pitcher_team2: test_player.clone(),
+            pitched_team1: 1,
+            pitched_team2: 1,
+            runs_team1: 0,
+            runs_team2: 0,
+            hits_team1: 0,
+            hits_team2: 0,
+            errors_team1: 0,
+            errors_team2: 0,
+        };
+
+        state.runners = RunnersOn::Runner011;
+        state = add_runner(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner111));
+
+        state.runners = RunnersOn::Runner101;
+        state = add_runner(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner111));
+
+        state.runners = RunnersOn::Runner000;
+        state = add_runner(state, &1);
+        assert!(matches!(state.runners, RunnersOn::Runner100));
+
+        state = add_runner(state, &2);
+        assert!(matches!(state.runners, RunnersOn::Runner110));
+    }
+
+    // load_csv function test
+    #[test]
+    fn test_load_csv() {
+        let filename = "src/testfiles/csv_test.csv";
+        let delimiter = "\n";
+        let result = load_csv(filename, delimiter).unwrap();
+        assert_eq!(result.len(), 4);
+        assert!(result[0] == "this");
+        assert!(result[1] == "is");
+        assert!(result[2] == "a");
+        assert!(result[3] == "test");
+    }
+
+    // generate player function test
+    #[test]
+    fn test_generate_player() {
+        // use same file name every time so test directory isn't mindlessly spammed
+        // make basic first name and last name vectors to keep things simple
+        // make them vector of vectors so you can take randomness out of player names for test
+        let firstnames = vec![
+            vec!["Seth".to_string(), "Seth".to_string()],
+            vec!["Ben".to_string(), "Ben".to_string()],
+            vec!["Chuck".to_string(), "Chuck".to_string()],
+        ];
+        let lastnames = vec![
+            vec!["Loveall".to_string(), "Loveall".to_string()],
+            vec!["Smith".to_string(), "Smith".to_string()],
+            vec!["Schuldiner".to_string(), "Schuldiner".to_string()],
+        ];
+        for i in 0..3 as usize {
+            let test_player = generate_player(
+                PlayerClass::StartingHitter,
+                Position::Firstbase,
+                &firstnames[i],
+                &lastnames[i],
+            );
+            let mut filename = "src/testfiles/game_test/test_player".to_string();
+            filename.push_str(&i.to_string());
+            filename.push_str(".dbp");
+            _ = write_player(&test_player, &filename);
+            let contents = fs::read_to_string(filename).unwrap();
+            let read_player = load_player(contents);
+
+            let position = read_player.position;
+            let handedness = read_player.handedness;
+            let raits = read_player.traits;
+            assert!(matches!(test_player.position, position));
+            assert!(test_player.first_name == read_player.first_name);
+            assert!(test_player.last_name == read_player.last_name);
+            assert!(matches!(test_player.handedness, handedness));
+            assert_eq!(test_player.batter_target, read_player.batter_target);
+            assert_eq!(test_player.on_base_target, read_player.on_base_target);
+            assert_eq!(test_player.pitch_die, read_player.pitch_die);
+            assert!(matches!(test_player.traits, traits));
+        }
+    }
+
+    // find player by position test
+    #[test]
+    fn test_find_by_position() {
+        let filename = "src/testfiles/game/teams/blue_team.dbt";
+        let contents = fs::read_to_string(filename).unwrap();
+        let team = load_team(contents);
+        let (roster, _, _, _) = load_roster(&team);
+        let second_baseman = find_by_position(Position::Secondbase, &roster).unwrap();
+        assert_eq!(second_baseman.batter_target, 26); // this was easier than actually comparing
+                                                      // name strings or something, lol
+    }
+
+    // debug_roll test
+    #[test]
+    fn test_debug_roll() {
+        let mut config = DebugConfig {
+            mode: true,
+            rolls: vec![12, 15, 20],
+            roll_index: 0,
+        };
+        let result1 = debug_roll(&mut config, 10);
+        let result2 = debug_roll(&mut config, 10);
+        let result3 = debug_roll(&mut config, 10);
+        assert_eq!(result1, 12);
+        assert_eq!(result2, 15);
+        assert_eq!(result3, 20);
+    }
+
+    /*
+    // oddity test
+    #[test]
+    fn test_oddity() {
+        let odd = oddity(&1, &1, &game, state);
+    }
+    */
+
+    /*
+    // hit_table test
+    #[test]
+    fn test_hit_table() {
+        let mut state = GameState { status: GameStatus::Ongoing, inning: 1, inning_half: InningTB::Top, outs: Outs::One, runners: RunnersOn::Runner000, batting_team1: (), batting_team2: (), current_pitcher_team1: (), current_pitcher_team2: (), pitched_team1: (), pitched_team2: (), runs_team1: (), runs_team2: (), hits_team1: (), hits_team2: (), errors_team1: (), errors_team2: () };
+        let hit_result = hit_table(&1, state);
+    }
+    */
+
+    // get_swing_position()
+    #[test]
+    fn test_get_swing_position() {
+        let mut position = get_swing_position(&31);
+        assert_eq!(position, 1);
+        position = get_swing_position(&42);
+        assert_eq!(position, 2);
+        position = get_swing_position(&53);
+        assert_eq!(position, 3);
+        position = get_swing_position(&64);
+        assert_eq!(position, 4);
+        position = get_swing_position(&75);
+        assert_eq!(position, 5);
+        position = get_swing_position(&86);
+        assert_eq!(position, 6);
+        position = get_swing_position(&17);
+        assert_eq!(position, 7);
+        position = get_swing_position(&28);
+        assert_eq!(position, 8);
+        position = get_swing_position(&39);
+        assert_eq!(position, 9);
+    }
 }

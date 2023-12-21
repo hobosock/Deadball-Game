@@ -3,6 +3,7 @@ MODULE INCLUSIONS
 ========================================================*/
 pub mod characters; // includes player, team, and era code
 pub mod core; // includes core functions like dice rolling
+pub mod gui;
 
 #[allow(unused_imports)]
 use crate::core::game_functions;

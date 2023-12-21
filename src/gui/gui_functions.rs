@@ -2,7 +2,7 @@
 MODULE INCLUSIONS
 ========================================================*/
 
-use deadball::{
+use crate::{
     characters::{
         players::{Player, Position},
         teams::ActiveTeam,
