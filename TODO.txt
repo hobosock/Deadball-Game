@@ -5,4 +5,7 @@
  - add player find by position to use traits for things like defense rolls
  - probably need to track which player is on base???
 
- - update fn possible_error/productive_out1/productive_out2 to handle top/bottom inning logic
+game_functions.rs line 529
+
+ - refactor debug/regular roll code into core function (ex. rolls in fn modern_inning_flow())
+ - refactor incrementing outs code into a core function (ex. fn actual_out() match statement)

@@ -11,6 +11,7 @@ use crate::gui::debug::{debug_roll, DebugConfig};
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
+#[derive(Debug, Clone, PartialEq)]
 pub enum AtBatResults {
     Oddity,
     CriticalHit,
@@ -161,6 +162,7 @@ pub struct GameState {
     pub hits_team2: u32,
     pub errors_team1: u32,
     pub errors_team2: u32,
+    pub game_text: String,
 }
 
 //======== CUSTOM ERRORS =================================
@@ -372,33 +374,38 @@ pub fn modern_game_flow<'a>(
     mut state: GameState,
     debug: DebugConfig,
 ) -> GameState {
-    // TODO: delete these debug print statements once it is fixed
-    println!("{:?}", state);
     // check top of the 9th at a different place
     if state.inning > 9 {
         // check score
         if state.runs_team1 != state.runs_team2 {
             state.status = GameStatus::Over;
+            state.game_text += &format!(
+                "\nGame!  Final score: {} - {}",
+                state.runs_team1, state.runs_team2
+            );
         }
     }
     match state.status {
         GameStatus::NotStarted => {
             state.status = GameStatus::Ongoing;
-            // TODO: delete this
             println!("Play ball!");
+            state.game_text += "\nPlay ball!";
         }
         GameStatus::Ongoing => match state.inning_half {
-            InningTB::Top => match state.outs {
-                Outs::Three => {
-                    // clean up game state, reset for new inning
-                    state.inning_half = InningTB::Bottom;
-                    state.outs = Outs::None;
-                    state.runners = RunnersOn::Runner000;
+            InningTB::Top => {
+                match state.outs {
+                    Outs::Three => {
+                        // clean up game state, reset for new inning
+                        state.inning_half = InningTB::Bottom;
+                        state.outs = Outs::None;
+                        state.runners = RunnersOn::Runner000;
+                        state.game_text += "\nTop of the inning over.";
+                    }
+                    _ => {
+                        state = modern_inning_flow(game, state, debug);
+                    }
                 }
-                _ => {
-                    state = modern_inning_flow(game, state, debug);
-                }
-            },
+            }
             InningTB::Bottom => {
                 match state.outs {
                     Outs::Three => {
@@ -406,6 +413,7 @@ pub fn modern_game_flow<'a>(
                         state.runners = RunnersOn::Runner000;
                         state.outs = Outs::None; // reset outs
                         state.inning += 1;
+                        state.game_text += "\nBottom of the inning over.";
                     }
                     _ => {
                         state = modern_inning_flow(game, state, debug);
@@ -419,6 +427,10 @@ pub fn modern_game_flow<'a>(
             // TODO: inning ticks over one final time before game ends, need to fix
             println!("FINAL SCORE");
             println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
+            state.game_text += &format!(
+                "\nThat's game!  Final score: {} - {}",
+                state.runs_team1, state.runs_team2
+            );
         }
     }
     return state;
@@ -454,16 +466,19 @@ pub fn modern_inning_flow<'a>(
                             pitch_result = -1 * roll(pd.abs());
                         }
                     }
+                    state.game_text += &format!("\nPitch result: {}", &pitch_result);
                     if debug.mode {
                         pitch_result += debug_roll(&mut debug, 100);
                     } else {
                         pitch_result += roll(100);
                     }
+                    state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
                         game.home_active.batting_order[state.batting_team2 as usize].batter_target,
                         game.home_active.batting_order[state.batting_team2 as usize].on_base_target,
                         pitch_result,
                     );
+                    state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team2 == 8 {
                         state.batting_team2 = 0;
                     } else {
@@ -479,6 +494,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 oddity_result = roll(10) + roll(10);
                             }
+                            state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
                             state = oddity(&oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
@@ -489,6 +505,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 hit_result = roll(20);
                             }
+                            state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state);
                             // TODO: no DEF roll on crit_hit
@@ -501,6 +518,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 hit_result = roll(20);
                             }
+                            state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state);
                         }
                         AtBatResults::Walk => {
@@ -1343,6 +1361,7 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
         hits_team2: 0,
         errors_team1: 0,
         errors_team2: 0,
+        game_text: "Game created.".to_string(),
     };
 
     return game_state;
@@ -1390,6 +1409,7 @@ pub fn new_game_state_struct() -> GameState {
         hits_team2: 0,
         errors_team1: 0,
         errors_team2: 0,
+        game_text: "Game created.".to_string(),
     };
 
     return new_state;
@@ -1400,13 +1420,16 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
     // TODO: Not sure I am implementing this correctly, see page 29
     // get position
     // TODO: get player traits
+    state.game_text += "\n Possible error -> ";
     let def_roll: i32;
     if debug.mode {
         def_roll = debug_roll(debug, 12);
     } else {
         def_roll = roll(12);
     }
+    state.game_text += &format!("defense roll: {}", &def_roll);
     if def_roll <= 2 {
+        state.game_text += "-> Error!";
         // fielder makes an error
         // TODO: these kind of match statements are redundant, clean it up
         match state.inning_half {
@@ -1420,6 +1443,7 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
     } else {
+        state.game_text += "-> No error.";
         // fielder makes the out like normal
         match state.outs {
             Outs::None => {
@@ -1451,6 +1475,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
             state.outs = Outs::Three;
         }
         _ => {
+            state.game_text += "\nPossible productive out (type 1).";
             let fielder = get_swing_position(pitch_result);
             if fielder == 3 || fielder >= 7 {
                 // check for runners on second and third
@@ -1539,6 +1564,7 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
             state.outs = Outs::Three;
         }
         _ => {
+            state.game_text += "\nPossible producive out 2.";
             let fielder = get_swing_position(pitch_result);
             if fielder == 3 || fielder >= 7 {
                 match state.runners {
