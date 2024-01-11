@@ -728,6 +728,7 @@ mod tests {
             hits_team2: 0,
             errors_team1: 0,
             errors_team2: 0,
+            game_text: "test".to_string(),
         };
 
         let r1 = runnerson(&state);
@@ -797,6 +798,7 @@ mod tests {
             hits_team2: 0,
             errors_team1: 0,
             errors_team2: 0,
+            game_text: "test".to_string(),
         };
 
         state = runners_advance(state, &1);
@@ -862,6 +864,7 @@ mod tests {
             hits_team2: 0,
             errors_team1: 0,
             errors_team2: 0,
+            game_text: "test".to_string(),
         };
 
         state.runners = RunnersOn::Runner011;

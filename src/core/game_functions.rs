@@ -1567,6 +1567,7 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
             state.game_text += "\nPossible producive out 2.";
             let fielder = get_swing_position(pitch_result);
             if fielder == 3 || fielder >= 7 {
+                state.game_text += "\nBall hit to 1B or OF, runners at 2nd and 3rd advance.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
                     RunnersOn::Runner100 => {}
@@ -1610,7 +1611,8 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
                 //
             } else {
                 // advance batter to first and lead runner is out
-                // TODO: should this be done for force outs only?
+                // TODO: should this be done for force outs only
+                state.game_text += "\nFielder's choice.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
                     RunnersOn::Runner100 => {}
@@ -1652,7 +1654,9 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
 
 /// process non-productive out swing results
 fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
-    // no runners advance
+    state.game_text += "\nOut!";
+    // runners at second and third cannot advance on a flyball
+    // TODO: check if runner at first can advance
     // anywhere in the infield, runner at first and batter are out
     let fielder = get_swing_position(pitch_result);
     if fielder >= 3 && fielder <= 6 {
@@ -1663,6 +1667,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
             }
             _ => match state.runners {
                 RunnersOn::Runner100 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner000;
                     match state.outs {
                         Outs::None => {
@@ -1674,6 +1679,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
                 RunnersOn::Runner110 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner010;
                     match state.outs {
                         Outs::None => {
@@ -1685,6 +1691,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
                 RunnersOn::Runner101 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner001;
                     match state.outs {
                         Outs::None => {
@@ -1696,6 +1703,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
                 RunnersOn::Runner111 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner011;
                     match state.outs {
                         Outs::None => {
@@ -1746,15 +1754,19 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
 fn mega_out(mut state: GameState) -> GameState {
     // triple play if no outs and runners on first and second
     // check for triple play, otherwise same as previous branch
+    state.game_text += "\nOut!";
     match state.runners {
         RunnersOn::Runner110 => {
+            state.game_text += "\nTriple play!";
             state.outs = Outs::Three;
             // TODO: only say it's a triple play if no outs
         }
         RunnersOn::Runner111 => {
+            state.game_text += "\nTriple play!";
             state.outs = Outs::Three;
         }
         RunnersOn::Runner100 => {
+            state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner000;
             match state.outs {
                 Outs::None => {
@@ -1766,6 +1778,7 @@ fn mega_out(mut state: GameState) -> GameState {
             }
         }
         RunnersOn::Runner101 => {
+            state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner001;
             match state.outs {
                 Outs::None => {
