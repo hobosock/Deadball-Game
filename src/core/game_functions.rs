@@ -11,6 +11,7 @@ use crate::gui::debug::{debug_roll, DebugConfig};
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
+#[derive(Debug, Clone, PartialEq)]
 pub enum AtBatResults {
     Oddity,
     CriticalHit,
@@ -161,6 +162,7 @@ pub struct GameState {
     pub hits_team2: u32,
     pub errors_team1: u32,
     pub errors_team2: u32,
+    pub game_text: String,
 }
 
 //======== CUSTOM ERRORS =================================
@@ -372,33 +374,38 @@ pub fn modern_game_flow<'a>(
     mut state: GameState,
     debug: DebugConfig,
 ) -> GameState {
-    // TODO: delete these debug print statements once it is fixed
-    println!("{:?}", state);
     // check top of the 9th at a different place
     if state.inning > 9 {
         // check score
         if state.runs_team1 != state.runs_team2 {
             state.status = GameStatus::Over;
+            state.game_text += &format!(
+                "\nGame!  Final score: {} - {}",
+                state.runs_team1, state.runs_team2
+            );
         }
     }
     match state.status {
         GameStatus::NotStarted => {
             state.status = GameStatus::Ongoing;
-            // TODO: delete this
             println!("Play ball!");
+            state.game_text += "\nPlay ball!";
         }
         GameStatus::Ongoing => match state.inning_half {
-            InningTB::Top => match state.outs {
-                Outs::Three => {
-                    // clean up game state, reset for new inning
-                    state.inning_half = InningTB::Bottom;
-                    state.outs = Outs::None;
-                    state.runners = RunnersOn::Runner000;
+            InningTB::Top => {
+                match state.outs {
+                    Outs::Three => {
+                        // clean up game state, reset for new inning
+                        state.inning_half = InningTB::Bottom;
+                        state.outs = Outs::None;
+                        state.runners = RunnersOn::Runner000;
+                        state.game_text += "\nTop of the inning over.";
+                    }
+                    _ => {
+                        state = modern_inning_flow(game, state, debug);
+                    }
                 }
-                _ => {
-                    state = modern_inning_flow(game, state, debug);
-                }
-            },
+            }
             InningTB::Bottom => {
                 match state.outs {
                     Outs::Three => {
@@ -406,6 +413,7 @@ pub fn modern_game_flow<'a>(
                         state.runners = RunnersOn::Runner000;
                         state.outs = Outs::None; // reset outs
                         state.inning += 1;
+                        state.game_text += "\nBottom of the inning over.";
                     }
                     _ => {
                         state = modern_inning_flow(game, state, debug);
@@ -419,6 +427,10 @@ pub fn modern_game_flow<'a>(
             // TODO: inning ticks over one final time before game ends, need to fix
             println!("FINAL SCORE");
             println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
+            state.game_text += &format!(
+                "\nThat's game!  Final score: {} - {}",
+                state.runs_team1, state.runs_team2
+            );
         }
     }
     return state;
@@ -454,16 +466,19 @@ pub fn modern_inning_flow<'a>(
                             pitch_result = -1 * roll(pd.abs());
                         }
                     }
+                    state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
                     if debug.mode {
                         pitch_result += debug_roll(&mut debug, 100);
                     } else {
                         pitch_result += roll(100);
                     }
+                    state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
                         game.home_active.batting_order[state.batting_team2 as usize].batter_target,
                         game.home_active.batting_order[state.batting_team2 as usize].on_base_target,
                         pitch_result,
                     );
+                    state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team2 == 8 {
                         state.batting_team2 = 0;
                     } else {
@@ -479,6 +494,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 oddity_result = roll(10) + roll(10);
                             }
+                            state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
                             state = oddity(&oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
@@ -489,6 +505,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 hit_result = roll(20);
                             }
+                            state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state);
                             // TODO: no DEF roll on crit_hit
@@ -501,6 +518,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 hit_result = roll(20);
                             }
+                            state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state);
                         }
                         AtBatResults::Walk => {
@@ -746,6 +764,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
     // 3 move hitter to runner
     // 4. update hit values in game state
     if *hit_result <= 2 {
+        state.game_text += " -> Single";
         // single
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
@@ -761,6 +780,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         return state;
     } else if *hit_result == 3 {
         // single DEF 1B
+        state.game_text += " -> Single DEF 1B";
         let mut advance = 1;
         let mut base = 1;
         // when a defense roll is involved, add hit first and then you can subtract if there is an
@@ -781,6 +801,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 4 {
+        state.game_text += " -> Single DEF 2B";
         // single DEF 2B
         let mut advance = 1;
         let mut base = 1;
@@ -799,6 +820,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 5 {
+        state.game_text += " -> Single DEF 3B";
         // single DEF 3B
         let mut advance = 1;
         let mut base = 1;
@@ -817,6 +839,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 6 {
+        state.game_text += " -> Single DEF SS";
         // single DEF SS
         let mut advance = 1;
         let mut base = 1;
@@ -835,6 +858,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result >= 7 && *hit_result <= 9 {
+        state.game_text += " -> Single";
         // single
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
@@ -848,6 +872,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         }
         return state;
     } else if *hit_result >= 10 && *hit_result <= 14 {
+        state.game_text += " -> Single, runners advance 2";
         // single, runners advance 2
         state = runners_advance(state, &2);
         state = add_runner(state, &1);
@@ -861,6 +886,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         }
         return state;
     } else if *hit_result == 15 {
+        state.game_text += " -> Double DEF LF";
         // double DEF LF
         let mut advance = 2;
         let mut base = 2;
@@ -879,6 +905,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 16 {
+        state.game_text += " -> Double, DEF CF";
         // double DEF CF
         let mut advance = 2;
         let mut base = 2;
@@ -897,6 +924,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 17 {
+        state.game_text += " -> Double DEF RF";
         // double DEF RF
         let mut advance = 2;
         let mut base = 2;
@@ -915,6 +943,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 18 {
+        state.game_text += " -> Double, runners advance 3";
         // double, runners advance 3
         state = runners_advance(state, &3);
         state = add_runner(state, &2);
@@ -928,6 +957,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         }
         return state;
     } else if *hit_result >= 19 {
+        state.game_text += " -> HOME RUN!";
         // home run
         let mut runs = runnerson(&state);
         runs += 1;
@@ -963,7 +993,9 @@ pub fn defense<'b>(
     mut advance: u32,
     mut base: u32,
 ) -> (GameState, u32, u32) {
+    state.game_text += &format!("\n Defense roll: {}", def_result);
     if *def_result <= 2 {
+        state.game_text += " -> Error";
         // error, runners take an extra base
         // modify hit and error values
         // should be okay to subtract here since hit was added before passing into this function
@@ -979,9 +1011,11 @@ pub fn defense<'b>(
         }
         return (state, advance + 1, base + 1);
     } else if *def_result >= 3 && *def_result <= 9 {
+        state.game_text += " -> Normal";
         // no change
         return (state, advance, base);
     } else if *def_result >= 10 && *def_result <= 11 {
+        state.game_text += " -> good defense, reduce hit level by 1";
         // double turns to single, runners advance 2, single turns to out, runners advance 1
         if base == 1 {
             match state.outs {
@@ -1006,6 +1040,7 @@ pub fn defense<'b>(
         }
         return (state, advance, base);
     } else if *def_result >= 12 {
+        state.game_text += " -> Out!  What a play, Runners hold.";
         // hit turned to out, runners hold
         match state.outs {
             Outs::None => {
@@ -1343,6 +1378,7 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
         hits_team2: 0,
         errors_team1: 0,
         errors_team2: 0,
+        game_text: "Game created.".to_string(),
     };
 
     return game_state;
@@ -1390,6 +1426,7 @@ pub fn new_game_state_struct() -> GameState {
         hits_team2: 0,
         errors_team1: 0,
         errors_team2: 0,
+        game_text: "Game created.".to_string(),
     };
 
     return new_state;
@@ -1400,13 +1437,16 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
     // TODO: Not sure I am implementing this correctly, see page 29
     // get position
     // TODO: get player traits
+    state.game_text += "\n Possible error -> ";
     let def_roll: i32;
     if debug.mode {
         def_roll = debug_roll(debug, 12);
     } else {
         def_roll = roll(12);
     }
+    state.game_text += &format!("defense roll: {}", &def_roll);
     if def_roll <= 2 {
+        state.game_text += "-> Error!";
         // fielder makes an error
         // TODO: these kind of match statements are redundant, clean it up
         match state.inning_half {
@@ -1420,6 +1460,7 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
     } else {
+        state.game_text += "-> No error.";
         // fielder makes the out like normal
         match state.outs {
             Outs::None => {
@@ -1451,6 +1492,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
             state.outs = Outs::Three;
         }
         _ => {
+            state.game_text += "\nPossible productive out (type 1).";
             let fielder = get_swing_position(pitch_result);
             if fielder == 3 || fielder >= 7 {
                 // check for runners on second and third
@@ -1539,8 +1581,10 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
             state.outs = Outs::Three;
         }
         _ => {
+            state.game_text += "\nPossible producive out 2.";
             let fielder = get_swing_position(pitch_result);
             if fielder == 3 || fielder >= 7 {
+                state.game_text += "\nBall hit to 1B or OF, runners at 2nd and 3rd advance.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
                     RunnersOn::Runner100 => {}
@@ -1584,7 +1628,8 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
                 //
             } else {
                 // advance batter to first and lead runner is out
-                // TODO: should this be done for force outs only?
+                // TODO: should this be done for force outs only
+                state.game_text += "\nFielder's choice.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
                     RunnersOn::Runner100 => {}
@@ -1626,7 +1671,9 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
 
 /// process non-productive out swing results
 fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
-    // no runners advance
+    state.game_text += "\nOut!";
+    // runners at second and third cannot advance on a flyball
+    // TODO: check if runner at first can advance
     // anywhere in the infield, runner at first and batter are out
     let fielder = get_swing_position(pitch_result);
     if fielder >= 3 && fielder <= 6 {
@@ -1637,6 +1684,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
             }
             _ => match state.runners {
                 RunnersOn::Runner100 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner000;
                     match state.outs {
                         Outs::None => {
@@ -1648,6 +1696,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
                 RunnersOn::Runner110 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner010;
                     match state.outs {
                         Outs::None => {
@@ -1659,6 +1708,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
                 RunnersOn::Runner101 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner001;
                     match state.outs {
                         Outs::None => {
@@ -1670,6 +1720,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
                 RunnersOn::Runner111 => {
+                    state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner011;
                     match state.outs {
                         Outs::None => {
@@ -1720,15 +1771,19 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
 fn mega_out(mut state: GameState) -> GameState {
     // triple play if no outs and runners on first and second
     // check for triple play, otherwise same as previous branch
+    state.game_text += "\nOut!";
     match state.runners {
         RunnersOn::Runner110 => {
+            state.game_text += "\nTriple play!";
             state.outs = Outs::Three;
             // TODO: only say it's a triple play if no outs
         }
         RunnersOn::Runner111 => {
+            state.game_text += "\nTriple play!";
             state.outs = Outs::Three;
         }
         RunnersOn::Runner100 => {
+            state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner000;
             match state.outs {
                 Outs::None => {
@@ -1740,6 +1795,7 @@ fn mega_out(mut state: GameState) -> GameState {
             }
         }
         RunnersOn::Runner101 => {
+            state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner001;
             match state.outs {
                 Outs::None => {

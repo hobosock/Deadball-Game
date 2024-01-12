@@ -80,6 +80,7 @@ pub struct DeadballApp {
     create_game_window: bool,
     debug_window: bool,
     debug_roll_window: bool,
+    console_window: bool,
     // create game interface
     create_game_era: Era,
     away_team_file: Option<PathBuf>,
@@ -178,6 +179,7 @@ impl<'a> Default for DeadballApp {
             create_game_window: false,
             debug_window: false,
             debug_roll_window: false,
+            console_window: false,
             create_game_era: Era::None,
             away_team_file: None,
             away_team_file_dialog: None,
@@ -246,6 +248,7 @@ impl<'a> eframe::App for DeadballApp {
         draw_debug_window(ctx, self);
         draw_create_new_game(ctx, self);
         draw_debug_roll_window(ctx, self);
+        draw_console_window(ctx, self);
 
         // main window
         draw_bottom_panel(ctx, self);
@@ -551,7 +554,7 @@ fn draw_about_deadball_window(ctx: &Context, app: &mut DeadballApp) {
         });
 }
 
-// populates ui for the "About this app" window
+/// populates ui for the "About this app" window
 fn draw_about_app_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("About this app")
         .open(&mut app.about_app_window)
@@ -560,6 +563,7 @@ fn draw_about_app_window(ctx: &Context, app: &mut DeadballApp) {
         });
 }
 
+/// draw the debug window
 fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Debug Mode")
         .open(&mut app.debug_window)
@@ -740,6 +744,7 @@ fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
         });
 }
 
+/// draws the debug roll window
 fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Roll Debug Mode")
         .open(&mut app.debug_roll_window)
@@ -777,6 +782,25 @@ fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
                     ui.label(roll.to_string());
                 }
             });
+        });
+}
+
+/// draws the console for displaying game text
+fn draw_console_window(ctx: &Context, app: &mut DeadballApp) {
+    let mut console_text: String;
+    if app.game_state.is_some() {
+        console_text = app.game_state.clone().unwrap().game_text;
+    } else {
+        console_text = "No game is currently active.".to_string();
+    }
+    egui::Window::new("Console")
+        .open(&mut app.console_window)
+        .show(ctx, |ui| {
+            egui::ScrollArea::vertical()
+                .stick_to_bottom(true)
+                .show(ui, |ui| {
+                    ui.text_edit_multiline(&mut console_text);
+                });
         });
 }
 
@@ -1057,17 +1081,6 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                             GameStatus::Over => {}
                         }
                     }
-                    if app.game_state.is_some() && app.game_modern.is_some() {
-                        // TODO: update with ancient game when ready
-                        app.game_state = Some(modern_game_flow(
-                            &app.game_modern.clone().unwrap(),
-                            app.game_state.clone().unwrap(),
-                            app.debug_roll_state.clone(),
-                        ));
-                        println!("{:?}", app.game_state);
-                    } else {
-                        println!("Need to initialize a game first.");
-                    }
                 }
             }
             Panel::Roster => {
@@ -1091,6 +1104,9 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                     }
                     if ui.button("Roll").clicked() {
                         app.debug_roll_window = true;
+                    }
+                    if ui.button("Console").clicked() {
+                        app.console_window = true;
                     }
                 });
             }
