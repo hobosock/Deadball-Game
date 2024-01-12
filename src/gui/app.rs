@@ -1081,17 +1081,6 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                             GameStatus::Over => {}
                         }
                     }
-                    if app.game_state.is_some() && app.game_modern.is_some() {
-                        // TODO: update with ancient game when ready
-                        app.game_state = Some(modern_game_flow(
-                            &app.game_modern.clone().unwrap(),
-                            app.game_state.clone().unwrap(),
-                            app.debug_roll_state.clone(),
-                        ));
-                        println!("{:?}", app.game_state);
-                    } else {
-                        println!("Need to initialize a game first.");
-                    }
                 }
             }
             Panel::Roster => {
