@@ -466,7 +466,7 @@ pub fn modern_inning_flow<'a>(
                             pitch_result = -1 * roll(pd.abs());
                         }
                     }
-                    state.game_text += &format!("\nPitch result: {}", &pitch_result);
+                    state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
                     if debug.mode {
                         pitch_result += debug_roll(&mut debug, 100);
                     } else {
@@ -764,6 +764,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
     // 3 move hitter to runner
     // 4. update hit values in game state
     if *hit_result <= 2 {
+        state.game_text += " -> Single";
         // single
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
@@ -779,6 +780,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         return state;
     } else if *hit_result == 3 {
         // single DEF 1B
+        state.game_text += " -> Single DEF 1B";
         let mut advance = 1;
         let mut base = 1;
         // when a defense roll is involved, add hit first and then you can subtract if there is an
@@ -799,6 +801,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 4 {
+        state.game_text += " -> Single DEF 2B";
         // single DEF 2B
         let mut advance = 1;
         let mut base = 1;
@@ -817,6 +820,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 5 {
+        state.game_text += " -> Single DEF 3B";
         // single DEF 3B
         let mut advance = 1;
         let mut base = 1;
@@ -835,6 +839,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 6 {
+        state.game_text += " -> Single DEF SS";
         // single DEF SS
         let mut advance = 1;
         let mut base = 1;
@@ -853,6 +858,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result >= 7 && *hit_result <= 9 {
+        state.game_text += " -> Single";
         // single
         state = runners_advance(state, &1);
         state = add_runner(state, &1);
@@ -866,6 +872,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         }
         return state;
     } else if *hit_result >= 10 && *hit_result <= 14 {
+        state.game_text += " -> Single, runners advance 2";
         // single, runners advance 2
         state = runners_advance(state, &2);
         state = add_runner(state, &1);
@@ -879,6 +886,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         }
         return state;
     } else if *hit_result == 15 {
+        state.game_text += " -> Double DEF LF";
         // double DEF LF
         let mut advance = 2;
         let mut base = 2;
@@ -897,6 +905,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 16 {
+        state.game_text += " -> Double, DEF CF";
         // double DEF CF
         let mut advance = 2;
         let mut base = 2;
@@ -915,6 +924,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 17 {
+        state.game_text += " -> Double DEF RF";
         // double DEF RF
         let mut advance = 2;
         let mut base = 2;
@@ -933,6 +943,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state = add_runner(state, &base);
         return state;
     } else if *hit_result == 18 {
+        state.game_text += " -> Double, runners advance 3";
         // double, runners advance 3
         state = runners_advance(state, &3);
         state = add_runner(state, &2);
@@ -946,6 +957,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         }
         return state;
     } else if *hit_result >= 19 {
+        state.game_text += " -> HOME RUN!";
         // home run
         let mut runs = runnerson(&state);
         runs += 1;
@@ -981,7 +993,9 @@ pub fn defense<'b>(
     mut advance: u32,
     mut base: u32,
 ) -> (GameState, u32, u32) {
+    state.game_text += &format!("\n Defense roll: {}", def_result);
     if *def_result <= 2 {
+        state.game_text += " -> Error";
         // error, runners take an extra base
         // modify hit and error values
         // should be okay to subtract here since hit was added before passing into this function
@@ -997,9 +1011,11 @@ pub fn defense<'b>(
         }
         return (state, advance + 1, base + 1);
     } else if *def_result >= 3 && *def_result <= 9 {
+        state.game_text += " -> Normal";
         // no change
         return (state, advance, base);
     } else if *def_result >= 10 && *def_result <= 11 {
+        state.game_text += " -> good defense, reduce hit level by 1";
         // double turns to single, runners advance 2, single turns to out, runners advance 1
         if base == 1 {
             match state.outs {
@@ -1024,6 +1040,7 @@ pub fn defense<'b>(
         }
         return (state, advance, base);
     } else if *def_result >= 12 {
+        state.game_text += " -> Out!  What a play, Runners hold.";
         // hit turned to out, runners hold
         match state.outs {
             Outs::None => {
