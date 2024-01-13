@@ -1196,42 +1196,91 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
             away_name8 = "None".to_string();
             away_name9 = "None".to_string();
         }
+        let mut away_at_bat = 1;
+        if app.game_state.is_some() {
+            away_at_bat = app.game_state.clone().unwrap().batting_team1;
+        }
         ui.horizontal(|ui| {
-            ui.label("1. ");
-            ui.label(away_name1);
+            if away_at_bat == 1 {
+                ui.label(RichText::new("1. ").strong());
+                ui.label(RichText::new(away_name1).strong());
             // TODO: figure out a way to put baseball icon to indicate current batter
+            } else {
+                ui.label("1. ");
+                ui.label(away_name1);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("2. ");
-            ui.label(away_name2);
+            if away_at_bat == 2 {
+                ui.label(RichText::new("2. ").strong());
+                ui.label(RichText::new(away_name2).strong());
+            } else {
+                ui.label("2. ");
+                ui.label(away_name2);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("3. ");
-            ui.label(away_name3);
+            if away_at_bat == 3 {
+                ui.label(RichText::new("3. ").strong());
+                ui.label(RichText::new(away_name3).strong());
+            } else {
+                ui.label("3. ");
+                ui.label(away_name3);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("4. ");
-            ui.label(away_name4);
+            if away_at_bat == 4 {
+                ui.label(RichText::new("4. ").strong());
+                ui.label(RichText::new(away_name4).strong());
+            } else {
+                ui.label("4. ");
+                ui.label(away_name4);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("5. ");
-            ui.label(away_name5);
+            if away_at_bat == 5 {
+                ui.label(RichText::new("5. ").strong());
+                ui.label(RichText::new(away_name5).strong());
+            } else {
+                ui.label("5. ");
+                ui.label(away_name5);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("6. ");
-            ui.label(away_name6);
+            if away_at_bat == 6 {
+                ui.label(RichText::new("6. ").strong());
+                ui.label(RichText::new(away_name6).strong());
+            } else {
+                ui.label("6. ");
+                ui.label(away_name6);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("7. ");
-            ui.label(away_name7);
+            if away_at_bat == 7 {
+                ui.label(RichText::new("7. ").strong());
+                ui.label(RichText::new(away_name7).strong());
+            } else {
+                ui.label("7. ");
+                ui.label(away_name7);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("8. ");
-            ui.label(away_name8);
+            if away_at_bat == 8 {
+                ui.label(RichText::new("8. ").strong());
+                ui.label(RichText::new(away_name8).strong());
+            } else {
+                ui.label("8. ");
+                ui.label(away_name8);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("9. ");
-            ui.label(away_name9);
+            if away_at_bat == 9 {
+                ui.label(RichText::new("9. ").strong());
+                ui.label(RichText::new(away_name9).strong());
+            } else {
+                ui.label("9. ");
+                ui.label(away_name9);
+            }
         });
     });
 }
@@ -1265,41 +1314,90 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
             let batter9 = &app.game_modern.clone().unwrap().home_active.pitching[0];
             app.home_batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
         }
+        let mut home_at_bat = 1;
+        if app.game_state.is_some() {
+            home_at_bat = app.game_state.clone().unwrap().batting_team2;
+        }
         ui.horizontal(|ui| {
-            ui.label("1. ");
-            ui.label(&app.home_batter1);
+            if home_at_bat == 1 {
+                ui.label(RichText::new("1. ").strong());
+                ui.label(RichText::new(app.home_batter1.clone()).strong());
+            } else {
+                ui.label("1. ");
+                ui.label(&app.home_batter1);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("2. ");
-            ui.label(&app.home_batter2);
+            if home_at_bat == 1 {
+                ui.label(RichText::new("2. ").strong());
+                ui.label(RichText::new(app.home_batter2.clone()).strong());
+            } else {
+                ui.label("2. ");
+                ui.label(&app.home_batter2);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("3. ");
-            ui.label(&app.home_batter3);
+            if home_at_bat == 3 {
+                ui.label(RichText::new("3. ").strong());
+                ui.label(RichText::new(app.home_batter3.clone()).strong());
+            } else {
+                ui.label("3. ");
+                ui.label(&app.home_batter3);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("4. ");
-            ui.label(&app.home_batter4);
+            if home_at_bat == 4 {
+                ui.label(RichText::new("4. ").strong());
+                ui.label(RichText::new(app.home_batter4.clone()).strong());
+            } else {
+                ui.label("4. ");
+                ui.label(&app.home_batter4);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("5. ");
-            ui.label(&app.home_batter5);
+            if home_at_bat == 5 {
+                ui.label(RichText::new("5. ").strong());
+                ui.label(RichText::new(app.home_batter5.clone()).strong());
+            } else {
+                ui.label("5. ");
+                ui.label(&app.home_batter5);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("6. ");
-            ui.label(&app.home_batter6);
+            if home_at_bat == 6 {
+                ui.label(RichText::new("6. ").strong());
+                ui.label(RichText::new(app.home_batter6.clone()).strong());
+            } else {
+                ui.label("6. ");
+                ui.label(&app.home_batter6);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("7. ");
-            ui.label(&app.home_batter7);
+            if home_at_bat == 7 {
+                ui.label(RichText::new("7. ").strong());
+                ui.label(RichText::new(app.home_batter7.clone()).strong());
+            } else {
+                ui.label("7. ");
+                ui.label(&app.home_batter7);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("8. ");
-            ui.label(&app.home_batter8);
+            if home_at_bat == 8 {
+                ui.label(RichText::new("8. ").strong());
+                ui.label(RichText::new(app.home_batter8.clone()).strong());
+            } else {
+                ui.label("8. ");
+                ui.label(&app.home_batter8);
+            }
         });
         ui.horizontal(|ui| {
-            ui.label("9. ");
-            ui.label(&app.home_batter9);
+            if home_at_bat == 9 {
+                ui.label(RichText::new("9. ").strong());
+                ui.label(RichText::new(app.home_batter9.clone()).strong());
+            } else {
+                ui.label("9. ");
+                ui.label(&app.home_batter9);
+            }
         });
     });
 }
