@@ -1127,6 +1127,7 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         let away_name7: String;
         let away_name8: String;
         let away_name9: String;
+        let mut away_info1 = "".to_string();
         if app.away_team.is_some() {
             let away_team = app.away_team.as_ref().unwrap();
             let away_team_active = app.game_modern.clone().unwrap().away_active;
@@ -1140,6 +1141,16 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
             app.away_batter7 = Some(away_team_active.roster[6].clone());
             app.away_batter8 = Some(away_team_active.roster[7].clone());
             app.away_batter9 = Some(away_team_active.pitching[0].clone());
+            let batter1 = app.away_batter1.clone().unwrap();
+            let batter2 = app.away_batter2.clone().unwrap();
+            let batter3 = app.away_batter3.clone().unwrap();
+            let batter4 = app.away_batter4.clone().unwrap();
+            let batter5 = app.away_batter5.clone().unwrap();
+            let batter6 = app.away_batter6.clone().unwrap();
+            let batter7 = app.away_batter7.clone().unwrap();
+            let batter8 = app.away_batter8.clone().unwrap();
+            let batter9 = app.away_batter9.clone().unwrap();
+            // TODO: clean this up (use local var)
             away_name1 = format!(
                 "{} {}",
                 app.away_batter1.clone().unwrap().first_name,
@@ -1185,6 +1196,14 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
                 app.away_batter9.clone().unwrap().first_name,
                 app.away_batter9.clone().unwrap().last_name
             );
+            away_info1 = format!(
+                "{:?} | {:?} | {} | {} | {:?} ",
+                batter1.position,
+                batter1.handedness,
+                batter1.batter_target,
+                batter1.on_base_target,
+                batter1.traits,
+            );
         } else {
             away_name1 = "None".to_string();
             away_name2 = "None".to_string();
@@ -1207,7 +1226,7 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
             // TODO: figure out a way to put baseball icon to indicate current batter
             } else {
                 ui.label("1. ");
-                ui.label(away_name1);
+                ui.label(away_name1).on_hover_text(away_info1);
             }
         });
         ui.horizontal(|ui| {
