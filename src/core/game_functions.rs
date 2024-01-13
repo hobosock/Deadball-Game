@@ -164,6 +164,7 @@ pub struct GameState {
     pub errors_team2: u32,
     pub game_text: String,
 }
+// NOTE: home team is team 1, away team is team 2
 
 //======== CUSTOM ERRORS =================================
 #[derive(Debug, Clone)]
