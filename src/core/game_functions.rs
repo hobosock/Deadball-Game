@@ -523,6 +523,7 @@ pub fn modern_inning_flow<'a>(
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
+                            state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
                             state = add_runner(state, &1);
                         }
@@ -568,16 +569,19 @@ pub fn modern_inning_flow<'a>(
                             pitch_result = -1 * roll(pd.abs());
                         }
                     }
+                    state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
                     if debug.mode {
                         pitch_result += debug_roll(&mut debug, 100);
                     } else {
                         pitch_result += roll(100);
                     }
+                    state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
                         game.home_active.batting_order[state.batting_team1 as usize].batter_target,
                         game.home_active.batting_order[state.batting_team1 as usize].on_base_target,
                         pitch_result,
                     );
+                    state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team1 == 8 {
                         state.batting_team1 = 0;
                     } else {
@@ -593,6 +597,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 oddity_result = roll(10) + roll(10);
                             }
+                            state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
                             state = oddity(&oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
@@ -603,6 +608,7 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 hit_result = roll(20);
                             }
+                            state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state);
                             // TODO: no DEF roll on crit_hit
@@ -615,10 +621,12 @@ pub fn modern_inning_flow<'a>(
                             } else {
                                 hit_result = roll(20);
                             }
+                            state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
+                            state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
                             state = add_runner(state, &1);
                         }
@@ -1483,7 +1491,6 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
 
 /// handles ProductiveOut1 swing result
 fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
-    // TODO: only proceed if less than two outs
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner at first advances and batter is out
     match state.outs {
@@ -1497,6 +1504,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
             if fielder == 3 || fielder >= 7 {
                 // check for runners on second and third
                 // advance if they exist
+                state.game_text += "\nRunners on second and third advance.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
                     RunnersOn::Runner100 => {}
@@ -1541,9 +1549,11 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
                 // check for runner on first
                 match state.runners {
                     RunnersOn::Runner100 => {
+                        state.game_text += "\nRunner at first advances, batter is out.";
                         state.runners = RunnersOn::Runner010;
                     }
                     RunnersOn::Runner101 => {
+                        state.game_text += "\nRunner at first advances, batter is out.";
                         state.runners = RunnersOn::Runner011;
                     }
                     _ => {}
