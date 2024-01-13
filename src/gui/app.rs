@@ -1365,7 +1365,7 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         if app.home_team.is_some() {
             let home_team = app.home_team.as_ref().unwrap();
             app.home_team_name = home_team.name.to_string();
-            let batter1 = &app.game_modern.clone().unwrap().home_active.roster[1];
+            let batter1 = &app.game_modern.clone().unwrap().home_active.roster[0];
             app.home_batter1 = format!(
                 "{} {}",
                 app.game_modern.clone().unwrap().home_active.roster[0].first_name,
@@ -1390,10 +1390,10 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
             home_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?}",
                 batter1.position,
-                batter2.handedness,
-                batter2.batter_target,
-                batter2.on_base_target,
-                batter2.traits
+                batter1.handedness,
+                batter1.batter_target,
+                batter1.on_base_target,
+                batter1.traits
             );
             home_info2 = format!(
                 "{:?} | {:?} | {} | {} | {:?}",
@@ -1475,13 +1475,13 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
             }
         });
         ui.horizontal(|ui| {
-            if home_at_bat == 1 {
+            if home_at_bat == 2 {
                 ui.label(RichText::new("2. ").strong());
                 ui.label(RichText::new(app.home_batter2.clone()).strong())
                     .on_hover_text(home_info2);
             } else {
                 ui.label("2. ");
-                ui.label(&app.home_batter2);
+                ui.label(&app.home_batter2).on_hover_text(home_info2);
             }
         });
         ui.horizontal(|ui| {
