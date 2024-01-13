@@ -1253,7 +1253,7 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut away_at_bat = 1;
         if app.game_state.is_some() {
-            away_at_bat = app.game_state.clone().unwrap().batting_team1;
+            away_at_bat = app.game_state.clone().unwrap().batting_team2;
         }
         ui.horizontal(|ui| {
             if away_at_bat == 1 {
@@ -1462,7 +1462,7 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut home_at_bat = 1;
         if app.game_state.is_some() {
-            home_at_bat = app.game_state.clone().unwrap().batting_team2;
+            home_at_bat = app.game_state.clone().unwrap().batting_team1;
         }
         ui.horizontal(|ui| {
             if home_at_bat == 1 {
