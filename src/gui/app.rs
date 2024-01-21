@@ -540,7 +540,7 @@ fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
         .open(&mut app.version_window)
         .show(ctx, |ui| {
-            ui.label("Version 0.1");
+            ui.label("Version 0.1.0");
         });
 }
 
