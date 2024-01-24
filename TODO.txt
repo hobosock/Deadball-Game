@@ -9,8 +9,3 @@ game_functions.rs line 529
 
  - refactor debug/regular roll code into core function (ex. rolls in fn modern_inning_flow())
  - refactor incrementing outs code into a core function (ex. fn actual_out() match statement)
-
-ADDING TRAITS
- - starting with D+/- traits
- - need to increment/decrement the roll before passing to defense function
- - make new function to check for Defense trait

@@ -502,9 +502,10 @@ pub fn modern_inning_flow<'a>(
                             // make hit roll, bump up a level
                             let mut hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
@@ -515,9 +516,10 @@ pub fn modern_inning_flow<'a>(
                             // hit roll
                             let hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state, game);
@@ -605,9 +607,10 @@ pub fn modern_inning_flow<'a>(
                             // make hit roll, bump up a level
                             let mut hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
@@ -618,9 +621,10 @@ pub fn modern_inning_flow<'a>(
                             // hit roll
                             let hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state, game);

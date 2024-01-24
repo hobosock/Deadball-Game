@@ -7,7 +7,7 @@ use text_colorizer::*;
 
 //use super::teams::Era;
 use crate::core::{
-    game_functions::{find_by_position, GameModern, InningTB},
+    game_functions::{find_by_position, GameModern, GameState, InningTB},
     roll,
 };
 
@@ -116,12 +116,28 @@ pub struct Player {
 }
 
 impl Player {
+    /// returns player specific modifier for defense rolls (D+/D-)
     pub fn defense(&self) -> i32 {
         let mut modifier = 0;
         for player_trait in self.traits.iter() {
             match player_trait {
                 Traits::GreatDefender => modifier = 1,
                 Traits::PoorDefender => modifier = -1,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns player specific modifier to hit rolls (P+/P++/P-/P--)
+    pub fn power(&self) -> i32 {
+        let mut modifier = 0;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::PowerHitter => modifier = 1,
+                Traits::WeakHitter => modifier = -1,
+                Traits::ExtraWeakHitter => modifier = -2,
+                Traits::ElitePowerHitter => modifier = 2,
                 _ => {}
             }
         }
@@ -635,6 +651,22 @@ pub fn def_trait_check(half: &InningTB, game: &GameModern, position: Position) -
             if player.is_some() {
                 modifier += player.unwrap().defense();
             }
+        }
+    }
+    return modifier;
+}
+
+/// checks inning half and returns hit roll modifier for appropriate player
+pub fn pow_trait_check(game: &GameModern, state: &GameState) -> i32 {
+    let modifier: i32;
+    match state.inning_half {
+        InningTB::Top => {
+            let player = &game.away_active.roster[state.batting_team2 as usize];
+            modifier = player.power();
+        }
+        InningTB::Bottom => {
+            let player = &game.home_active.roster[state.batting_team1 as usize];
+            modifier = player.power();
         }
     }
     return modifier;
