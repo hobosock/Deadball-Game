@@ -803,21 +803,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
             }
         }
         // TODO: are defense rolls implemented twice???
-        let mut def_roll = roll(12); // defense rolls are d12
-        match state.inning_half {
-            InningTB::Top => {
-                let player_1b = find_by_position(Position::Firstbase, &game.home_active.roster);
-                if player_1b.is_some() {
-                    def_roll += player_1b.unwrap().defense();
-                }
-            }
-            InningTB::Bottom => {
-                let player_1b = find_by_position(Position::Firstbase, &game.away_active.roster);
-                if player_1b.is_some() {
-                    def_roll += player_1b.unwrap().defense();
-                }
-            }
-        }
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Firstbase); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);

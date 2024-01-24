@@ -6,7 +6,10 @@ use std::fs; // needed to read in files
 use text_colorizer::*;
 
 //use super::teams::Era;
-use crate::core::roll;
+use crate::core::{
+    game_functions::{find_by_position, GameModern, InningTB},
+    roll,
+};
 
 /*========================================================
 ENUM DEFINITIONS
@@ -615,4 +618,24 @@ pub fn generate_player(
     };
 
     return new_player;
+}
+
+/// checks inning half and returns defense roll modifier for the appropriate player
+pub fn def_trait_check(half: &InningTB, game: &GameModern, position: Position) -> i32 {
+    let mut modifier = 0;
+    match half {
+        InningTB::Top => {
+            let player = find_by_position(position, &game.home_active.roster);
+            if player.is_some() {
+                modifier += player.unwrap().defense();
+            }
+        }
+        InningTB::Bottom => {
+            let player = find_by_position(position, &game.away_active.roster);
+            if player.is_some() {
+                modifier += player.unwrap().defense();
+            }
+        }
+    }
+    return modifier;
 }
