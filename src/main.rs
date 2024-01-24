@@ -5,8 +5,6 @@
 mod characters;
 mod core;
 mod gui;
-//use characters::*;
-//use core::*;
 use gui::app::*;
 
 // EXTERNAL IMPORTS
@@ -159,6 +157,9 @@ mod tests {
     use crate::{
         characters::players::*, characters::teams::*, core::file_locations::*,
         core::game_functions::*,
+    };
+    use characters::players::{
+        Handedness, InjuryLocation, InjurySeverity, Player, Position, Traits,
     };
 
     use super::*;
@@ -1006,5 +1007,30 @@ mod tests {
         assert_eq!(position, 8);
         position = get_swing_position(&39);
         assert_eq!(position, 9);
+    }
+
+    // def_trait_check()
+    #[test]
+    fn test_def_trait_check() {
+        let player1 = Player {
+            first_name: "Seth".to_string(),
+            nickname: "".to_string(),
+            last_name: "Loveall".to_string(),
+            position: Position::Firstbase,
+            handedness: Handedness::Right,
+            batter_target: 30,
+            on_base_target: 30,
+            pitch_die: -12,
+            traits: vec![Traits::GreatDefender],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![],
+        };
+        let mut player2 = player1.clone();
+        let mut player3 = player1.clone();
+        player2.traits = vec![Traits::None];
+        player3.traits = vec![Traits::PoorDefender];
+        assert_eq!(player1.defense(), 1);
+        assert_eq!(player2.defense(), 0);
+        assert_eq!(player3.defense(), -1);
     }
 }
