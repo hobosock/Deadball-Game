@@ -821,8 +821,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Secondbase); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
@@ -840,8 +839,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Thirdbase); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
@@ -859,8 +857,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Shortstop); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
@@ -906,8 +903,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Leftfield); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
@@ -925,8 +921,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Centerfield); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
@@ -944,8 +939,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Rightfield); // defense rolls are d12
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
