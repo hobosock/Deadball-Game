@@ -113,7 +113,7 @@ pub struct Player {
 }
 
 impl Player {
-    fn defense(&self) -> i32 {
+    pub fn defense(&self) -> i32 {
         let mut modifier = 0;
         for player_trait in self.traits.iter() {
             match player_trait {

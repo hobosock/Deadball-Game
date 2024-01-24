@@ -508,7 +508,7 @@ pub fn modern_inning_flow<'a>(
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
@@ -520,7 +520,7 @@ pub fn modern_inning_flow<'a>(
                                 hit_result = roll(20);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
@@ -611,7 +611,7 @@ pub fn modern_inning_flow<'a>(
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
@@ -623,7 +623,7 @@ pub fn modern_inning_flow<'a>(
                                 hit_result = roll(20);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
@@ -767,7 +767,7 @@ pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
 }
 
 /// rolls on the hit table and updates game state accordingly
-pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
+pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) -> GameState {
     // 1. defense roll (if needed)
     // 2. advance runners
     // 3 move hitter to runner
@@ -803,8 +803,21 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
             }
         }
         // TODO: are defense rolls implemented twice???
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let mut def_roll = roll(12); // defense rolls are d12
+        match state.inning_half {
+            InningTB::Top => {
+                let player_1b = find_by_position(Position::Firstbase, &game.home_active.roster);
+                if player_1b.is_some() {
+                    def_roll += player_1b.unwrap().defense();
+                }
+            }
+            InningTB::Bottom => {
+                let player_1b = find_by_position(Position::Firstbase, &game.away_active.roster);
+                if player_1b.is_some() {
+                    def_roll += player_1b.unwrap().defense();
+                }
+            }
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base);
