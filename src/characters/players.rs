@@ -112,6 +112,20 @@ pub struct Player {
     pub injury_severity: Vec<InjurySeverity>,
 }
 
+impl Player {
+    fn defense(&self) -> i32 {
+        let mut modifier = 0;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::GreatDefender => modifier = 1,
+                Traits::PoorDefender => modifier = -1,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+}
+
 /*========================================================
 FUNCTION DEFINITIONS
 ========================================================*/
