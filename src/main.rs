@@ -1044,5 +1044,34 @@ mod tests {
         assert_eq!(player2.power(), -2);
         assert_eq!(player3.power(), 2);
         assert_eq!(player4.power(), -1);
+
+        player1.traits = vec![Traits::ContactHitter];
+        assert_eq!(player1.contact_hit(), true);
+
+        player1.traits = vec![Traits::FreeSwinger];
+        assert_eq!(player1.free_swing(), true);
+
+        player1.traits = vec![Traits::SpeedyRunner];
+        assert_eq!(player1.speedy(), true);
+
+        player1.traits = vec![Traits::SlowRunner];
+        assert_eq!(player1.slow(), true);
+
+        player1.traits = vec![Traits::ToughPlayer];
+        assert_eq!(player1.tough(), true);
+
+        player1.traits = vec![Traits::StrikeoutArtist];
+        assert_eq!(player1.strikeout(), true);
+
+        player1.traits = vec![Traits::GroundballMachine];
+        assert_eq!(player1.groundball(), true);
+
+        player1.traits = vec![Traits::GreatStamina];
+        assert_eq!(player1.stamina(), true);
+
+        player1.traits = vec![Traits::ControlPitcher];
+        player2.traits = vec![Traits::Wild];
+        assert_eq!(player1.control(), -2);
+        assert_eq!(player2.control(), 3);
     }
 }

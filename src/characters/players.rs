@@ -116,6 +116,7 @@ pub struct Player {
 }
 
 impl Player {
+    // BATTER TRAITS
     /// returns player specific modifier for defense rolls (D+/D-)
     pub fn defense(&self) -> i32 {
         let mut modifier = 0;
@@ -138,6 +139,117 @@ impl Player {
                 Traits::WeakHitter => modifier = -1,
                 Traits::ExtraWeakHitter => modifier = -2,
                 Traits::ElitePowerHitter => modifier = 2,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    // the rest of the traits aren't simple or symmetric enough, so implementing them differently
+    /// returns true if player has C+
+    pub fn contact_hit(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::ContactHitter => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has C-
+    pub fn free_swing(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::FreeSwinger => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has S+
+    pub fn speedy(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::SpeedyRunner => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has S-
+    pub fn slow(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::SlowRunner => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has T+
+    pub fn tough(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::ToughPlayer => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    // PITCHING TRAITS
+    /// returns true if pitcher has K+
+    pub fn strikeout(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::StrikeoutArtist => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if pitcher has GB+
+    pub fn groundball(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::GroundballMachine => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns OBT modifier if pitcher has CN+/CN-
+    pub fn control(&self) -> i32 {
+        let mut modifier = 0;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::ControlPitcher => modifier = -2,
+                Traits::Wild => modifier = 3,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if pitcher has ST+
+    pub fn stamina(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::GreatStamina => modifier = true,
                 _ => {}
             }
         }
