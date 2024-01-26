@@ -1082,6 +1082,60 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                         }
                     }
                 }
+                ui.menu_button("Steal", |ui| {
+                    // evaluate if steal conditions are met, show relevant options
+                    if app.game_state.is_some() {
+                        let mut steal2 = false;
+                        let mut steal3 = false;
+                        let mut steal4 = false;
+                        let mut double_steal = false;
+                        // runner on 1st can steal 2nd
+                        match app.game_state.as_ref().unwrap().runners {
+                            RunnersOn::Runner000 => {}
+                            RunnersOn::Runner100 => steal2 = true,
+                            RunnersOn::Runner010 => steal3 = true,
+                            RunnersOn::Runner001 => {
+                                // TODO: check if runner on 3rd has S+
+                            }
+                            RunnersOn::Runner110 => {
+                                steal3 = true;
+                                double_steal = true;
+                            }
+                            RunnersOn::Runner101 => {
+                                steal2 = true;
+                                // TODO: check if runner on 3rd has S+
+                            }
+                            RunnersOn::Runner011 => {
+                                // TODO: check if runner on 3rd has S+
+                            }
+                            RunnersOn::Runner111 => {
+                                // TODO: check if runner on 3rd has S+
+                            }
+                        }
+                        if steal2 {
+                            if ui.button("Steal 2nd").clicked() {
+                                // TODO: process stealing second
+                            }
+                        }
+                        if steal3 {
+                            if ui.button("Steal 3rd").clicked() {
+                                // TODO: process stealing third
+                            }
+                        }
+                        if steal4 {
+                            if ui.button("Steal Home").clicked() {
+                                // TODO: you know the drill
+                            }
+                        }
+                        if double_steal {
+                            if ui.button("Double Steal").clicked() {
+                                // TODO: you guessed it
+                            }
+                        }
+                    } else {
+                        ui.label("No active game.");
+                    }
+                });
             }
             Panel::Roster => {
                 ui.horizontal(|ui| {

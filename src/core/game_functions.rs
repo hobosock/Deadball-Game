@@ -58,6 +58,14 @@ pub enum GameStatus {
     Over,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum StealType {
+    Second,
+    Third,
+    Home,
+    Double,
+}
+
 // 2d10
 pub enum Oddity {
     FanInterference,
@@ -1830,5 +1838,18 @@ fn mega_out(mut state: GameState) -> GameState {
         },
     }
 
+    return state;
+}
+
+/// takes a game state and processes steals of the indicated type
+/// includes rules for S+/S-
+/// (!) assumes you have check for valid steal scenarios before calling it
+pub fn process_steals(steal_type: StealType, mut state: GameState) -> GameState {
+    match steal_type {
+        StealType::Second => {}
+        StealType::Third => {}
+        StealType::Home => {}
+        StealType::Double => {}
+    }
     return state;
 }
