@@ -1968,12 +1968,158 @@ fn mega_out(mut state: GameState) -> GameState {
 
 /// takes a game state and processes steals of the indicated type
 /// includes rules for S+/S-
-/// (!) assumes you have check for valid steal scenarios before calling it
-pub fn process_steals(steal_type: StealType, mut state: GameState) -> GameState {
+/// (!) assumes you have checked for valid steal scenarios before calling it
+pub fn process_steals(
+    steal_type: StealType,
+    mut state: GameState,
+    mut debug: DebugConfig,
+) -> GameState {
     match steal_type {
-        StealType::Second => {}
-        StealType::Third => {}
-        StealType::Home => {}
+        StealType::Second => {
+            let mut steal_mod = 0;
+            let stealer = state.runner1.clone().unwrap(); // TODO: error proof?
+            if stealer.speedy() {
+                steal_mod = 1;
+            }
+            if stealer.slow() {
+                steal_mod = -2;
+            }
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) + steal_mod;
+            } else {
+                steal_result = roll(8) + steal_mod;
+            }
+
+            if steal_result > 3 {
+                // successful steal
+                match state.runners {
+                    RunnersOn::Runner100 => {
+                        state.runners = RunnersOn::Runner010;
+                        state.runner2 = state.runner1.clone();
+                        state.runner1 = None;
+                    }
+                    RunnersOn::Runner101 => {
+                        state.runners = RunnersOn::Runner011;
+                        state.runner2 = state.runner1.clone();
+                        state.runner1 = None;
+                    }
+                    _ => {} // only valid configurations
+                }
+            } else {
+                // runner is out
+                match state.runners {
+                    RunnersOn::Runner100 => {
+                        state.runners = RunnersOn::Runner000;
+                        state.runner1 = None;
+                    }
+                    RunnersOn::Runner101 => {
+                        state.runners = RunnersOn::Runner001;
+                        state.runner1 = None;
+                    }
+                    _ => {}
+                }
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+            }
+        }
+        StealType::Third => {
+            let mut steal_mod = 0;
+            let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
+            if stealer.speedy() {
+                steal_mod = 1;
+            }
+            if stealer.slow() {
+                steal_mod = -2;
+            }
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) - 1 + steal_mod;
+            } else {
+                steal_result = roll(8) - 1 + steal_mod;
+            }
+
+            if steal_result > 3 {
+                match state.runners {
+                    RunnersOn::Runner010 => {
+                        state.runners = RunnersOn::Runner001;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
+                    }
+                    RunnersOn::Runner110 => {
+                        state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
+                    }
+                    _ => {}
+                }
+            } else {
+                match state.runners {
+                    RunnersOn::Runner010 => {
+                        state.runners = RunnersOn::Runner000;
+                        state.runner2 = None;
+                    }
+                    RunnersOn::Runner110 => {
+                        state.runners = RunnersOn::Runner100;
+                        state.runner2 = None;
+                    }
+                    _ => {}
+                }
+            }
+            match state.outs {
+                Outs::None => state.outs = Outs::One,
+                Outs::One => state.outs = Outs::Two,
+                Outs::Two => state.outs = Outs::Three,
+                _ => {}
+            }
+        }
+        StealType::Home => {
+            // NOTE: your runner should have S+ to end up here!
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) + 1;
+            } else {
+                steal_result = roll(8) + 1;
+            }
+
+            // runner leaves 3rd no matter outcome of steal attempt
+            match state.runners {
+                RunnersOn::Runner001 => {
+                    state.runners = RunnersOn::Runner000;
+                    state.runner3 = None;
+                }
+                RunnersOn::Runner101 => {
+                    state.runners = RunnersOn::Runner100;
+                    state.runner3 = None;
+                }
+                RunnersOn::Runner011 => {
+                    state.runners = RunnersOn::Runner010;
+                    state.runner3 = None;
+                }
+                RunnersOn::Runner111 => {
+                    state.runners = RunnersOn::Runner110;
+                    state.runner3 = None;
+                }
+                _ => {}
+            }
+            if steal_result >= 8 {
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else {
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+            }
+        }
         StealType::Double => {}
     }
     return state;
