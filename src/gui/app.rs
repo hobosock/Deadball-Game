@@ -314,6 +314,12 @@ impl<'a> eframe::App for DeadballApp {
             ));
             // draw helmets to indicate runners on base
             if on_first {
+                // no error, game state should already exist
+                let runner1 = self.game_state.as_ref().unwrap().runner1.clone().unwrap();
+                let runner1_text = format!(
+                    "{} | {} | {:?}",
+                    runner1.first_name, runner1.last_name, runner1.traits
+                );
                 ui.put(
                     Rect {
                         min: pos2(490.0, 260.0),
@@ -323,9 +329,15 @@ impl<'a> eframe::App for DeadballApp {
                         self.helmet_image.texture_id(ctx),
                         self.helmet_image.size_vec2() * 0.1,
                     ),
-                );
+                )
+                .on_hover_text(runner1_text);
             }
             if on_second {
+                let runner2 = self.game_state.as_ref().unwrap().runner2.clone().unwrap();
+                let runner2_text = format!(
+                    "{} | {} | {:?}",
+                    runner2.first_name, runner2.last_name, runner2.traits
+                );
                 ui.put(
                     Rect {
                         min: pos2(340.0, 120.0),
@@ -335,9 +347,15 @@ impl<'a> eframe::App for DeadballApp {
                         self.helmet_image.texture_id(ctx),
                         self.helmet_image.size_vec2() * 0.1,
                     ),
-                );
+                )
+                .on_hover_text(runner2_text);
             }
             if on_third {
+                let runner3 = self.game_state.as_ref().unwrap().runner3.clone().unwrap();
+                let runner3_text = format!(
+                    "{} | {} | {:?}",
+                    runner3.first_name, runner3.last_name, runner3.traits
+                );
                 ui.put(
                     Rect {
                         min: pos2(205.0, 270.0),
@@ -347,7 +365,8 @@ impl<'a> eframe::App for DeadballApp {
                         self.helmet_image.texture_id(ctx),
                         self.helmet_image.size_vec2() * 0.1,
                     ),
-                );
+                )
+                .on_hover_text(runner3_text);
             }
             // update player labels
             if self.home_team_active.is_some()

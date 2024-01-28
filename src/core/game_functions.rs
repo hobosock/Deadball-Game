@@ -494,8 +494,8 @@ pub fn modern_inning_flow<'a>(
                     }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
-                        game.home_active.batting_order[state.batting_team2 as usize].batter_target,
-                        game.home_active.batting_order[state.batting_team2 as usize].on_base_target,
+                        game.away_active.batting_order[state.batting_team2 as usize].batter_target,
+                        game.away_active.batting_order[state.batting_team2 as usize].on_base_target,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -548,7 +548,7 @@ pub fn modern_inning_flow<'a>(
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
                             let batter = game.away_active.batting_order
-                                [state.batting_team2 as usize]
+                                [(state.batting_team2 - 2) as usize]
                                 .clone();
                             state = add_runner(state, &1, batter);
                         }
@@ -560,7 +560,7 @@ pub fn modern_inning_flow<'a>(
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.away_active.batting_order
-                                [state.batting_team2 as usize]
+                                [(state.batting_team2 - 2) as usize]
                                 .clone();
                             state = productive_out2(state, &pitch_result, batter);
                         }
@@ -659,7 +659,7 @@ pub fn modern_inning_flow<'a>(
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
                             let batter = game.home_active.batting_order
-                                [state.batting_team1 as usize]
+                                [(state.batting_team1 - 2) as usize]
                                 .clone();
                             state = add_runner(state, &1, batter);
                         }
@@ -671,7 +671,7 @@ pub fn modern_inning_flow<'a>(
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.home_active.batting_order
-                                [state.batting_team1 as usize]
+                                [(state.batting_team1 - 2) as usize]
                                 .clone();
                             state = productive_out2(state, &pitch_result, batter);
                         }
@@ -811,10 +811,10 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
     let batter: Player;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[state.batting_team2 as usize].clone();
+            batter = game.away_active.batting_order[(state.batting_team2 - 2) as usize].clone();
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[state.batting_team1 as usize].clone();
+            batter = game.home_active.batting_order[(state.batting_team1 - 2) as usize].clone();
         }
     }
     if *hit_result <= 2 {
@@ -1547,10 +1547,10 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameMode
     let batter: Player;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[state.batting_team2 as usize].clone();
+            batter = game.away_active.batting_order[(state.batting_team2 - 2) as usize].clone();
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[state.batting_team1 as usize].clone();
+            batter = game.home_active.batting_order[(state.batting_team1 - 2) as usize].clone();
         }
     }
     state.game_text += "\n Possible error -> ";
