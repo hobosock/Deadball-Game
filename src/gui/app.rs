@@ -739,6 +739,30 @@ fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
             // button to write changes to game state
             ui.separator();
             if ui.button("Write Changes").clicked() {
+                // put players in the runner fields to avoid crashes
+                let current_batter: usize;
+                match app.debug_state.inning_half {
+                    InningTB::Top => {
+                        current_batter = app.debug_state.batting_team2 as usize;
+                        match app.debug_state.runners {
+                            RunnersOn::Runner000 => {}
+                            RunnersOn::Runner100 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner1 =
+                                        Some(app.game_modern.unwrap().away_active.roster[8]);
+                                } else {
+                                    app.debug_state.runner1 = Some(
+                                        app.game_modern.unwrap().away_active.roster
+                                            [current_batter - 2],
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    InningTB::Bottom => {
+                        current_batter = app.debug_state.batting_team1 as usize;
+                    }
+                }
                 app.game_state = Some(app.debug_state.clone());
             }
         });
