@@ -5,8 +5,8 @@
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
 use crate::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct, GameModern,
-    GameState, GameStatus, InningTB, Outs, RunnersOn,
+    create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct,
+    process_steals, GameModern, GameState, GameStatus, InningTB, Outs, RunnersOn, StealType,
 };
 use crate::{
     gui::debug::DebugConfig,
@@ -1062,79 +1062,117 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                 });
             }
             Panel::Game => {
-                if ui.button("Next At Bat").clicked() {
-                    // TODO: this could be cleaner
-                    if app.game_state.is_some() && app.game_modern.is_some() {
-                        // TODO: update with ancient game when ready
-                        match app.game_state.clone().unwrap().status {
-                            GameStatus::NotStarted => {
-                                app.game_state.as_mut().unwrap().status = GameStatus::Ongoing
+                ui.horizontal(|ui| {
+                    if ui.button("Next At Bat").clicked() {
+                        // TODO: this could be cleaner
+                        if app.game_state.is_some() && app.game_modern.is_some() {
+                            // TODO: update with ancient game when ready
+                            match app.game_state.clone().unwrap().status {
+                                GameStatus::NotStarted => {
+                                    app.game_state.as_mut().unwrap().status = GameStatus::Ongoing
+                                }
+                                GameStatus::Ongoing => {
+                                    app.game_state = Some(modern_game_flow(
+                                        &app.game_modern.clone().unwrap(),
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                    println!("{:?}", app.game_state);
+                                }
+                                GameStatus::Over => {}
                             }
-                            GameStatus::Ongoing => {
-                                app.game_state = Some(modern_game_flow(
-                                    &app.game_modern.clone().unwrap(),
-                                    app.game_state.clone().unwrap(),
-                                    app.debug_roll_state.clone(),
-                                ));
-                                println!("{:?}", app.game_state);
-                            }
-                            GameStatus::Over => {}
                         }
                     }
-                }
-                ui.menu_button("Steal", |ui| {
-                    // evaluate if steal conditions are met, show relevant options
-                    if app.game_state.is_some() {
-                        let mut steal2 = false;
-                        let mut steal3 = false;
-                        let mut steal4 = false;
-                        let mut double_steal = false;
-                        // runner on 1st can steal 2nd
-                        match app.game_state.as_ref().unwrap().runners {
-                            RunnersOn::Runner000 => {}
-                            RunnersOn::Runner100 => steal2 = true,
-                            RunnersOn::Runner010 => steal3 = true,
-                            RunnersOn::Runner001 => {
-                                // TODO: check if runner on 3rd has S+
+                    ui.menu_button("Steal", |ui| {
+                        // evaluate if steal conditions are met, show relevant options
+                        if app.game_state.is_some() {
+                            let mut steal2 = false;
+                            let mut steal3 = false;
+                            let mut steal4 = false;
+                            let mut double_steal = false;
+                            // runner on 1st can steal 2nd
+                            match app.game_state.as_ref().unwrap().runners {
+                                RunnersOn::Runner000 => {}
+                                RunnersOn::Runner100 => steal2 = true,
+                                RunnersOn::Runner010 => steal3 = true,
+                                RunnersOn::Runner001 => {
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                                RunnersOn::Runner110 => {
+                                    steal3 = true;
+                                    double_steal = true;
+                                }
+                                RunnersOn::Runner101 => {
+                                    steal2 = true;
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                                RunnersOn::Runner011 => {
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                                RunnersOn::Runner111 => {
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
                             }
-                            RunnersOn::Runner110 => {
-                                steal3 = true;
-                                double_steal = true;
+                            if steal2 {
+                                if ui.button("Steal 2nd").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Second,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
                             }
-                            RunnersOn::Runner101 => {
-                                steal2 = true;
-                                // TODO: check if runner on 3rd has S+
+                            if steal3 {
+                                if ui.button("Steal 3rd").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Third,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
                             }
-                            RunnersOn::Runner011 => {
-                                // TODO: check if runner on 3rd has S+
+                            if steal4 {
+                                if ui.button("Steal Home").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Home,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
                             }
-                            RunnersOn::Runner111 => {
-                                // TODO: check if runner on 3rd has S+
+                            if double_steal {
+                                if ui.button("Double Steal").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Double,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
                             }
+                        } else {
+                            ui.label("No active game.");
                         }
-                        if steal2 {
-                            if ui.button("Steal 2nd").clicked() {
-                                // TODO: process stealing second
-                            }
-                        }
-                        if steal3 {
-                            if ui.button("Steal 3rd").clicked() {
-                                // TODO: process stealing third
-                            }
-                        }
-                        if steal4 {
-                            if ui.button("Steal Home").clicked() {
-                                // TODO: you know the drill
-                            }
-                        }
-                        if double_steal {
-                            if ui.button("Double Steal").clicked() {
-                                // TODO: you guessed it
-                            }
-                        }
-                    } else {
-                        ui.label("No active game.");
-                    }
+                    });
                 });
             }
             Panel::Roster => {
