@@ -1,7 +1,9 @@
+use std::fmt::format;
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
 use std::fs;
+use std::os::linux::raw::stat;
 use text_colorizer::*;
 
 use super::roll;
@@ -545,8 +547,9 @@ pub fn modern_inning_flow<'a>(
                             // basically like a single, just don't update the hit values
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
-                            let batter =
-                                game.away_active.roster[state.batting_team2 as usize].clone();
+                            let batter = game.away_active.batting_order
+                                [state.batting_team2 as usize]
+                                .clone();
                             state = add_runner(state, &1, batter);
                         }
                         AtBatResults::PossibleError => {
@@ -556,8 +559,9 @@ pub fn modern_inning_flow<'a>(
                             state = productive_out1(state, &pitch_result);
                         }
                         AtBatResults::ProductiveOut2 => {
-                            let batter =
-                                game.away_active.roster[state.batting_team2 as usize].clone();
+                            let batter = game.away_active.batting_order
+                                [state.batting_team2 as usize]
+                                .clone();
                             state = productive_out2(state, &pitch_result, batter);
                         }
                         AtBatResults::Out => {
@@ -654,8 +658,9 @@ pub fn modern_inning_flow<'a>(
                             // basically like a single, just don't update the hit values
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
-                            let batter =
-                                game.home_active.roster[state.batting_team1 as usize].clone();
+                            let batter = game.home_active.batting_order
+                                [state.batting_team1 as usize]
+                                .clone();
                             state = add_runner(state, &1, batter);
                         }
                         AtBatResults::PossibleError => {
@@ -665,8 +670,9 @@ pub fn modern_inning_flow<'a>(
                             state = productive_out1(state, &pitch_result);
                         }
                         AtBatResults::ProductiveOut2 => {
-                            let batter =
-                                game.home_active.roster[state.batting_team1 as usize].clone();
+                            let batter = game.home_active.batting_order
+                                [state.batting_team1 as usize]
+                                .clone();
                             state = productive_out2(state, &pitch_result, batter);
                         }
                         AtBatResults::Out => {
@@ -805,10 +811,10 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
     let batter: Player;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.roster[state.batting_team2 as usize].clone();
+            batter = game.away_active.batting_order[state.batting_team2 as usize].clone();
         }
         InningTB::Bottom => {
-            batter = game.home_active.roster[state.batting_team1 as usize].clone();
+            batter = game.home_active.batting_order[state.batting_team1 as usize].clone();
         }
     }
     if *hit_result <= 2 {
@@ -1541,10 +1547,10 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameMode
     let batter: Player;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.roster[state.batting_team2 as usize].clone();
+            batter = game.away_active.batting_order[state.batting_team2 as usize].clone();
         }
         InningTB::Bottom => {
-            batter = game.home_active.roster[state.batting_team1 as usize].clone();
+            batter = game.home_active.batting_order[state.batting_team1 as usize].clone();
         }
     }
     state.game_text += "\n Possible error -> ";
@@ -2006,6 +2012,8 @@ pub fn process_steals(
                     }
                     _ => {} // only valid configurations
                 }
+                state.game_text +=
+                    &format!("\n{} {} stole 2B!", stealer.first_name, stealer.last_name);
             } else {
                 // runner is out
                 match state.runners {
@@ -2025,6 +2033,10 @@ pub fn process_steals(
                     Outs::Two => state.outs = Outs::Three,
                     _ => {}
                 }
+                state.game_text += &format!(
+                    "\n{} {} thrown out stealing 2B!",
+                    stealer.first_name, stealer.last_name
+                );
             }
         }
         StealType::Third => {
@@ -2057,6 +2069,8 @@ pub fn process_steals(
                     }
                     _ => {}
                 }
+                state.game_text +=
+                    &format!("\n{} {} stole 3B!", stealer.first_name, stealer.last_name);
             } else {
                 match state.runners {
                     RunnersOn::Runner010 => {
@@ -2069,16 +2083,21 @@ pub fn process_steals(
                     }
                     _ => {}
                 }
-            }
-            match state.outs {
-                Outs::None => state.outs = Outs::One,
-                Outs::One => state.outs = Outs::Two,
-                Outs::Two => state.outs = Outs::Three,
-                _ => {}
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+                state.game_text += &format!(
+                    "\n{} {} thrown out stealing 3B!",
+                    stealer.first_name, stealer.last_name
+                );
             }
         }
         StealType::Home => {
             // NOTE: your runner should have S+ to end up here!
+            let stealer = state.runner3.clone().unwrap();
             let steal_result: i32;
             if debug.mode {
                 steal_result = debug_roll(&mut debug, 8) + 1;
@@ -2111,6 +2130,8 @@ pub fn process_steals(
                     InningTB::Top => state.runs_team2 += 1,
                     InningTB::Bottom => state.runs_team1 += 1,
                 }
+                state.game_text +=
+                    &format!("\n{} {} stole home!", stealer.first_name, stealer.last_name);
             } else {
                 match state.outs {
                     Outs::None => state.outs = Outs::One,
@@ -2118,12 +2139,17 @@ pub fn process_steals(
                     Outs::Two => state.outs = Outs::Three,
                     _ => {}
                 }
+                state.game_text += &format!(
+                    "\n{} {} thrown out stealing home.",
+                    stealer.first_name, stealer.last_name
+                );
             }
         }
         StealType::Double => {
             let mut steal_mod = 0;
             // look at traits of lead runner
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
+            let stealer2 = state.runner1.clone().unwrap();
             if stealer.speedy() {
                 steal_mod = 1;
             }
@@ -2149,6 +2175,14 @@ pub fn process_steals(
                     Outs::Two => state.outs = Outs::Three,
                     _ => {}
                 }
+                state.game_text += &format!(
+                    "\n{} {} thrown out at third",
+                    stealer.first_name, stealer.last_name
+                );
+                state.game_text += &format!(
+                    "\n{} {} steals 2B safely.",
+                    stealer2.first_name, stealer2.last_name
+                );
             } else if steal_result > 3 && steal_result <= 5 {
                 // trailing runner is out
                 state.runners = RunnersOn::Runner001;
@@ -2161,12 +2195,24 @@ pub fn process_steals(
                     Outs::Two => state.outs = Outs::Three,
                     _ => {}
                 }
+                state.game_text += &format!(
+                    "\n{} {} steals 3B safely.",
+                    stealer.first_name, stealer.last_name
+                );
+                state.game_text += &format!(
+                    "\n{} {} thrown out at 2B.",
+                    stealer2.first_name, stealer2.last_name
+                );
             } else {
                 // both runners reach safely
                 state.runners = RunnersOn::Runner011;
                 state.runner3 = state.runner2.clone();
                 state.runner2 = state.runner1.clone();
                 state.runner1 = None;
+                state.game_text +=
+                    &format!("\n{} {} stole 3B!", stealer.first_name, stealer.last_name);
+                state.game_text +=
+                    &format!("\n{} {} stole 2B!", stealer2.first_name, stealer2.last_name);
             }
         }
     }
