@@ -2120,7 +2120,55 @@ pub fn process_steals(
                 }
             }
         }
-        StealType::Double => {}
+        StealType::Double => {
+            let mut steal_mod = 0;
+            // look at traits of lead runner
+            let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
+            if stealer.speedy() {
+                steal_mod = 1;
+            }
+            if stealer.slow() {
+                steal_mod = -1; // see 2nd ed. pg. 31 - is it a typo?
+            }
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) + steal_mod;
+            } else {
+                steal_result = roll(8) + steal_mod;
+            }
+
+            if steal_result <= 3 {
+                // lead runner is out - only valid condition is Runner110
+                state.runners = RunnersOn::Runner010;
+                state.runner3 = None;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+            } else if steal_result > 3 && steal_result <= 5 {
+                // trailing runner is out
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+            } else {
+                // both runners reach safely
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            }
+        }
     }
     return state;
 }
