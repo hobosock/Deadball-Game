@@ -317,8 +317,8 @@ impl<'a> eframe::App for DeadballApp {
                 // no error, game state should already exist
                 let runner1 = self.game_state.as_ref().unwrap().runner1.clone().unwrap();
                 let runner1_text = format!(
-                    "{} | {} | {:?}",
-                    runner1.first_name, runner1.last_name, runner1.traits
+                    "{} {} {} | {:?}",
+                    runner1.first_name, runner1.nickname, runner1.last_name, runner1.traits
                 );
                 ui.put(
                     Rect {
@@ -335,8 +335,8 @@ impl<'a> eframe::App for DeadballApp {
             if on_second {
                 let runner2 = self.game_state.as_ref().unwrap().runner2.clone().unwrap();
                 let runner2_text = format!(
-                    "{} | {} | {:?}",
-                    runner2.first_name, runner2.last_name, runner2.traits
+                    "{} {} {} | {:?}",
+                    runner2.first_name, runner2.nickname, runner2.last_name, runner2.traits
                 );
                 ui.put(
                     Rect {
@@ -353,8 +353,8 @@ impl<'a> eframe::App for DeadballApp {
             if on_third {
                 let runner3 = self.game_state.as_ref().unwrap().runner3.clone().unwrap();
                 let runner3_text = format!(
-                    "{} | {} | {:?}",
-                    runner3.first_name, runner3.last_name, runner3.traits
+                    "{} {} {} | {:?}",
+                    runner3.first_name, runner3.nickname, runner3.last_name, runner3.traits
                 );
                 ui.put(
                     Rect {
