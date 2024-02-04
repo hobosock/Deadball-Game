@@ -717,6 +717,9 @@ mod tests {
             inning_half: InningTB::Bottom,
             outs: Outs::Two,
             runners: RunnersOn::Runner000,
+            runner1: None,
+            runner2: None,
+            runner3: None,
             batting_team1: 1,
             batting_team2: 1,
             current_pitcher_team1: test_player.clone(),
@@ -787,6 +790,9 @@ mod tests {
             inning_half: InningTB::Bottom,
             outs: Outs::Two,
             runners: RunnersOn::Runner100,
+            runner1: None,
+            runner2: None,
+            runner3: None,
             batting_team1: 1,
             batting_team2: 1,
             current_pitcher_team1: test_player.clone(),
@@ -853,6 +859,9 @@ mod tests {
             inning_half: InningTB::Bottom,
             outs: Outs::Two,
             runners: RunnersOn::Runner100,
+            runner1: None,
+            runner2: None,
+            runner3: None,
             batting_team1: 1,
             batting_team2: 1,
             current_pitcher_team1: test_player.clone(),
@@ -868,19 +877,32 @@ mod tests {
             game_text: "test".to_string(),
         };
 
+        let player1 = Player {
+            first_name: "Seth".to_string(),
+            nickname: "".to_string(),
+            last_name: "Loveall".to_string(),
+            position: Position::Firstbase,
+            handedness: Handedness::Right,
+            batter_target: 30,
+            on_base_target: 30,
+            pitch_die: -12,
+            traits: vec![Traits::GreatDefender],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![],
+        };
         state.runners = RunnersOn::Runner011;
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner111));
 
         state.runners = RunnersOn::Runner101;
-        state = add_runner(state, &2);
+        state = add_runner(state, &2, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner111));
 
         state.runners = RunnersOn::Runner000;
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner100));
 
-        state = add_runner(state, &2);
+        state = add_runner(state, &2, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner110));
     }
 

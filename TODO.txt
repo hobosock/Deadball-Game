@@ -14,3 +14,8 @@ STEAL
  - add a button in the "Game" tab next to "Next At Bat"
  - only enable button if steal conditions are met
  - "Steal" button opens menu with different steal options
+
+Ed Munson MSS: 32 -> Possible Error -> defense roll = 4 -> No Error
+and then nothing happens???
+also Randy Oglivie MSS: 42, defense roll: 6
+I think I just need to print "Out" as well

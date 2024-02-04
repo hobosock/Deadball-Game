@@ -811,10 +811,10 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
     let batter: Player;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[(state.batting_team2 - 2) as usize].clone();
+            batter = game.away_active.batting_order[(state.batting_team2 - 1) as usize].clone();
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[(state.batting_team1 - 2) as usize].clone();
+            batter = game.home_active.batting_order[(state.batting_team1 - 1) as usize].clone();
         }
     }
     if *hit_result <= 2 {
@@ -1547,10 +1547,10 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameMode
     let batter: Player;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[(state.batting_team2 - 2) as usize].clone();
+            batter = game.away_active.batting_order[(state.batting_team2 - 1) as usize].clone();
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[(state.batting_team1 - 2) as usize].clone();
+            batter = game.home_active.batting_order[(state.batting_team1 - 1) as usize].clone();
         }
     }
     state.game_text += "\n Possible error -> ";
@@ -1576,7 +1576,7 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameMode
         state = runners_advance(state, &1);
         state = add_runner(state, &1, batter);
     } else {
-        state.game_text += "-> No error.";
+        state.game_text += "-> No error.  Out!";
         // fielder makes the out like normal
         match state.outs {
             Outs::None => {

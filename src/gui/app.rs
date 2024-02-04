@@ -1329,6 +1329,11 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     app.home_team_active.clone().unwrap().pitching[0].clone(),
                                     app.away_team_active.clone().unwrap().pitching[0].clone(),
                                 ));
+                                println!(
+                                    "Away: {} | Home: {}",
+                                    app.game_state.as_ref().unwrap().batting_team2,
+                                    app.game_state.as_ref().unwrap().batting_team1
+                                ); // TODO: delete this
                             } else {
                                 println!("Load teams first.");
                             }
@@ -1384,6 +1389,11 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                 }
                                 GameStatus::Over => {}
                             }
+                            println!(
+                                "Away: {} | Home: {}",
+                                app.game_state.as_ref().unwrap().batting_team2,
+                                app.game_state.as_ref().unwrap().batting_team1
+                            ); // TODO: delete this
                         }
                     }
                     ui.menu_button("Steal", |ui| {
@@ -1648,7 +1658,7 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut away_at_bat = 1;
         if app.game_state.is_some() {
-            away_at_bat = app.game_state.clone().unwrap().batting_team2;
+            away_at_bat = app.game_state.clone().unwrap().batting_team2 + 1; // array indexing :/
         }
         ui.horizontal(|ui| {
             if away_at_bat == 1 {
@@ -1858,7 +1868,7 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut home_at_bat = 1;
         if app.game_state.is_some() {
-            home_at_bat = app.game_state.clone().unwrap().batting_team1;
+            home_at_bat = app.game_state.clone().unwrap().batting_team1 + 1; // array indexing :/
         }
         ui.horizontal(|ui| {
             if home_at_bat == 1 {
