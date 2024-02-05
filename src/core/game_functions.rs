@@ -1,9 +1,7 @@
-use std::fmt::format;
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
 use std::fs;
-use std::os::linux::raw::stat;
 use text_colorizer::*;
 
 use super::roll;
@@ -2215,6 +2213,48 @@ pub fn process_steals(
                     &format!("\n{} {} stole 2B!", stealer2.first_name, stealer2.last_name);
             }
         }
+    }
+    return state;
+}
+
+/// process bunting
+pub fn bunt(mut state: GameState, mut debug: DebugConfig, batter: Player) -> GameState {
+    // check traits, get bunt roll result
+    let mut bunt_mod: i32 = 0;
+    if batter.speedy() {
+        bunt_mod = 1;
+    }
+    if batter.slow() {
+        bunt_mod = -1;
+    }
+    let bunt_result: i32;
+    if debug.mode {
+        bunt_result = debug_roll(&mut debug, 6) + bunt_mod;
+    } else {
+        bunt_result = roll(6) + bunt_mod;
+    }
+
+    // process result
+    if bunt_result <= 2 {
+        // lead runner out, batter safe
+        match state.runners {
+            RunnersOn::Runner000 => {}
+            RunnersOn::Runner100 => {}
+            RunnersOn::Runner010 => {}
+            RunnersOn::Runner001 => {}
+            RunnersOn::Runner110 => {}
+            RunnersOn::Runner101 => {}
+            RunnersOn::Runner011 => {}
+            RunnersOn::Runner111 => {}
+        }
+    } else if bunt_result == 3 {
+        // 1st & 2nd -> lead runner advances, batter out
+        // 3rd -> lead runner out, batter safe
+    } else if bunt_result == 4 || bunt_result == 5 {
+        // lead runner advances, batter out
+    } else { // >= 6
+         // S+ -> Single, DEF 3B
+         // lead runner advances, batter out
     }
     return state;
 }

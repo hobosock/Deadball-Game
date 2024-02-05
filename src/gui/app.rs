@@ -5,7 +5,7 @@
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
 use crate::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct,
+    bunt, create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct,
     process_steals, GameModern, GameState, GameStatus, InningTB, Outs, RunnersOn, StealType,
 };
 use crate::{
@@ -1486,6 +1486,34 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                             ui.label("No active game.");
                         }
                     });
+                    if ui.button("Bunt").clicked() {
+                        if app.game_state.is_some() && app.game_modern.is_some() {
+                            // TODO: check and make sure base runners make sense
+                            // roll a d6, handle S+/S-, check runners
+                            let batter: Player;
+                            match app.game_state.as_ref().unwrap().inning_half {
+                                InningTB::Top => {
+                                    let bat_num = app.game_state.as_ref().unwrap().batting_team2;
+                                    batter =
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [bat_num as usize]
+                                            .clone();
+                                }
+                                InningTB::Bottom => {
+                                    let bat_num = app.game_state.as_ref().unwrap().batting_team1;
+                                    batter =
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [bat_num as usize]
+                                            .clone();
+                                }
+                            }
+                            app.game_state = Some(bunt(
+                                app.game_state.clone().unwrap(),
+                                app.debug_roll_state.clone(),
+                                batter,
+                            ));
+                        }
+                    }
                 });
             }
             Panel::Roster => {
