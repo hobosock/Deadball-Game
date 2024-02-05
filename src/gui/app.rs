@@ -1514,6 +1514,27 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                             ));
                         }
                     }
+                    if ui.button("Hit & Run").clicked() {
+                        if app.game_state.is_some() && app.game_modern.is_some() {
+                            let batter: Player;
+                            match app.game_state.as_ref().unwrap().inning_half {
+                                InningTB::Top => {
+                                    let bat_num = app.game_state.as_ref().unwrap().batting_team2;
+                                    batter =
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [bat_num as usize]
+                                            .clone();
+                                }
+                                InningTB::Bottom => {
+                                    let bat_num = app.game_state.as_ref().unwrap().batting_team1;
+                                    batter =
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [bat_num as usize]
+                                            .clone();
+                                }
+                            }
+                        }
+                    }
                 });
             }
             Panel::Roster => {
