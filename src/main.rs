@@ -5,8 +5,6 @@
 mod characters;
 mod core;
 mod gui;
-//use characters::*;
-//use core::*;
 use gui::app::*;
 
 // EXTERNAL IMPORTS
@@ -159,6 +157,9 @@ mod tests {
     use crate::{
         characters::players::*, characters::teams::*, core::file_locations::*,
         core::game_functions::*,
+    };
+    use characters::players::{
+        Handedness, InjuryLocation, InjurySeverity, Player, Position, Traits,
     };
 
     use super::*;
@@ -716,6 +717,9 @@ mod tests {
             inning_half: InningTB::Bottom,
             outs: Outs::Two,
             runners: RunnersOn::Runner000,
+            runner1: None,
+            runner2: None,
+            runner3: None,
             batting_team1: 1,
             batting_team2: 1,
             current_pitcher_team1: test_player.clone(),
@@ -786,6 +790,9 @@ mod tests {
             inning_half: InningTB::Bottom,
             outs: Outs::Two,
             runners: RunnersOn::Runner100,
+            runner1: None,
+            runner2: None,
+            runner3: None,
             batting_team1: 1,
             batting_team2: 1,
             current_pitcher_team1: test_player.clone(),
@@ -852,6 +859,9 @@ mod tests {
             inning_half: InningTB::Bottom,
             outs: Outs::Two,
             runners: RunnersOn::Runner100,
+            runner1: None,
+            runner2: None,
+            runner3: None,
             batting_team1: 1,
             batting_team2: 1,
             current_pitcher_team1: test_player.clone(),
@@ -867,19 +877,32 @@ mod tests {
             game_text: "test".to_string(),
         };
 
+        let player1 = Player {
+            first_name: "Seth".to_string(),
+            nickname: "".to_string(),
+            last_name: "Loveall".to_string(),
+            position: Position::Firstbase,
+            handedness: Handedness::Right,
+            batter_target: 30,
+            on_base_target: 30,
+            pitch_die: -12,
+            traits: vec![Traits::GreatDefender],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![],
+        };
         state.runners = RunnersOn::Runner011;
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner111));
 
         state.runners = RunnersOn::Runner101;
-        state = add_runner(state, &2);
+        state = add_runner(state, &2, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner111));
 
         state.runners = RunnersOn::Runner000;
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner100));
 
-        state = add_runner(state, &2);
+        state = add_runner(state, &2, player1.clone());
         assert!(matches!(state.runners, RunnersOn::Runner110));
     }
 
@@ -1006,5 +1029,71 @@ mod tests {
         assert_eq!(position, 8);
         position = get_swing_position(&39);
         assert_eq!(position, 9);
+    }
+
+    #[test]
+    fn test_trait_check() {
+        let mut player1 = Player {
+            first_name: "Seth".to_string(),
+            nickname: "".to_string(),
+            last_name: "Loveall".to_string(),
+            position: Position::Firstbase,
+            handedness: Handedness::Right,
+            batter_target: 30,
+            on_base_target: 30,
+            pitch_die: -12,
+            traits: vec![Traits::GreatDefender],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![],
+        };
+        let mut player2 = player1.clone();
+        let mut player3 = player1.clone();
+        let mut player4 = player1.clone();
+
+        // defense
+        player2.traits = vec![Traits::None];
+        player3.traits = vec![Traits::PoorDefender];
+        assert_eq!(player1.defense(), 1);
+        assert_eq!(player2.defense(), 0);
+        assert_eq!(player3.defense(), -1);
+
+        // power hitter
+        player1.traits = vec![Traits::PowerHitter];
+        player2.traits = vec![Traits::ExtraWeakHitter];
+        player3.traits = vec![Traits::ElitePowerHitter];
+        player4.traits = vec![Traits::WeakHitter];
+        assert_eq!(player1.power(), 1);
+        assert_eq!(player2.power(), -2);
+        assert_eq!(player3.power(), 2);
+        assert_eq!(player4.power(), -1);
+
+        player1.traits = vec![Traits::ContactHitter];
+        assert_eq!(player1.contact_hit(), true);
+
+        player1.traits = vec![Traits::FreeSwinger];
+        assert_eq!(player1.free_swing(), true);
+
+        player1.traits = vec![Traits::SpeedyRunner];
+        assert_eq!(player1.speedy(), true);
+
+        player1.traits = vec![Traits::SlowRunner];
+        assert_eq!(player1.slow(), true);
+
+        player1.traits = vec![Traits::ToughPlayer];
+        assert_eq!(player1.tough(), true);
+
+        player1.traits = vec![Traits::StrikeoutArtist];
+        assert_eq!(player1.strikeout(), true);
+
+        player1.traits = vec![Traits::GroundballMachine];
+        assert_eq!(player1.groundball(), true);
+
+        player1.traits = vec![Traits::GreatStamina];
+        assert_eq!(player1.stamina(), true);
+
+        player1.traits = vec![Traits::ControlPitcher];
+        player2.traits = vec![Traits::Wild];
+        assert_eq!(player1.control(), -2);
+        assert_eq!(player2.control(), 3);
     }
 }

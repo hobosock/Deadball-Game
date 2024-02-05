@@ -5,15 +5,15 @@
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
 use crate::core::game_functions::{
-    create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct, GameModern,
-    GameState, GameStatus, InningTB, Outs, RunnersOn,
+    create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct,
+    process_steals, GameModern, GameState, GameStatus, InningTB, Outs, RunnersOn, StealType,
 };
 use crate::{
     gui::debug::DebugConfig,
     gui::gui_functions::{runners_on_bool, update_player_labels},
 };
 
-use std::fs;
+use std::{fs, usize};
 
 // EXTERNAL IMPORTS
 use eframe::{
@@ -314,6 +314,12 @@ impl<'a> eframe::App for DeadballApp {
             ));
             // draw helmets to indicate runners on base
             if on_first {
+                // no error, game state should already exist
+                let runner1 = self.game_state.as_ref().unwrap().runner1.clone().unwrap();
+                let runner1_text = format!(
+                    "{} {} {} | {:?}",
+                    runner1.first_name, runner1.nickname, runner1.last_name, runner1.traits
+                );
                 ui.put(
                     Rect {
                         min: pos2(490.0, 260.0),
@@ -323,9 +329,15 @@ impl<'a> eframe::App for DeadballApp {
                         self.helmet_image.texture_id(ctx),
                         self.helmet_image.size_vec2() * 0.1,
                     ),
-                );
+                )
+                .on_hover_text(runner1_text);
             }
             if on_second {
+                let runner2 = self.game_state.as_ref().unwrap().runner2.clone().unwrap();
+                let runner2_text = format!(
+                    "{} {} {} | {:?}",
+                    runner2.first_name, runner2.nickname, runner2.last_name, runner2.traits
+                );
                 ui.put(
                     Rect {
                         min: pos2(340.0, 120.0),
@@ -335,9 +347,15 @@ impl<'a> eframe::App for DeadballApp {
                         self.helmet_image.texture_id(ctx),
                         self.helmet_image.size_vec2() * 0.1,
                     ),
-                );
+                )
+                .on_hover_text(runner2_text);
             }
             if on_third {
+                let runner3 = self.game_state.as_ref().unwrap().runner3.clone().unwrap();
+                let runner3_text = format!(
+                    "{} {} {} | {:?}",
+                    runner3.first_name, runner3.nickname, runner3.last_name, runner3.traits
+                );
                 ui.put(
                     Rect {
                         min: pos2(205.0, 270.0),
@@ -347,7 +365,8 @@ impl<'a> eframe::App for DeadballApp {
                         self.helmet_image.texture_id(ctx),
                         self.helmet_image.size_vec2() * 0.1,
                     ),
-                );
+                )
+                .on_hover_text(runner3_text);
             }
             // update player labels
             if self.home_team_active.is_some()
@@ -540,7 +559,7 @@ fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
         .open(&mut app.version_window)
         .show(ctx, |ui| {
-            ui.label("Version 0.1.0");
+            ui.label("Version 0.2.0");
         });
 }
 
@@ -739,6 +758,290 @@ fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
             // button to write changes to game state
             ui.separator();
             if ui.button("Write Changes").clicked() {
+                // put players in the runner fields to avoid crashes
+                let current_batter: i32;
+                match app.debug_state.inning_half {
+                    InningTB::Top => {
+                        current_batter = app.debug_state.batting_team2 as i32;
+                        match app.debug_state.runners {
+                            RunnersOn::Runner000 => {}
+                            RunnersOn::Runner100 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner1 = Some(
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [8]
+                                        .clone(),
+                                    );
+                                } else {
+                                    app.debug_state.runner1 = Some(
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [(current_batter - 2) as usize]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            RunnersOn::Runner010 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner2 = Some(
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [8]
+                                        .clone(),
+                                    );
+                                } else {
+                                    app.debug_state.runner2 = Some(
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [(current_batter - 2) as usize]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            RunnersOn::Runner001 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner3 = Some(
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [8]
+                                        .clone(),
+                                    );
+                                } else {
+                                    app.debug_state.runner3 = Some(
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                                            [(current_batter - 2) as usize]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            RunnersOn::Runner110 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                app.debug_state.runner2 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner1 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                            RunnersOn::Runner101 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                app.debug_state.runner3 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner1 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                            RunnersOn::Runner011 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                app.debug_state.runner3 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner2 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                            RunnersOn::Runner111 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                let mut batter3 = current_batter - 3;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                if batter3 < 0 {
+                                    batter3 += 9;
+                                }
+                                app.debug_state.runner3 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter3 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner2 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner1 = Some(
+                                    app.game_modern.as_ref().unwrap().away_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                        }
+                    }
+                    InningTB::Bottom => {
+                        current_batter = app.debug_state.batting_team2 as i32;
+                        match app.debug_state.runners {
+                            RunnersOn::Runner000 => {}
+                            RunnersOn::Runner100 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner1 = Some(
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [8]
+                                        .clone(),
+                                    );
+                                } else {
+                                    app.debug_state.runner1 = Some(
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [(current_batter - 2) as usize]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            RunnersOn::Runner010 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner2 = Some(
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [8]
+                                        .clone(),
+                                    );
+                                } else {
+                                    app.debug_state.runner2 = Some(
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [(current_batter - 2) as usize]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            RunnersOn::Runner001 => {
+                                if current_batter == 1 {
+                                    app.debug_state.runner3 = Some(
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [8]
+                                        .clone(),
+                                    );
+                                } else {
+                                    app.debug_state.runner3 = Some(
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                            [(current_batter - 2) as usize]
+                                            .clone(),
+                                    );
+                                }
+                            }
+                            RunnersOn::Runner110 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                app.debug_state.runner2 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner1 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                            RunnersOn::Runner101 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                app.debug_state.runner3 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner1 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                            RunnersOn::Runner011 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                app.debug_state.runner3 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner2 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                            RunnersOn::Runner111 => {
+                                let mut batter1 = current_batter - 1;
+                                let mut batter2 = current_batter - 2;
+                                let mut batter3 = current_batter - 3;
+                                if batter1 < 0 {
+                                    batter1 += 9;
+                                }
+                                if batter2 < 0 {
+                                    batter2 += 9;
+                                }
+                                if batter3 < 0 {
+                                    batter3 += 9;
+                                }
+                                app.debug_state.runner3 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter3 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner2 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter2 - 1) as usize]
+                                        .clone(),
+                                );
+                                app.debug_state.runner1 = Some(
+                                    app.game_modern.as_ref().unwrap().home_active.batting_order
+                                        [(batter1 - 1) as usize]
+                                        .clone(),
+                                );
+                            }
+                        }
+                    }
+                }
                 app.game_state = Some(app.debug_state.clone());
             }
         });
@@ -1026,6 +1329,11 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     app.home_team_active.clone().unwrap().pitching[0].clone(),
                                     app.away_team_active.clone().unwrap().pitching[0].clone(),
                                 ));
+                                println!(
+                                    "Away: {} | Home: {}",
+                                    app.game_state.as_ref().unwrap().batting_team2,
+                                    app.game_state.as_ref().unwrap().batting_team1
+                                ); // TODO: delete this
                             } else {
                                 println!("Load teams first.");
                             }
@@ -1062,26 +1370,123 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                 });
             }
             Panel::Game => {
-                if ui.button("Next At Bat").clicked() {
-                    // TODO: this could be cleaner
-                    if app.game_state.is_some() && app.game_modern.is_some() {
-                        // TODO: update with ancient game when ready
-                        match app.game_state.clone().unwrap().status {
-                            GameStatus::NotStarted => {
-                                app.game_state.as_mut().unwrap().status = GameStatus::Ongoing
+                ui.horizontal(|ui| {
+                    if ui.button("Next At Bat").clicked() {
+                        // TODO: this could be cleaner
+                        if app.game_state.is_some() && app.game_modern.is_some() {
+                            // TODO: update with ancient game when ready
+                            match app.game_state.clone().unwrap().status {
+                                GameStatus::NotStarted => {
+                                    app.game_state.as_mut().unwrap().status = GameStatus::Ongoing
+                                }
+                                GameStatus::Ongoing => {
+                                    app.game_state = Some(modern_game_flow(
+                                        &app.game_modern.clone().unwrap(),
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                    println!("{:?}", app.game_state);
+                                }
+                                GameStatus::Over => {}
                             }
-                            GameStatus::Ongoing => {
-                                app.game_state = Some(modern_game_flow(
-                                    &app.game_modern.clone().unwrap(),
-                                    app.game_state.clone().unwrap(),
-                                    app.debug_roll_state.clone(),
-                                ));
-                                println!("{:?}", app.game_state);
-                            }
-                            GameStatus::Over => {}
+                            println!(
+                                "Away: {} | Home: {}",
+                                app.game_state.as_ref().unwrap().batting_team2,
+                                app.game_state.as_ref().unwrap().batting_team1
+                            ); // TODO: delete this
                         }
                     }
-                }
+                    ui.menu_button("Steal", |ui| {
+                        // evaluate if steal conditions are met, show relevant options
+                        if app.game_state.is_some() {
+                            let mut steal2 = false;
+                            let mut steal3 = false;
+                            let mut steal4 = false;
+                            let mut double_steal = false;
+                            // runner on 1st can steal 2nd
+                            match app.game_state.as_ref().unwrap().runners {
+                                RunnersOn::Runner000 => {}
+                                RunnersOn::Runner100 => steal2 = true,
+                                RunnersOn::Runner010 => steal3 = true,
+                                RunnersOn::Runner001 => {
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                                RunnersOn::Runner110 => {
+                                    steal3 = true;
+                                    double_steal = true;
+                                }
+                                RunnersOn::Runner101 => {
+                                    steal2 = true;
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                                RunnersOn::Runner011 => {
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                                RunnersOn::Runner111 => {
+                                    let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
+                                    if runner3.is_some() {
+                                        if runner3.unwrap().speedy() {
+                                            steal4 = true;
+                                        }
+                                    }
+                                }
+                            }
+                            if steal2 {
+                                if ui.button("Steal 2nd").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Second,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
+                            }
+                            if steal3 {
+                                if ui.button("Steal 3rd").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Third,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
+                            }
+                            if steal4 {
+                                if ui.button("Steal Home").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Home,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
+                            }
+                            if double_steal {
+                                if ui.button("Double Steal").clicked() {
+                                    app.game_state = Some(process_steals(
+                                        StealType::Double,
+                                        app.game_state.clone().unwrap(),
+                                        app.debug_roll_state.clone(),
+                                    ));
+                                }
+                            }
+                        } else {
+                            ui.label("No active game.");
+                        }
+                    });
+                });
             }
             Panel::Roster => {
                 ui.horizontal(|ui| {
@@ -1253,7 +1658,7 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut away_at_bat = 1;
         if app.game_state.is_some() {
-            away_at_bat = app.game_state.clone().unwrap().batting_team2;
+            away_at_bat = app.game_state.clone().unwrap().batting_team2 + 1; // array indexing :/
         }
         ui.horizontal(|ui| {
             if away_at_bat == 1 {
@@ -1365,6 +1770,7 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         if app.home_team.is_some() {
             let home_team = app.home_team.as_ref().unwrap();
             app.home_team_name = home_team.name.to_string();
+            // TODO: use batting_order instead?
             let batter1 = &app.game_modern.clone().unwrap().home_active.roster[0];
             app.home_batter1 = format!(
                 "{} {}",
@@ -1462,7 +1868,7 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut home_at_bat = 1;
         if app.game_state.is_some() {
-            home_at_bat = app.game_state.clone().unwrap().batting_team1;
+            home_at_bat = app.game_state.clone().unwrap().batting_team1 + 1; // array indexing :/
         }
         ui.horizontal(|ui| {
             if home_at_bat == 1 {
