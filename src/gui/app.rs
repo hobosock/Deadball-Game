@@ -1489,7 +1489,6 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                     if ui.button("Bunt").clicked() {
                         if app.game_state.is_some() && app.game_modern.is_some() {
                             // TODO: check and make sure base runners make sense
-                            // roll a d6, handle S+/S-, check runners
                             let batter: Player;
                             match app.game_state.as_ref().unwrap().inning_half {
                                 InningTB::Top => {
@@ -1509,6 +1508,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                             }
                             app.game_state = Some(bunt(
                                 app.game_state.clone().unwrap(),
+                                app.game_modern.as_ref().unwrap(),
                                 app.debug_roll_state.clone(),
                                 batter,
                             ));

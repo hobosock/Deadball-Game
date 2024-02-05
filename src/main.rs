@@ -1096,4 +1096,6 @@ mod tests {
         assert_eq!(player1.control(), -2);
         assert_eq!(player2.control(), 3);
     }
+
+    // TODO: write test for bunt function
 }

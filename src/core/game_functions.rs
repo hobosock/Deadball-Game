@@ -2218,7 +2218,12 @@ pub fn process_steals(
 }
 
 /// process bunting
-pub fn bunt(mut state: GameState, mut debug: DebugConfig, batter: Player) -> GameState {
+pub fn bunt(
+    mut state: GameState,
+    game: &GameModern,
+    mut debug: DebugConfig,
+    batter: Player,
+) -> GameState {
     // check traits, get bunt roll result
     let mut bunt_mod: i32 = 0;
     if batter.speedy() {
@@ -2233,28 +2238,165 @@ pub fn bunt(mut state: GameState, mut debug: DebugConfig, batter: Player) -> Gam
     } else {
         bunt_result = roll(6) + bunt_mod;
     }
+    state.game_text += &format!("\nBunting!  Bunt roll: {}", &bunt_result);
 
     // process result
     if bunt_result <= 2 {
         // lead runner out, batter safe
+        state.game_text += "\nLead runner out, batter safe.";
         match state.runners {
-            RunnersOn::Runner000 => {}
-            RunnersOn::Runner100 => {}
-            RunnersOn::Runner010 => {}
-            RunnersOn::Runner001 => {}
-            RunnersOn::Runner110 => {}
-            RunnersOn::Runner101 => {}
-            RunnersOn::Runner011 => {}
-            RunnersOn::Runner111 => {}
+            RunnersOn::Runner000 => state.game_text += "\nNo runners, no bunt.",
+            RunnersOn::Runner100 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runner1 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner010 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner001 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner110 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner101 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner011 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner111 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            }
         }
     } else if bunt_result == 3 {
         // 1st & 2nd -> lead runner advances, batter out
         // 3rd -> lead runner out, batter safe
+        match state.runners {
+            RunnersOn::Runner000 => state.game_text += "\nNo runners, no bunt.", // TODO: allow bunt against shift
+            RunnersOn::Runner100 => {
+                state.outs = increment_out(state.outs, 1);
+                state = runners_advance(state, &1);
+                state.game_text += "\nLead runner advances, batter out.";
+            }
+            RunnersOn::Runner010 => {
+                state.outs = increment_out(state.outs, 1);
+                state = runners_advance(state, &1);
+                state.game_text += "\nLead runner advances, batter out.";
+            }
+            RunnersOn::Runner001 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+            RunnersOn::Runner110 => {
+                state.outs = increment_out(state.outs, 1);
+                state = runners_advance(state, &1);
+                state.game_text += "\nLead runner advances, batter out.";
+            }
+            RunnersOn::Runner101 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+            RunnersOn::Runner011 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                state = add_runner(state, &1, batter);
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+            RunnersOn::Runner111 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+        }
     } else if bunt_result == 4 || bunt_result == 5 {
         // lead runner advances, batter out
-    } else { // >= 6
-         // S+ -> Single, DEF 3B
-         // lead runner advances, batter out
+        state.outs = increment_out(state.outs, 1);
+        state = runners_advance(state, &1);
+        state.game_text += "\nLead runner advances, batter out.";
+    } else {
+        // >= 6
+        // S+ -> Single, DEF 3B
+        // lead runner advances, batter out
+        if batter.speedy() {
+            state = hit_table(&5, state, game);
+            state.game_text += "\nLead runner advances, bunter races for first!";
+        } else {
+            state.outs = increment_out(state.outs, 1);
+            state = runners_advance(state, &1);
+            state.game_text += "\nLead runner advances, batter out.";
+        }
     }
     return state;
+}
+
+/// increment outs
+pub fn increment_out(current: Outs, mut increment: u32) -> Outs {
+    let mut outs = Outs::None;
+    if increment > 3 {
+        increment = 3;
+    }
+    if increment == 0 {
+        increment = 1;
+    }
+    match current {
+        Outs::None => {
+            if increment == 1 {
+                outs = Outs::One;
+            }
+            if increment == 2 {
+                outs = Outs::Two;
+            }
+            if increment == 3 {
+                outs = Outs::Three;
+            }
+        }
+        Outs::One => {
+            if increment == 1 {
+                outs = Outs::Two;
+            }
+            if increment >= 2 {
+                outs = Outs::Three;
+            }
+        }
+        Outs::Two => {
+            outs = Outs::Three;
+        }
+        Outs::Three => outs = Outs::Three,
+    }
+    return outs;
 }
