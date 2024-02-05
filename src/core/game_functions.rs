@@ -2226,10 +2226,10 @@ pub fn bunt(
 ) -> GameState {
     // check traits, get bunt roll result
     let mut bunt_mod: i32 = 0;
-    if batter.speedy() {
+    if batter.contact_hit() {
         bunt_mod = 1;
     }
-    if batter.slow() {
+    if batter.free_swing() {
         bunt_mod = -1;
     }
     let bunt_result: i32;
