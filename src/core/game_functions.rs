@@ -139,6 +139,13 @@ pub enum Animal {
     Streaker,
 }
 
+#[derive(Clone, Debug)]
+enum HitAndRun {
+    Hit,
+    PopUpK,
+    Groundball,
+}
+
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
@@ -1498,6 +1505,37 @@ pub fn find_by_position(position: Position, roster: &Vec<Player>) -> Option<Play
     return None;
 }
 
+/// convert MSS digit to position
+pub fn position_by_number(mut last_digit: i32) -> Position {
+    let position: Position;
+    if last_digit < 1 {
+        last_digit = 1;
+    }
+    if last_digit > 9 {
+        last_digit = 9;
+    }
+    if last_digit == 1 {
+        position = Position::Pitcher;
+    } else if last_digit == 2 {
+        position = Position::Catcher;
+    } else if last_digit == 3 {
+        position = Position::Firstbase;
+    } else if last_digit == 4 {
+        position = Position::Secondbase;
+    } else if last_digit == 5 {
+        position = Position::Shortstop;
+    } else if last_digit == 6 {
+        position = Position::Thirdbase;
+    } else if last_digit == 7 {
+        position = Position::Leftfield;
+    } else if last_digit == 8 {
+        position = Position::Centerfield;
+    } else {
+        position = Position::Rightfield;
+    }
+    return position;
+}
+
 /// convenience function to return a default GameState struct
 pub fn new_game_state_struct() -> GameState {
     let new_state = GameState {
@@ -1970,6 +2008,7 @@ fn mega_out(mut state: GameState) -> GameState {
     return state;
 }
 
+// TODO: check catcher's defense trait
 /// takes a game state and processes steals of the indicated type
 /// includes rules for S+/S-
 /// (!) assumes you have checked for valid steal scenarios before calling it
@@ -2399,4 +2438,195 @@ pub fn increment_out(current: Outs, mut increment: u32) -> Outs {
         Outs::Three => outs = Outs::Three,
     }
     return outs;
+}
+
+/// hit and run - should be RUnner100 otherwise can't do it
+pub fn hit_and_run(
+    mut state: GameState,
+    game: &GameModern,
+    debug: &mut DebugConfig,
+    batter: Player,
+) -> GameState {
+    state.game_text += "\n\nThe hit and run is on!";
+    // first roll a steal like normal
+    let stealer = state.runner1.clone().unwrap();
+    let mut steal_mod = 0;
+    if stealer.speedy() {
+        steal_mod = 1;
+    }
+    if stealer.slow() {
+        steal_mod = -1;
+    }
+    let steal_result: i32;
+    if debug.mode {
+        steal_result = debug_roll(debug, 8) + steal_mod;
+    } else {
+        steal_result = roll(8) + steal_mod;
+    }
+    state.game_text += &format!("\nSteal result: {} -> ", steal_result);
+    let steal_success: bool;
+    if steal_result >= 4 {
+        steal_success = true;
+        state.game_text += "Success!";
+    } else {
+        steal_success = false;
+        state.game_text += "Fail!";
+    }
+
+    // now handle hit chance
+    let pd: i32;
+    match state.inning_half {
+        InningTB::Top => {
+            pd = state.current_pitcher_team1.pitch_die;
+        }
+        InningTB::Bottom => {
+            pd = state.current_pitcher_team2.pitch_die;
+        }
+    }
+    let mut pitch_result: i32;
+    if pd > 0 {
+        if debug.mode {
+            pitch_result = debug_roll(debug, pd);
+        } else {
+            pitch_result = roll(pd)
+        }
+    } else {
+        if debug.mode {
+            pitch_result = -1 * debug_roll(debug, pd.abs());
+        } else {
+            pitch_result = -1 * roll(pd.abs());
+        }
+    }
+    state.game_text += &format!("\nPitch result: {}", &pitch_result);
+    if debug.mode {
+        pitch_result += debug_roll(debug, 100);
+    } else {
+        pitch_result += roll(100);
+    }
+    state.game_text += &format!("\nMSS: {}", &pitch_result);
+    let mut hit_bonus = 5;
+    if batter.contact_hit() {
+        hit_bonus = 10;
+    }
+    if batter.free_swing() {
+        hit_bonus = 0;
+    }
+    let swing_result = at_bat(
+        batter.batter_target + hit_bonus,
+        batter.on_base_target + hit_bonus,
+        pitch_result,
+    );
+    state.game_text += &format!(" -> {:?}", swing_result);
+    match state.inning_half {
+        InningTB::Top => {
+            if state.batting_team2 == 8 {
+                state.batting_team2 = 0;
+            } else {
+                state.batting_team2 += 1;
+            }
+        }
+        InningTB::Bottom => {
+            if state.batting_team1 == 8 {
+                state.batting_team1 = 0;
+            } else {
+                state.batting_team1 += 1;
+            }
+        }
+    }
+    let hnr: HitAndRun;
+    let out_type = get_swing_position(&pitch_result);
+    match swing_result {
+        AtBatResults::Hit => hnr = HitAndRun::Hit,
+        AtBatResults::Out => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+        AtBatResults::Walk => hnr = HitAndRun::Hit,
+        AtBatResults::Oddity => hnr = HitAndRun::Hit,
+        AtBatResults::MegaOut => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+        AtBatResults::CriticalHit => hnr = HitAndRun::Hit,
+        AtBatResults::PossibleError => {
+            let defender: Option<Player>;
+            match state.inning_half {
+                InningTB::Top => {
+                    let defender_position = position_by_number(out_type);
+                    defender = find_by_position(defender_position, &game.home_active.batting_order);
+                }
+                InningTB::Bottom => {
+                    let defender_position = position_by_number(out_type);
+                    defender = find_by_position(defender_position, &game.away_active.batting_order);
+                }
+            }
+            let mut defense_bonus = 0;
+            if defender.is_some() {
+                defense_bonus += defender.unwrap().defense();
+            }
+            let def_roll: i32;
+            if debug.mode {
+                def_roll = debug_roll(debug, 12) + defense_bonus;
+            } else {
+                def_roll = roll(12) + defense_bonus;
+            }
+            if def_roll <= 2 {
+                hnr = HitAndRun::Hit;
+            } else {
+                if out_type <= 3 || out_type >= 7 {
+                    hnr = HitAndRun::PopUpK;
+                } else {
+                    hnr = HitAndRun::Groundball;
+                }
+            }
+        }
+        AtBatResults::ProductiveOut1 => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+        AtBatResults::ProductiveOut2 => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+    }
+    state.game_text += &format!("Hit result: {:?}", hnr);
+
+    // clean up bases
+    match hnr {
+        HitAndRun::Hit => {
+            if steal_success {
+                // runners at 1st and 3rd
+            } else {
+                // runners at 1st and 2nd
+            }
+        }
+        HitAndRun::PopUpK => {
+            if steal_success {
+                // batter out, runner stays at 1st
+            } else {
+                // double play
+            }
+        }
+        HitAndRun::Groundball => {
+            if steal_success {
+                // batter out, runner reaches 2nd
+            } else {
+                // double play
+            }
+        }
+    }
+
+    return state;
 }
