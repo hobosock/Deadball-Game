@@ -5,8 +5,9 @@
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
 use crate::core::game_functions::{
-    bunt, create_modern_game, init_new_game_state, modern_game_flow, new_game_state_struct,
-    process_steals, GameModern, GameState, GameStatus, InningTB, Outs, RunnersOn, StealType,
+    bunt, create_modern_game, hit_and_run, init_new_game_state, modern_game_flow,
+    new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
+    RunnersOn, StealType,
 };
 use crate::{
     gui::debug::DebugConfig,
@@ -775,7 +776,7 @@ fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 } else {
                                     app.debug_state.runner1 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
-                                            [(current_batter - 2) as usize]
+                                            [(current_batter - 1) as usize]
                                             .clone(),
                                     );
                                 }
@@ -1533,6 +1534,12 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                             .clone();
                                 }
                             }
+                            app.game_state = Some(hit_and_run(
+                                app.game_state.clone().unwrap(),
+                                app.game_modern.as_ref().unwrap(),
+                                &mut app.debug_roll_state,
+                                batter,
+                            ));
                         }
                     }
                 });

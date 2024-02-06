@@ -2601,29 +2601,48 @@ pub fn hit_and_run(
             }
         }
     }
-    state.game_text += &format!("Hit result: {:?}", hnr);
+    state.game_text += &format!("\nHit result: {:?}", hnr);
 
     // clean up bases
     match hnr {
         HitAndRun::Hit => {
             if steal_success {
                 // runners at 1st and 3rd
+                state.game_text += "\nRunners on 1st and 3rd!";
+                state.runners = RunnersOn::Runner101;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = Some(batter);
             } else {
                 // runners at 1st and 2nd
+                state.game_text += "\nRunners on 1st and 2nd!";
+                state.runners = RunnersOn::Runner110;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = Some(batter);
             }
         }
         HitAndRun::PopUpK => {
             if steal_success {
                 // batter out, runner stays at 1st
+                state.game_text += "\nBatter out, runner stays at 1st.";
+                state.outs = increment_out(state.outs, 1);
             } else {
                 // double play
+                state.game_text += "\nDouble play!";
+                state.outs = increment_out(state.outs, 2);
             }
         }
         HitAndRun::Groundball => {
             if steal_success {
                 // batter out, runner reaches 2nd
+                state.game_text += "\nBatter out, runner reaches 2nd.";
+                state.outs = increment_out(state.outs, 1);
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                state.runners = RunnersOn::Runner010;
             } else {
                 // double play
+                state.game_text += "\nDouble play!";
+                state.outs = increment_out(state.outs, 2);
             }
         }
     }
