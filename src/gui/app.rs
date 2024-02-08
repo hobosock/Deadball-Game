@@ -1277,7 +1277,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                                         Some(app.game_modern.clone().unwrap().home_active.clone());
                                     app.away_team_active =
                                         Some(app.game_modern.clone().unwrap().away_active.clone());
-                                    //TODO: make the window close after successfully generating a game
+                                    // TODO: make the window close after successfully generating a game
                                 }
                                 Err(err) => {
                                     app.create_game_error =
