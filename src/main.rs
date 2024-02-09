@@ -1096,4 +1096,240 @@ mod tests {
         assert_eq!(player1.control(), -2);
         assert_eq!(player2.control(), 3);
     }
+
+    // TODO: write test for bunt function
+    // TODO: write test for hit and run function
+    // TODO: write test for steal function
+    // TODO: make test function names uniform
+
+    #[test]
+    fn increment_out_check() {
+        let mut current = Outs::None;
+        current = increment_out(current, 1);
+        assert_eq!(current, Outs::One);
+        current = increment_out(current, 1);
+        assert_eq!(current, Outs::Two);
+        current = increment_out(current, 1);
+        assert_eq!(current, Outs::Three);
+        current = increment_out(current, 1);
+        assert_eq!(current, Outs::Three);
+        current = Outs::None;
+        current = increment_out(current, 2);
+        assert_eq!(current, Outs::Two);
+        current = increment_out(current, 2);
+        assert_eq!(current, Outs::Three);
+        current = Outs::None;
+        current = increment_out(current, 3);
+        assert_eq!(current, Outs::Three);
+    }
+
+    #[test]
+    fn test_process_steals() {
+        // create GameState, GameModern, DebugConfig, Player
+        let red_team =
+            load_team(fs::read_to_string("src/testfiles/game/teams/red_team.dbt").unwrap());
+        let blue_team =
+            load_team(fs::read_to_string("src/testfiles/game/teams/blue_team.dbt").unwrap());
+        let ballpark = load_park_modern(
+            fs::read_to_string("src/testfiles/game/ballparks/Nightside Field.dbb").unwrap(),
+        );
+        let game = create_modern_game(red_team, blue_team, ballpark).unwrap();
+        let mut state = init_new_game_state(
+            game.home_active.pitching[0].clone(),
+            game.away_active.pitching[0].clone(),
+        );
+        let mut debug = DebugConfig {
+            mode: true,
+            rolls: vec![3],
+            roll_index: 0,
+        };
+        let mut stealer = game.home_active.batting_order[2].clone();
+        stealer.traits = vec![Traits::SpeedyRunner];
+        state.inning_half = InningTB::Bottom;
+        state.status = GameStatus::Ongoing;
+        state.runners = RunnersOn::Runner100;
+        state.runner1 = Some(stealer.clone());
+        state.batting_team1 = 3;
+
+        let mut new_state = process_steals(StealType::Second, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner010);
+
+        stealer.traits = vec![Traits::SlowRunner];
+        state.runner1 = Some(stealer.clone());
+        debug.rolls = vec![4];
+        new_state = process_steals(StealType::Second, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+
+        stealer.traits = vec![Traits::SpeedyRunner];
+        state.runner1 = None;
+        state.runner2 = Some(stealer.clone());
+        state.runners = RunnersOn::Runner010;
+        debug.rolls = vec![4];
+        new_state = process_steals(StealType::Third, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner001);
+
+        debug.rolls = vec![1];
+        new_state = process_steals(StealType::Third, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+
+        debug.rolls = vec![8];
+        state.runners = RunnersOn::Runner001;
+        state.runner3 = state.runner2.clone();
+        state.runner2 = None;
+        new_state = process_steals(StealType::Home, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+        assert_eq!(new_state.runs_team1, 1);
+
+        debug.rolls = vec![1];
+        state.runners = RunnersOn::Runner110;
+        state.runner2 = state.runner3.clone();
+        state.runner1 = state.runner2.clone();
+        state.runner3 = None;
+        new_state = process_steals(StealType::Double, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner010);
+
+        debug.rolls = vec![4];
+        new_state = process_steals(StealType::Double, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner001);
+
+        debug.rolls = vec![7];
+        new_state = process_steals(StealType::Double, state.clone(), debug.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner011);
+    }
+
+    #[test]
+    fn test_bunt() {
+        // create GameState, GameModern, DebugConfig, Player
+        let red_team =
+            load_team(fs::read_to_string("src/testfiles/game/teams/red_team.dbt").unwrap());
+        let blue_team =
+            load_team(fs::read_to_string("src/testfiles/game/teams/blue_team.dbt").unwrap());
+        let ballpark = load_park_modern(
+            fs::read_to_string("src/testfiles/game/ballparks/Nightside Field.dbb").unwrap(),
+        );
+        let game = create_modern_game(red_team, blue_team, ballpark).unwrap();
+        let mut state = init_new_game_state(
+            game.home_active.pitching[0].clone(),
+            game.away_active.pitching[0].clone(),
+        );
+        let mut debug = DebugConfig {
+            mode: true,
+            rolls: vec![1],
+            roll_index: 0,
+        };
+        let mut batter = game.home_active.batting_order[3].clone();
+        state.inning_half = InningTB::Bottom;
+        state.status = GameStatus::Ongoing;
+        state.runners = RunnersOn::Runner100;
+        state.runner1 = Some(game.home_active.batting_order[2].clone());
+        state.batting_team1 = 3;
+        batter.traits = vec![Traits::ContactHitter];
+
+        // bunt_result = 2
+        let mut new_state = bunt(state.clone(), &game, debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner100);
+
+        // bunt_result = 3
+        batter.traits = vec![Traits::FreeSwinger];
+        debug.rolls = vec![4];
+        new_state = bunt(state.clone(), &game, debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner010);
+        state.runners = RunnersOn::Runner001;
+        state.runner3 = state.runner1.clone();
+        state.runner1 = None;
+        new_state = bunt(state.clone(), &game, debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner100);
+
+        // bunt_result = 4/5
+        batter.traits = vec![Traits::None];
+        debug.rolls = vec![5];
+        new_state = bunt(state.clone(), &game, debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+
+        // bunt_result = 6
+        debug.rolls = vec![6];
+        new_state = bunt(state.clone(), &game, debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+        debug.rolls = vec![6, 4];
+        batter.traits = vec![Traits::SpeedyRunner];
+        new_state = bunt(state.clone(), &game, debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner100);
+    }
+
+    #[test]
+    fn test_hit_and_run() {
+        // create GameState, GameModern, DebugConfig, Player
+        let red_team =
+            load_team(fs::read_to_string("src/testfiles/game/teams/red_team.dbt").unwrap());
+        let blue_team =
+            load_team(fs::read_to_string("src/testfiles/game/teams/blue_team.dbt").unwrap());
+        let ballpark = load_park_modern(
+            fs::read_to_string("src/testfiles/game/ballparks/Nightside Field.dbb").unwrap(),
+        );
+        let game = create_modern_game(red_team, blue_team, ballpark).unwrap();
+        let mut state = init_new_game_state(
+            game.home_active.pitching[0].clone(),
+            game.away_active.pitching[0].clone(),
+        );
+        let mut debug = DebugConfig {
+            mode: true,
+            rolls: vec![8, 1, 37],
+            roll_index: 0,
+        };
+        let mut stealer = game.home_active.batting_order[2].clone();
+        let mut batter = game.home_active.batting_order[3].clone();
+        batter.batter_target = 30;
+        batter.on_base_target = 30;
+        batter.traits = vec![Traits::ContactHitter];
+        stealer.traits = vec![Traits::SpeedyRunner];
+        state.inning_half = InningTB::Bottom;
+        state.status = GameStatus::Ongoing;
+        state.runners = RunnersOn::Runner100;
+        state.runner1 = Some(stealer.clone());
+        state.batting_team1 = 3;
+
+        let mut new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner101);
+
+        batter.traits = vec![Traits::FreeSwinger];
+        debug.rolls = vec![1, 1, 10];
+        new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::None);
+        assert_eq!(new_state.runners, RunnersOn::Runner110);
+
+        debug.rolls = vec![8, 1, 70];
+        new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner100);
+
+        debug.rolls = vec![1, 1, 37];
+        new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::Two);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+
+        debug.rolls = vec![8, 4, 70];
+        new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::One);
+        assert_eq!(new_state.runners, RunnersOn::Runner010);
+
+        debug.rolls = vec![1, 4, 70];
+        new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
+        assert_eq!(new_state.outs, Outs::Two);
+        assert_eq!(new_state.runners, RunnersOn::Runner000);
+    }
 }
