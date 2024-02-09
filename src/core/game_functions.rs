@@ -2675,6 +2675,9 @@ pub fn hit_and_run(
                 // double play
                 state.game_text += "\nDouble play!";
                 state.outs = increment_out(state.outs, 2);
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner1 = None;
             }
         }
         HitAndRun::Groundball => {
@@ -2689,6 +2692,9 @@ pub fn hit_and_run(
                 // double play
                 state.game_text += "\nDouble play!";
                 state.outs = increment_out(state.outs, 2);
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner1 = None;
             }
         }
     }
