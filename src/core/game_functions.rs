@@ -533,7 +533,7 @@ pub fn modern_inning_flow<'a>(
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state, game);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
@@ -546,7 +546,7 @@ pub fn modern_inning_flow<'a>(
                                 hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state, game);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
@@ -644,7 +644,7 @@ pub fn modern_inning_flow<'a>(
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state, game);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
@@ -657,7 +657,7 @@ pub fn modern_inning_flow<'a>(
                                 hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state, game);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
@@ -807,7 +807,12 @@ pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
 }
 
 /// rolls on the hit table and updates game state accordingly
-pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) -> GameState {
+pub fn hit_table<'b>(
+    hit_result: &i32,
+    mut state: GameState,
+    game: &GameModern,
+    debug: &mut DebugConfig,
+) -> GameState {
     // 1. defense roll (if needed)
     // 2. advance runners
     // 3 move hitter to runner
@@ -852,8 +857,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        // TODO: are defense rolls implemented twice???
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Firstbase); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Firstbase);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Firstbase);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -871,7 +881,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Secondbase); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Secondbase);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Secondbase);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -889,7 +905,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Thirdbase); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Thirdbase);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Thirdbase);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -907,7 +929,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Shortstop); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Shortstop);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Shortstop);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -953,7 +981,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Leftfield); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Leftfield);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Leftfield);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -971,7 +1005,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Centerfield); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Centerfield);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Centerfield);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -989,7 +1029,13 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState, game: &GameModern) 
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Rightfield); // defense rolls are d12
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Rightfield);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Rightfield);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -2392,7 +2438,7 @@ pub fn bunt(
         // S+ -> Single, DEF 3B
         // lead runner advances, batter out
         if batter.speedy() {
-            state = hit_table(&5, state, game);
+            state = hit_table(&5, state, game, &mut debug);
             state.game_text += "\nLead runner advances, bunter races for first!";
         } else {
             state.outs = increment_out(state.outs, 1);
