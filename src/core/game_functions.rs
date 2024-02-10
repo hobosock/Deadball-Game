@@ -2085,10 +2085,12 @@ pub fn process_steals(
     steal_type: StealType,
     mut state: GameState,
     mut debug: DebugConfig,
+    catcher: &Player,
 ) -> GameState {
+    let catcher_mod = catcher.defense();
     match steal_type {
         StealType::Second => {
-            let mut steal_mod = 0;
+            let mut steal_mod = 0 + catcher_mod;
             let stealer = state.runner1.clone().unwrap(); // TODO: error proof?
             if stealer.speedy() {
                 steal_mod = 1;
@@ -2146,7 +2148,7 @@ pub fn process_steals(
             }
         }
         StealType::Third => {
-            let mut steal_mod = 0;
+            let mut steal_mod = 0 + catcher_mod;
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
             if stealer.speedy() {
                 steal_mod = 1;
@@ -2206,9 +2208,9 @@ pub fn process_steals(
             let stealer = state.runner3.clone().unwrap();
             let steal_result: i32;
             if debug.mode {
-                steal_result = debug_roll(&mut debug, 8) + 1;
+                steal_result = debug_roll(&mut debug, 8) + 1 + catcher_mod;
             } else {
-                steal_result = roll(8) + 1;
+                steal_result = roll(8) + 1 + catcher_mod;
             }
 
             // runner leaves 3rd no matter outcome of steal attempt
@@ -2252,7 +2254,7 @@ pub fn process_steals(
             }
         }
         StealType::Double => {
-            let mut steal_mod = 0;
+            let mut steal_mod = 0 + catcher_mod;
             // look at traits of lead runner
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
             let stealer2 = state.runner1.clone().unwrap();
