@@ -476,11 +476,16 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let pd = state.current_pitcher_team1.pitch_die;
+                    let mut pd = state.current_pitcher_team1.pitch_die;
+                    // NOTE: special rules for GB+
+                    if state.runners == RunnersOn::Runner111 {
+                        pd = change_pitch_die(pd, 1);
+                    }
                     let mut pitch_mod: i32 = 0;
                     if state.current_pitcher_team1.strikeout() {
                         pitch_mod = -1;
                     }
+                    let control_mod = state.current_pitcher_team1.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -501,11 +506,24 @@ pub fn modern_inning_flow<'a>(
                     } else {
                         pitch_result += roll(100);
                     }
+                    let batter =
+                        game.away_active.batting_order[state.batting_team2 as usize].clone();
+                    let mut hit_mod: i32 = 0;
+                    if batter.free_swing() {
+                        match state.runners {
+                            RunnersOn::Runner010 => hit_mod = -3,
+                            RunnersOn::Runner001 => hit_mod = -3,
+                            RunnersOn::Runner110 => hit_mod = -3,
+                            RunnersOn::Runner101 => hit_mod = -3,
+                            RunnersOn::Runner011 => hit_mod = -3,
+                            RunnersOn::Runner111 => hit_mod = -3,
+                            _ => hit_mod = 0,
+                        }
+                    }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
-                        game.away_active.batting_order[state.batting_team2 as usize].batter_target
-                            + pitch_mod,
-                        game.away_active.batting_order[state.batting_team2 as usize].on_base_target,
+                        batter.batter_target + pitch_mod + hit_mod,
+                        batter.on_base_target + control_mod + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -592,11 +610,16 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let pd = state.current_pitcher_team2.pitch_die;
+                    let mut pd = state.current_pitcher_team2.pitch_die;
+                    // NOTE: special rules for GB+
+                    if state.runners == RunnersOn::Runner111 {
+                        pd = change_pitch_die(pd, 1);
+                    }
                     let mut pitch_mod = 0;
                     if state.current_pitcher_team2.strikeout() {
                         pitch_mod = -1;
                     }
+                    let control_mod = state.current_pitcher_team2.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -618,10 +641,23 @@ pub fn modern_inning_flow<'a>(
                         pitch_result += roll(100);
                     }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    let batter =
+                        game.home_active.batting_order[state.batting_team1 as usize].clone();
+                    let mut hit_mod: i32 = 0;
+                    if batter.free_swing() {
+                        match state.runners {
+                            RunnersOn::Runner010 => hit_mod = -3,
+                            RunnersOn::Runner001 => hit_mod = -3,
+                            RunnersOn::Runner110 => hit_mod = -3,
+                            RunnersOn::Runner101 => hit_mod = -3,
+                            RunnersOn::Runner011 => hit_mod = -3,
+                            RunnersOn::Runner111 => hit_mod = -3,
+                            _ => hit_mod = 0,
+                        }
+                    }
                     let swing_result = at_bat(
-                        game.home_active.batting_order[state.batting_team1 as usize].batter_target
-                            + pitch_mod,
-                        game.home_active.batting_order[state.batting_team1 as usize].on_base_target,
+                        batter.batter_target + pitch_mod + hit_mod,
+                        batter.on_base_target + control_mod + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -845,22 +881,32 @@ pub fn hit_table<'b>(
             if *hit_result == 1 {
                 state = runners_advance(state, &2);
                 state = add_runner(state, &2, batter);
+                state.game_text += " -> Double (S+)";
             } else {
                 state = runners_advance(state, &3);
                 state = add_runner(state, &3, batter);
+                state.game_text += " -> Triple (S+)";
             }
         } else {
-            state.game_text += " -> Single";
-            // single
-            state = runners_advance(state, &1);
-            state = add_runner(state, &1, batter);
-            // simple hit increment when no defense roll involved
-            match state.inning_half {
-                InningTB::Top => {
-                    state.hits_team2 += 1;
-                }
-                InningTB::Bottom => {
-                    state.hits_team1 += 1;
+            // NOTE: special rules for C+ (S+ is better if batter has both)
+            // on 1-2 batter doubles, runners advance 2, no DEF
+            if batter.contact_hit() {
+                state = runners_advance(state, &2);
+                state = add_runner(state, &2, batter);
+                state.game_text += " -> Double (C+)";
+            } else {
+                state.game_text += " -> Single";
+                // single
+                state = runners_advance(state, &1);
+                state = add_runner(state, &1, batter);
+                // simple hit increment when no defense roll involved
+                match state.inning_half {
+                    InningTB::Top => {
+                        state.hits_team2 += 1;
+                    }
+                    InningTB::Bottom => {
+                        state.hits_team1 += 1;
+                    }
                 }
             }
         }
@@ -1764,38 +1810,46 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
             } else {
+                let pitcher: &Player;
+                match state.inning_half {
+                    InningTB::Top => pitcher = &state.current_pitcher_team1,
+                    InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+                }
                 // check for runner on first
                 match state.runners {
                     RunnersOn::Runner100 => {
-                        state.game_text += "\nRunner at first advances, batter is out.";
-                        state.runners = RunnersOn::Runner010;
-                        state.runner2 = state.runner1.clone();
-                        state.runner1 = None;
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner000;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // one extra
+                        } else {
+                            state.game_text += "\nRunner at first advances, batter is out.";
+                            state.runners = RunnersOn::Runner010;
+                            state.runner2 = state.runner1.clone();
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1);
+                        }
                     }
                     RunnersOn::Runner101 => {
-                        state.game_text += "\nRunner at first advances, batter is out.";
-                        state.runners = RunnersOn::Runner011;
-                        state.runner2 = state.runner1.clone();
-                        state.runner1 = None;
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner001;
+                            state.runner1 = None;
+                        } else {
+                            state.game_text += "\nRunner at first advances, batter is out.";
+                            state.runners = RunnersOn::Runner011;
+                            state.runner2 = state.runner1.clone();
+                            state.runner1 = None;
+                        }
                     }
                     _ => {}
                 }
             }
             // update out
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
         }
     }
 
@@ -1807,6 +1861,11 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner is out and batter makes it to first
     // the first line is the same as ProductiveOut1
+    let pitcher: &Player;
+    match state.inning_half {
+        InningTB::Top => pitcher = &state.current_pitcher_team1,
+        InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+    }
     match state.outs {
         Outs::Three => {}
         Outs::Two => {
@@ -1869,7 +1928,17 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
                 state.game_text += "\nFielder's choice.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
-                    RunnersOn::Runner100 => {}
+                    RunnersOn::Runner100 => {
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner000;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // 1 extra
+                        } else {
+                            state.runner1 = Some(batter);
+                        }
+                    }
                     RunnersOn::Runner010 => {
                         state.runners = RunnersOn::Runner100;
                         state.runner2 = None;
@@ -1888,6 +1957,13 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
                         state.runner1 = Some(batter);
                     }
                     RunnersOn::Runner101 => {
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner001;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // 1 extra
+                        }
                         state.runners = RunnersOn::Runner110;
                         state.runner3 = None;
                         state.runner1 = Some(batter);
@@ -1895,20 +1971,7 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
                     RunnersOn::Runner111 => {}
                 }
             }
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
         }
     }
 
@@ -2085,10 +2148,12 @@ pub fn process_steals(
     steal_type: StealType,
     mut state: GameState,
     mut debug: DebugConfig,
+    catcher: &Player,
 ) -> GameState {
+    let catcher_mod = catcher.defense();
     match steal_type {
         StealType::Second => {
-            let mut steal_mod = 0;
+            let mut steal_mod = 0 + catcher_mod;
             let stealer = state.runner1.clone().unwrap(); // TODO: error proof?
             if stealer.speedy() {
                 steal_mod = 1;
@@ -2146,7 +2211,7 @@ pub fn process_steals(
             }
         }
         StealType::Third => {
-            let mut steal_mod = 0;
+            let mut steal_mod = 0 + catcher_mod;
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
             if stealer.speedy() {
                 steal_mod = 1;
@@ -2206,9 +2271,9 @@ pub fn process_steals(
             let stealer = state.runner3.clone().unwrap();
             let steal_result: i32;
             if debug.mode {
-                steal_result = debug_roll(&mut debug, 8) + 1;
+                steal_result = debug_roll(&mut debug, 8) + 1 + catcher_mod;
             } else {
-                steal_result = roll(8) + 1;
+                steal_result = roll(8) + 1 + catcher_mod;
             }
 
             // runner leaves 3rd no matter outcome of steal attempt
@@ -2252,7 +2317,7 @@ pub fn process_steals(
             }
         }
         StealType::Double => {
-            let mut steal_mod = 0;
+            let mut steal_mod = 0 + catcher_mod;
             // look at traits of lead runner
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
             let stealer2 = state.runner1.clone().unwrap();
@@ -2543,21 +2608,28 @@ pub fn hit_and_run(
     }
 
     // now handle hit chance
-    let pd: i32;
+    let mut pd: i32;
     let mut pitch_mod: i32 = 0;
+    let control_mod: i32;
     match state.inning_half {
         InningTB::Top => {
             pd = state.current_pitcher_team1.pitch_die;
             if state.current_pitcher_team1.strikeout() {
                 pitch_mod = -1;
             }
+            control_mod = state.current_pitcher_team1.control();
         }
         InningTB::Bottom => {
             pd = state.current_pitcher_team2.pitch_die;
             if state.current_pitcher_team2.strikeout() {
                 pitch_mod = -1;
             }
+            control_mod = state.current_pitcher_team2.control();
         }
+    }
+    // NOTE: special rules for GB+
+    if state.runners == RunnersOn::Runner111 {
+        pd = change_pitch_die(pd, 1);
     }
     let mut pitch_result: i32;
     if pd > 0 {
@@ -2589,7 +2661,7 @@ pub fn hit_and_run(
     }
     let swing_result = at_bat(
         batter.batter_target + hit_bonus + pitch_mod,
-        batter.on_base_target + hit_bonus,
+        batter.on_base_target + control_mod + hit_bonus,
         pitch_result,
     );
     state.game_text += &format!(" -> {:?}", swing_result);

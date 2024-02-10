@@ -1,1 +1,4 @@
 /target
+src/testfiles/game_test/test_player0.dbp
+src/testfiles/game_test/test_player1.dbp
+src/testfiles/game_test/test_player2.dbp

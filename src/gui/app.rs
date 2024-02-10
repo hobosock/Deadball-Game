@@ -5,7 +5,7 @@
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
 use crate::core::game_functions::{
-    bunt, create_modern_game, hit_and_run, init_new_game_state, modern_game_flow,
+    bunt, create_modern_game, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
     new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
     RunnersOn, StealType,
 };
@@ -560,7 +560,7 @@ fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
         .open(&mut app.version_window)
         .show(ctx, |ui| {
-            ui.label("Version 0.3.1");
+            ui.label("Version 0.3.2");
         });
 }
 
@@ -1447,12 +1447,32 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     }
                                 }
                             }
+                            let catcher: Player;
+                            // NOTE: I think it is okay to unwrap here, positions should exist when
+                            // game is created/roster is loaded
+                            match app.game_state.as_ref().unwrap().inning_half {
+                                InningTB::Top => {
+                                    catcher = find_by_position(
+                                        Position::Catcher,
+                                        &app.game_modern.as_ref().unwrap().home_active.roster,
+                                    )
+                                    .unwrap();
+                                }
+                                InningTB::Bottom => {
+                                    catcher = find_by_position(
+                                        Position::Catcher,
+                                        &app.game_modern.as_ref().unwrap().away_active.roster,
+                                    )
+                                    .unwrap();
+                                }
+                            }
                             if steal2 {
                                 if ui.button("Steal 2nd").clicked() {
                                     app.game_state = Some(process_steals(
                                         StealType::Second,
                                         app.game_state.clone().unwrap(),
                                         app.debug_roll_state.clone(),
+                                        &catcher,
                                     ));
                                 }
                             }
@@ -1462,6 +1482,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                         StealType::Third,
                                         app.game_state.clone().unwrap(),
                                         app.debug_roll_state.clone(),
+                                        &catcher,
                                     ));
                                 }
                             }
@@ -1471,6 +1492,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                         StealType::Home,
                                         app.game_state.clone().unwrap(),
                                         app.debug_roll_state.clone(),
+                                        &catcher,
                                     ));
                                 }
                             }
@@ -1480,6 +1502,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                         StealType::Double,
                                         app.game_state.clone().unwrap(),
                                         app.debug_roll_state.clone(),
+                                        &catcher,
                                     ));
                                 }
                             }
