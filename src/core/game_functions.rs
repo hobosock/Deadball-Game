@@ -1808,38 +1808,46 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
             } else {
+                let pitcher: &Player;
+                match state.inning_half {
+                    InningTB::Top => pitcher = &state.current_pitcher_team1,
+                    InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+                }
                 // check for runner on first
                 match state.runners {
                     RunnersOn::Runner100 => {
-                        state.game_text += "\nRunner at first advances, batter is out.";
-                        state.runners = RunnersOn::Runner010;
-                        state.runner2 = state.runner1.clone();
-                        state.runner1 = None;
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner000;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // one extra
+                        } else {
+                            state.game_text += "\nRunner at first advances, batter is out.";
+                            state.runners = RunnersOn::Runner010;
+                            state.runner2 = state.runner1.clone();
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1);
+                        }
                     }
                     RunnersOn::Runner101 => {
-                        state.game_text += "\nRunner at first advances, batter is out.";
-                        state.runners = RunnersOn::Runner011;
-                        state.runner2 = state.runner1.clone();
-                        state.runner1 = None;
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner001;
+                            state.runner1 = None;
+                        } else {
+                            state.game_text += "\nRunner at first advances, batter is out.";
+                            state.runners = RunnersOn::Runner011;
+                            state.runner2 = state.runner1.clone();
+                            state.runner1 = None;
+                        }
                     }
                     _ => {}
                 }
             }
             // update out
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
         }
     }
 
@@ -1851,6 +1859,11 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner is out and batter makes it to first
     // the first line is the same as ProductiveOut1
+    let pitcher: &Player;
+    match state.inning_half {
+        InningTB::Top => pitcher = &state.current_pitcher_team1,
+        InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+    }
     match state.outs {
         Outs::Three => {}
         Outs::Two => {
@@ -1913,7 +1926,17 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
                 state.game_text += "\nFielder's choice.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
-                    RunnersOn::Runner100 => {}
+                    RunnersOn::Runner100 => {
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner000;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // 1 extra
+                        } else {
+                            state.runner1 = Some(batter);
+                        }
+                    }
                     RunnersOn::Runner010 => {
                         state.runners = RunnersOn::Runner100;
                         state.runner2 = None;
@@ -1932,6 +1955,13 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
                         state.runner1 = Some(batter);
                     }
                     RunnersOn::Runner101 => {
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner001;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // 1 extra
+                        }
                         state.runners = RunnersOn::Runner110;
                         state.runner3 = None;
                         state.runner1 = Some(batter);
@@ -1939,20 +1969,7 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
                     RunnersOn::Runner111 => {}
                 }
             }
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
         }
     }
 
