@@ -783,3 +783,32 @@ pub fn pow_trait_check(game: &GameModern, state: &GameState) -> i32 {
     }
     return modifier;
 }
+
+/// adjust pitch die in set increments
+pub fn change_pitch_die(current: i32, increment: i32) -> i32 {
+    let die_vec = vec![-20, -12, -8, -4, 4, 8, 12, 20];
+    let mut current_pos_res = die_vec.iter().position(|&r| r == current);
+    if current_pos_res.is_none() {
+        // pitch die is somehow not an increment of 4, round to nearest
+        let division = current / 4;
+        let remainder = current % 4;
+        let rounded_die: i32;
+        if remainder > 2 {
+            rounded_die = (division + 1) * 4;
+        } else {
+            rounded_die = division * 4;
+        }
+        current_pos_res = die_vec.iter().position(|&r| r == rounded_die);
+    }
+    let current_pos = current_pos_res.unwrap();
+    let mut new_die_pos = current_pos as i32 + increment;
+    // clamp position before indexing
+    if new_die_pos < 0 {
+        new_die_pos = 0;
+    }
+    if new_die_pos > 7 {
+        new_die_pos = 7;
+    }
+    let new_die = die_vec[new_die_pos as usize];
+    return new_die;
+}
