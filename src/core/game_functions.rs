@@ -828,17 +828,30 @@ pub fn hit_table<'b>(
         }
     }
     if *hit_result <= 2 {
-        state.game_text += " -> Single";
-        // single
-        state = runners_advance(state, &1);
-        state = add_runner(state, &1, batter);
-        // simple hit increment when no defense roll involved
-        match state.inning_half {
-            InningTB::Top => {
-                state.hits_team2 += 1;
+        if batter.speedy() {
+            // NOTE: special rules for S+
+            // on 1: batter doubles, runners advance 2, no DEF roll
+            // on 2: batter triples, do not roll for defense
+            if *hit_result == 1 {
+                state = runners_advance(state, &2);
+                state = add_runner(state, &2, batter);
+            } else {
+                state = runners_advance(state, &3);
+                state = add_runner(state, &3, batter);
             }
-            InningTB::Bottom => {
-                state.hits_team1 += 1;
+        } else {
+            state.game_text += " -> Single";
+            // single
+            state = runners_advance(state, &1);
+            state = add_runner(state, &1, batter);
+            // simple hit increment when no defense roll involved
+            match state.inning_half {
+                InningTB::Top => {
+                    state.hits_team2 += 1;
+                }
+                InningTB::Bottom => {
+                    state.hits_team1 += 1;
+                }
             }
         }
         return state;
