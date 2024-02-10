@@ -485,6 +485,7 @@ pub fn modern_inning_flow<'a>(
                     if state.current_pitcher_team1.strikeout() {
                         pitch_mod = -1;
                     }
+                    let control_mod = state.current_pitcher_team1.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -522,7 +523,7 @@ pub fn modern_inning_flow<'a>(
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
                         batter.batter_target + pitch_mod + hit_mod,
-                        batter.on_base_target + hit_mod,
+                        batter.on_base_target + control_mod + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -618,6 +619,7 @@ pub fn modern_inning_flow<'a>(
                     if state.current_pitcher_team2.strikeout() {
                         pitch_mod = -1;
                     }
+                    let control_mod = state.current_pitcher_team2.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -655,7 +657,7 @@ pub fn modern_inning_flow<'a>(
                     }
                     let swing_result = at_bat(
                         batter.batter_target + pitch_mod + hit_mod,
-                        batter.on_base_target + hit_mod,
+                        batter.on_base_target + control_mod + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -2608,18 +2610,21 @@ pub fn hit_and_run(
     // now handle hit chance
     let mut pd: i32;
     let mut pitch_mod: i32 = 0;
+    let control_mod: i32;
     match state.inning_half {
         InningTB::Top => {
             pd = state.current_pitcher_team1.pitch_die;
             if state.current_pitcher_team1.strikeout() {
                 pitch_mod = -1;
             }
+            control_mod = state.current_pitcher_team1.control();
         }
         InningTB::Bottom => {
             pd = state.current_pitcher_team2.pitch_die;
             if state.current_pitcher_team2.strikeout() {
                 pitch_mod = -1;
             }
+            control_mod = state.current_pitcher_team2.control();
         }
     }
     // NOTE: special rules for GB+
@@ -2656,7 +2661,7 @@ pub fn hit_and_run(
     }
     let swing_result = at_bat(
         batter.batter_target + hit_bonus + pitch_mod,
-        batter.on_base_target + hit_bonus,
+        batter.on_base_target + control_mod + hit_bonus,
         pitch_result,
     );
     state.game_text += &format!(" -> {:?}", swing_result);
