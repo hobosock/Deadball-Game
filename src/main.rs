@@ -1333,4 +1333,24 @@ mod tests {
         assert_eq!(new_state.outs, Outs::Two);
         assert_eq!(new_state.runners, RunnersOn::Runner000);
     }
+
+    #[test]
+    fn test_change_pitch_die() {
+        let mut pd = -20;
+        pd = change_pitch_die(pd, -1);
+        assert_eq!(pd, -20);
+        pd = change_pitch_die(pd, 1);
+        assert_eq!(pd, -12);
+        pd = change_pitch_die(pd, 2);
+        assert_eq!(pd, -4);
+        pd = 20;
+        pd = change_pitch_die(pd, 1);
+        assert_eq!(pd, 20);
+        pd = 11;
+        pd = change_pitch_die(pd, 1);
+        assert_eq!(pd, 20);
+        pd = -16;
+        pd = change_pitch_die(pd, 1);
+        assert_eq!(pd, -8);
+    }
 }

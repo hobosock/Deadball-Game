@@ -792,11 +792,17 @@ pub fn change_pitch_die(current: i32, increment: i32) -> i32 {
         // pitch die is somehow not an increment of 4, round to nearest
         let division = current / 4;
         let remainder = current % 4;
-        let rounded_die: i32;
+        let mut rounded_die: i32;
         if remainder > 2 {
             rounded_die = (division + 1) * 4;
         } else {
             rounded_die = division * 4;
+        }
+        if rounded_die > 12 && rounded_die < 20 {
+            rounded_die = 12;
+        }
+        if rounded_die < -12 && rounded_die > -20 {
+            rounded_die = -12;
         }
         current_pos_res = die_vec.iter().position(|&r| r == rounded_die);
     }

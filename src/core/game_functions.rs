@@ -476,7 +476,11 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let pd = state.current_pitcher_team1.pitch_die;
+                    let mut pd = state.current_pitcher_team1.pitch_die;
+                    // NOTE: special rules for GB+
+                    if state.runners == RunnersOn::Runner111 {
+                        pd = change_pitch_die(pd, 1);
+                    }
                     let mut pitch_mod: i32 = 0;
                     if state.current_pitcher_team1.strikeout() {
                         pitch_mod = -1;
@@ -605,7 +609,11 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let pd = state.current_pitcher_team2.pitch_die;
+                    let mut pd = state.current_pitcher_team2.pitch_die;
+                    // NOTE: special rules for GB+
+                    if state.runners == RunnersOn::Runner111 {
+                        pd = change_pitch_die(pd, 1);
+                    }
                     let mut pitch_mod = 0;
                     if state.current_pitcher_team2.strikeout() {
                         pitch_mod = -1;
@@ -2581,7 +2589,7 @@ pub fn hit_and_run(
     }
 
     // now handle hit chance
-    let pd: i32;
+    let mut pd: i32;
     let mut pitch_mod: i32 = 0;
     match state.inning_half {
         InningTB::Top => {
@@ -2596,6 +2604,10 @@ pub fn hit_and_run(
                 pitch_mod = -1;
             }
         }
+    }
+    // NOTE: special rules for GB+
+    if state.runners == RunnersOn::Runner111 {
+        pd = change_pitch_die(pd, 1);
     }
     let mut pitch_result: i32;
     if pd > 0 {
