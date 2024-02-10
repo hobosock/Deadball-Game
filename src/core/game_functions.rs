@@ -477,6 +477,10 @@ pub fn modern_inning_flow<'a>(
                     // get at bat Result
                     // update score/runners/Outs
                     let pd = state.current_pitcher_team1.pitch_die;
+                    let mut pitch_mod: i32 = 0;
+                    if state.current_pitcher_team1.strikeout() {
+                        pitch_mod = -1;
+                    }
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -499,7 +503,8 @@ pub fn modern_inning_flow<'a>(
                     }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
-                        game.away_active.batting_order[state.batting_team2 as usize].batter_target,
+                        game.away_active.batting_order[state.batting_team2 as usize].batter_target
+                            + pitch_mod,
                         game.away_active.batting_order[state.batting_team2 as usize].on_base_target,
                         pitch_result,
                     );
@@ -588,6 +593,10 @@ pub fn modern_inning_flow<'a>(
                     // get at bat Result
                     // update score/runners/Outs
                     let pd = state.current_pitcher_team2.pitch_die;
+                    let mut pitch_mod = 0;
+                    if state.current_pitcher_team2.strikeout() {
+                        pitch_mod = -1;
+                    }
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -610,7 +619,8 @@ pub fn modern_inning_flow<'a>(
                     }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
-                        game.home_active.batting_order[state.batting_team1 as usize].batter_target,
+                        game.home_active.batting_order[state.batting_team1 as usize].batter_target
+                            + pitch_mod,
                         game.home_active.batting_order[state.batting_team1 as usize].on_base_target,
                         pitch_result,
                     );
@@ -828,17 +838,30 @@ pub fn hit_table<'b>(
         }
     }
     if *hit_result <= 2 {
-        state.game_text += " -> Single";
-        // single
-        state = runners_advance(state, &1);
-        state = add_runner(state, &1, batter);
-        // simple hit increment when no defense roll involved
-        match state.inning_half {
-            InningTB::Top => {
-                state.hits_team2 += 1;
+        if batter.speedy() {
+            // NOTE: special rules for S+
+            // on 1: batter doubles, runners advance 2, no DEF roll
+            // on 2: batter triples, do not roll for defense
+            if *hit_result == 1 {
+                state = runners_advance(state, &2);
+                state = add_runner(state, &2, batter);
+            } else {
+                state = runners_advance(state, &3);
+                state = add_runner(state, &3, batter);
             }
-            InningTB::Bottom => {
-                state.hits_team1 += 1;
+        } else {
+            state.game_text += " -> Single";
+            // single
+            state = runners_advance(state, &1);
+            state = add_runner(state, &1, batter);
+            // simple hit increment when no defense roll involved
+            match state.inning_half {
+                InningTB::Top => {
+                    state.hits_team2 += 1;
+                }
+                InningTB::Bottom => {
+                    state.hits_team1 += 1;
+                }
             }
         }
         return state;
@@ -2521,12 +2544,19 @@ pub fn hit_and_run(
 
     // now handle hit chance
     let pd: i32;
+    let mut pitch_mod: i32 = 0;
     match state.inning_half {
         InningTB::Top => {
             pd = state.current_pitcher_team1.pitch_die;
+            if state.current_pitcher_team1.strikeout() {
+                pitch_mod = -1;
+            }
         }
         InningTB::Bottom => {
             pd = state.current_pitcher_team2.pitch_die;
+            if state.current_pitcher_team2.strikeout() {
+                pitch_mod = -1;
+            }
         }
     }
     let mut pitch_result: i32;
@@ -2558,7 +2588,7 @@ pub fn hit_and_run(
         hit_bonus = 0;
     }
     let swing_result = at_bat(
-        batter.batter_target + hit_bonus,
+        batter.batter_target + hit_bonus + pitch_mod,
         batter.on_base_target + hit_bonus,
         pitch_result,
     );
