@@ -501,11 +501,24 @@ pub fn modern_inning_flow<'a>(
                     } else {
                         pitch_result += roll(100);
                     }
+                    let batter =
+                        game.away_active.batting_order[state.batting_team2 as usize].clone();
+                    let mut hit_mod: i32 = 0;
+                    if batter.free_swing() {
+                        match state.runners {
+                            RunnersOn::Runner010 => hit_mod = -3,
+                            RunnersOn::Runner001 => hit_mod = -3,
+                            RunnersOn::Runner110 => hit_mod = -3,
+                            RunnersOn::Runner101 => hit_mod = -3,
+                            RunnersOn::Runner011 => hit_mod = -3,
+                            RunnersOn::Runner111 => hit_mod = -3,
+                            _ => hit_mod = 0,
+                        }
+                    }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
-                        game.away_active.batting_order[state.batting_team2 as usize].batter_target
-                            + pitch_mod,
-                        game.away_active.batting_order[state.batting_team2 as usize].on_base_target,
+                        batter.batter_target + pitch_mod + hit_mod,
+                        batter.on_base_target + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -618,10 +631,23 @@ pub fn modern_inning_flow<'a>(
                         pitch_result += roll(100);
                     }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    let batter =
+                        game.home_active.batting_order[state.batting_team1 as usize].clone();
+                    let mut hit_mod: i32 = 0;
+                    if batter.free_swing() {
+                        match state.runners {
+                            RunnersOn::Runner010 => hit_mod = -3,
+                            RunnersOn::Runner001 => hit_mod = -3,
+                            RunnersOn::Runner110 => hit_mod = -3,
+                            RunnersOn::Runner101 => hit_mod = -3,
+                            RunnersOn::Runner011 => hit_mod = -3,
+                            RunnersOn::Runner111 => hit_mod = -3,
+                            _ => hit_mod = 0,
+                        }
+                    }
                     let swing_result = at_bat(
-                        game.home_active.batting_order[state.batting_team1 as usize].batter_target
-                            + pitch_mod,
-                        game.home_active.batting_order[state.batting_team1 as usize].on_base_target,
+                        batter.batter_target + pitch_mod + hit_mod,
+                        batter.on_base_target + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
