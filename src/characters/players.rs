@@ -6,7 +6,10 @@ use std::fs; // needed to read in files
 use text_colorizer::*;
 
 //use super::teams::Era;
-use crate::core::roll;
+use crate::core::{
+    game_functions::{find_by_position, GameModern, GameState, InningTB},
+    roll,
+};
 
 /*========================================================
 ENUM DEFINITIONS
@@ -110,6 +113,148 @@ pub struct Player {
     pub traits: Vec<Traits>,
     pub injury_location: Vec<InjuryLocation>,
     pub injury_severity: Vec<InjurySeverity>,
+}
+
+impl Player {
+    // BATTER TRAITS
+    /// returns player specific modifier for defense rolls (D+/D-)
+    pub fn defense(&self) -> i32 {
+        let mut modifier = 0;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::GreatDefender => modifier = 1,
+                Traits::PoorDefender => modifier = -1,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns player specific modifier to hit rolls (P+/P++/P-/P--)
+    pub fn power(&self) -> i32 {
+        let mut modifier = 0;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::PowerHitter => modifier = 1,
+                Traits::WeakHitter => modifier = -1,
+                Traits::ExtraWeakHitter => modifier = -2,
+                Traits::ElitePowerHitter => modifier = 2,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    // the rest of the traits aren't simple or symmetric enough, so implementing them differently
+    /// returns true if player has C+
+    pub fn contact_hit(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::ContactHitter => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has C-
+    pub fn free_swing(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::FreeSwinger => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has S+
+    pub fn speedy(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::SpeedyRunner => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has S-
+    pub fn slow(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::SlowRunner => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if player has T+
+    pub fn tough(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::ToughPlayer => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    // PITCHING TRAITS
+    /// returns true if pitcher has K+
+    pub fn strikeout(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::StrikeoutArtist => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if pitcher has GB+
+    pub fn groundball(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::GroundballMachine => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns OBT modifier if pitcher has CN+/CN-
+    pub fn control(&self) -> i32 {
+        let mut modifier = 0;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::ControlPitcher => modifier = -2,
+                Traits::Wild => modifier = 3,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
+
+    /// returns true if pitcher has ST+
+    pub fn stamina(&self) -> bool {
+        let mut modifier = false;
+        for player_trait in self.traits.iter() {
+            match player_trait {
+                Traits::GreatStamina => modifier = true,
+                _ => {}
+            }
+        }
+        return modifier;
+    }
 }
 
 /*========================================================
@@ -601,4 +746,75 @@ pub fn generate_player(
     };
 
     return new_player;
+}
+
+/// checks inning half and returns defense roll modifier for the appropriate player
+pub fn def_trait_check(half: &InningTB, game: &GameModern, position: Position) -> i32 {
+    let mut modifier = 0;
+    match half {
+        InningTB::Top => {
+            let player = find_by_position(position, &game.home_active.roster);
+            if player.is_some() {
+                modifier += player.unwrap().defense();
+            }
+        }
+        InningTB::Bottom => {
+            let player = find_by_position(position, &game.away_active.roster);
+            if player.is_some() {
+                modifier += player.unwrap().defense();
+            }
+        }
+    }
+    return modifier;
+}
+
+/// checks inning half and returns hit roll modifier for appropriate player
+pub fn pow_trait_check(game: &GameModern, state: &GameState) -> i32 {
+    let modifier: i32;
+    match state.inning_half {
+        InningTB::Top => {
+            let player = &game.away_active.roster[state.batting_team2 as usize];
+            modifier = player.power();
+        }
+        InningTB::Bottom => {
+            let player = &game.home_active.roster[state.batting_team1 as usize];
+            modifier = player.power();
+        }
+    }
+    return modifier;
+}
+
+/// adjust pitch die in set increments
+pub fn change_pitch_die(current: i32, increment: i32) -> i32 {
+    let die_vec = vec![-20, -12, -8, -4, 4, 8, 12, 20];
+    let mut current_pos_res = die_vec.iter().position(|&r| r == current);
+    if current_pos_res.is_none() {
+        // pitch die is somehow not an increment of 4, round to nearest
+        let division = current / 4;
+        let remainder = current % 4;
+        let mut rounded_die: i32;
+        if remainder > 2 {
+            rounded_die = (division + 1) * 4;
+        } else {
+            rounded_die = division * 4;
+        }
+        if rounded_die > 12 && rounded_die < 20 {
+            rounded_die = 12;
+        }
+        if rounded_die < -12 && rounded_die > -20 {
+            rounded_die = -12;
+        }
+        current_pos_res = die_vec.iter().position(|&r| r == rounded_die);
+    }
+    let current_pos = current_pos_res.unwrap();
+    let mut new_die_pos = current_pos as i32 + increment;
+    // clamp position before indexing
+    if new_die_pos < 0 {
+        new_die_pos = 0;
+    }
+    if new_die_pos > 7 {
+        new_die_pos = 7;
+    }
+    let new_die = die_vec[new_die_pos as usize];
+    return new_die;
 }

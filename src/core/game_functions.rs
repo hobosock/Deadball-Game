@@ -58,6 +58,14 @@ pub enum GameStatus {
     Over,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum StealType {
+    Second,
+    Third,
+    Home,
+    Double,
+}
+
 // 2d10
 pub enum Oddity {
     FanInterference,
@@ -131,6 +139,13 @@ pub enum Animal {
     Streaker,
 }
 
+#[derive(Clone, Debug)]
+enum HitAndRun {
+    Hit,
+    PopUpK,
+    Groundball,
+}
+
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
@@ -150,6 +165,9 @@ pub struct GameState {
     pub inning_half: InningTB,
     pub outs: Outs,
     pub runners: RunnersOn,
+    pub runner1: Option<Player>,
+    pub runner2: Option<Player>,
+    pub runner3: Option<Player>,
     pub batting_team1: u32,
     pub batting_team2: u32,
     pub current_pitcher_team1: Player,
@@ -400,6 +418,9 @@ pub fn modern_game_flow<'a>(
                         state.inning_half = InningTB::Bottom;
                         state.outs = Outs::None;
                         state.runners = RunnersOn::Runner000;
+                        state.runner1 = None;
+                        state.runner2 = None;
+                        state.runner3 = None;
                         state.game_text += "\nTop of the inning over.";
                     }
                     _ => {
@@ -412,6 +433,9 @@ pub fn modern_game_flow<'a>(
                     Outs::Three => {
                         state.inning_half = InningTB::Top;
                         state.runners = RunnersOn::Runner000;
+                        state.runner1 = None;
+                        state.runner2 = None;
+                        state.runner3 = None;
                         state.outs = Outs::None; // reset outs
                         state.inning += 1;
                         state.game_text += "\nBottom of the inning over.";
@@ -452,7 +476,16 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let pd = state.current_pitcher_team1.pitch_die;
+                    let mut pd = state.current_pitcher_team1.pitch_die;
+                    // NOTE: special rules for GB+
+                    if state.runners == RunnersOn::Runner111 {
+                        pd = change_pitch_die(pd, 1);
+                    }
+                    let mut pitch_mod: i32 = 0;
+                    if state.current_pitcher_team1.strikeout() {
+                        pitch_mod = -1;
+                    }
+                    let control_mod = state.current_pitcher_team1.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -473,10 +506,24 @@ pub fn modern_inning_flow<'a>(
                     } else {
                         pitch_result += roll(100);
                     }
+                    let batter =
+                        game.away_active.batting_order[state.batting_team2 as usize].clone();
+                    let mut hit_mod: i32 = 0;
+                    if batter.free_swing() {
+                        match state.runners {
+                            RunnersOn::Runner010 => hit_mod = -3,
+                            RunnersOn::Runner001 => hit_mod = -3,
+                            RunnersOn::Runner110 => hit_mod = -3,
+                            RunnersOn::Runner101 => hit_mod = -3,
+                            RunnersOn::Runner011 => hit_mod = -3,
+                            RunnersOn::Runner111 => hit_mod = -3,
+                            _ => hit_mod = 0,
+                        }
+                    }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let swing_result = at_bat(
-                        game.home_active.batting_order[state.batting_team2 as usize].batter_target,
-                        game.home_active.batting_order[state.batting_team2 as usize].on_base_target,
+                        batter.batter_target + pitch_mod + hit_mod,
+                        batter.on_base_target + control_mod + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -502,40 +549,48 @@ pub fn modern_inning_flow<'a>(
                             // make hit roll, bump up a level
                             let mut hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
                             // hit roll
                             let hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
-                            state = add_runner(state, &1);
+                            let batter = game.away_active.batting_order
+                                [(state.batting_team2 - 2) as usize]
+                                .clone();
+                            state = add_runner(state, &1, batter);
                         }
                         AtBatResults::PossibleError => {
-                            state = possible_error(&mut debug, state);
+                            state = possible_error(&mut debug, state, game);
                         }
                         AtBatResults::ProductiveOut1 => {
                             state = productive_out1(state, &pitch_result);
                         }
                         AtBatResults::ProductiveOut2 => {
-                            state = productive_out2(state, &pitch_result);
+                            let batter = game.away_active.batting_order
+                                [(state.batting_team2 - 2) as usize]
+                                .clone();
+                            state = productive_out2(state, &pitch_result, batter);
                         }
                         AtBatResults::Out => {
                             state = actual_out(state, &pitch_result);
@@ -555,7 +610,16 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let pd = state.current_pitcher_team2.pitch_die;
+                    let mut pd = state.current_pitcher_team2.pitch_die;
+                    // NOTE: special rules for GB+
+                    if state.runners == RunnersOn::Runner111 {
+                        pd = change_pitch_die(pd, 1);
+                    }
+                    let mut pitch_mod = 0;
+                    if state.current_pitcher_team2.strikeout() {
+                        pitch_mod = -1;
+                    }
+                    let control_mod = state.current_pitcher_team2.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
                         if debug.mode {
@@ -577,9 +641,23 @@ pub fn modern_inning_flow<'a>(
                         pitch_result += roll(100);
                     }
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    let batter =
+                        game.home_active.batting_order[state.batting_team1 as usize].clone();
+                    let mut hit_mod: i32 = 0;
+                    if batter.free_swing() {
+                        match state.runners {
+                            RunnersOn::Runner010 => hit_mod = -3,
+                            RunnersOn::Runner001 => hit_mod = -3,
+                            RunnersOn::Runner110 => hit_mod = -3,
+                            RunnersOn::Runner101 => hit_mod = -3,
+                            RunnersOn::Runner011 => hit_mod = -3,
+                            RunnersOn::Runner111 => hit_mod = -3,
+                            _ => hit_mod = 0,
+                        }
+                    }
                     let swing_result = at_bat(
-                        game.home_active.batting_order[state.batting_team1 as usize].batter_target,
-                        game.home_active.batting_order[state.batting_team1 as usize].on_base_target,
+                        batter.batter_target + pitch_mod + hit_mod,
+                        batter.on_base_target + control_mod + hit_mod,
                         pitch_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
@@ -605,40 +683,48 @@ pub fn modern_inning_flow<'a>(
                             // make hit roll, bump up a level
                             let mut hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                             // TODO: no DEF roll on crit_hit
                         }
                         AtBatResults::Hit => {
                             // hit roll
                             let hit_result: i32;
                             if debug.mode {
-                                hit_result = debug_roll(&mut debug, 20);
+                                hit_result =
+                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             } else {
-                                hit_result = roll(20);
+                                hit_result = roll(20) + pow_trait_check(game, &state);
                             }
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state);
+                            state = hit_table(&hit_result, state, game, &mut debug);
                         }
                         AtBatResults::Walk => {
                             // basically like a single, just don't update the hit values
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
-                            state = add_runner(state, &1);
+                            let batter = game.home_active.batting_order
+                                [(state.batting_team1 - 2) as usize]
+                                .clone();
+                            state = add_runner(state, &1, batter);
                         }
                         AtBatResults::PossibleError => {
-                            state = possible_error(&mut debug, state);
+                            state = possible_error(&mut debug, state, game);
                         }
                         AtBatResults::ProductiveOut1 => {
                             state = productive_out1(state, &pitch_result);
                         }
                         AtBatResults::ProductiveOut2 => {
-                            state = productive_out2(state, &pitch_result);
+                            let batter = game.home_active.batting_order
+                                [(state.batting_team1 - 2) as usize]
+                                .clone();
+                            state = productive_out2(state, &pitch_result, batter);
                         }
                         AtBatResults::Out => {
                             state = actual_out(state, &pitch_result);
@@ -767,23 +853,61 @@ pub fn crit_hit<'a>(hit_result: &i32) -> i32 {
 }
 
 /// rolls on the hit table and updates game state accordingly
-pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
+pub fn hit_table<'b>(
+    hit_result: &i32,
+    mut state: GameState,
+    game: &GameModern,
+    debug: &mut DebugConfig,
+) -> GameState {
     // 1. defense roll (if needed)
     // 2. advance runners
     // 3 move hitter to runner
     // 4. update hit values in game state
+    // get batter
+    let batter: Player;
+    match state.inning_half {
+        InningTB::Top => {
+            batter = game.away_active.batting_order[(state.batting_team2 - 1) as usize].clone();
+        }
+        InningTB::Bottom => {
+            batter = game.home_active.batting_order[(state.batting_team1 - 1) as usize].clone();
+        }
+    }
     if *hit_result <= 2 {
-        state.game_text += " -> Single";
-        // single
-        state = runners_advance(state, &1);
-        state = add_runner(state, &1);
-        // simple hit increment when no defense roll involved
-        match state.inning_half {
-            InningTB::Top => {
-                state.hits_team2 += 1;
+        if batter.speedy() {
+            // NOTE: special rules for S+
+            // on 1: batter doubles, runners advance 2, no DEF roll
+            // on 2: batter triples, do not roll for defense
+            if *hit_result == 1 {
+                state = runners_advance(state, &2);
+                state = add_runner(state, &2, batter);
+                state.game_text += " -> Double (S+)";
+            } else {
+                state = runners_advance(state, &3);
+                state = add_runner(state, &3, batter);
+                state.game_text += " -> Triple (S+)";
             }
-            InningTB::Bottom => {
-                state.hits_team1 += 1;
+        } else {
+            // NOTE: special rules for C+ (S+ is better if batter has both)
+            // on 1-2 batter doubles, runners advance 2, no DEF
+            if batter.contact_hit() {
+                state = runners_advance(state, &2);
+                state = add_runner(state, &2, batter);
+                state.game_text += " -> Double (C+)";
+            } else {
+                state.game_text += " -> Single";
+                // single
+                state = runners_advance(state, &1);
+                state = add_runner(state, &1, batter);
+                // simple hit increment when no defense roll involved
+                match state.inning_half {
+                    InningTB::Top => {
+                        state.hits_team2 += 1;
+                    }
+                    InningTB::Bottom => {
+                        state.hits_team1 += 1;
+                    }
+                }
             }
         }
         return state;
@@ -802,12 +926,16 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        // TODO: are defense rolls implemented twice???
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Firstbase);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Firstbase);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result == 4 {
         state.game_text += " -> Single DEF 2B";
@@ -822,11 +950,16 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Secondbase);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Secondbase);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result == 5 {
         state.game_text += " -> Single DEF 3B";
@@ -841,11 +974,16 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Thirdbase);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Thirdbase);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result == 6 {
         state.game_text += " -> Single DEF SS";
@@ -860,17 +998,22 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Shortstop);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Shortstop);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result >= 7 && *hit_result <= 9 {
         state.game_text += " -> Single";
         // single
         state = runners_advance(state, &1);
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, batter);
         match state.inning_half {
             InningTB::Top => {
                 state.hits_team2 += 1;
@@ -884,7 +1027,7 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         state.game_text += " -> Single, runners advance 2";
         // single, runners advance 2
         state = runners_advance(state, &2);
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, batter);
         match state.inning_half {
             InningTB::Top => {
                 state.hits_team2 += 1;
@@ -907,11 +1050,16 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Leftfield);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Leftfield);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result == 16 {
         state.game_text += " -> Double, DEF CF";
@@ -926,11 +1074,16 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Centerfield);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Centerfield);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result == 17 {
         state.game_text += " -> Double DEF RF";
@@ -945,17 +1098,22 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
                 state.hits_team1 += 1;
             }
         }
-        let def_roll = roll(12); // defense rolls are d12
-                                 // TODO: eventually will put trait check here
+        let def_roll: i32;
+        if debug.mode {
+            def_roll = debug_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Rightfield);
+        } else {
+            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Rightfield);
+        }
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
-        state = add_runner(state, &base);
+        state = add_runner(state, &base, batter);
         return state;
     } else if *hit_result == 18 {
         state.game_text += " -> Double, runners advance 3";
         // double, runners advance 3
         state = runners_advance(state, &3);
-        state = add_runner(state, &2);
+        state = add_runner(state, &2, batter);
         match state.inning_half {
             InningTB::Top => {
                 state.hits_team2 += 1;
@@ -971,6 +1129,9 @@ pub fn hit_table<'b>(hit_result: &i32, mut state: GameState) -> GameState {
         let mut runs = runnerson(&state);
         runs += 1;
         state.runners = RunnersOn::Runner000;
+        state.runner1 = None;
+        state.runner2 = None;
+        state.runner3 = None;
         match state.inning_half {
             InningTB::Top => {
                 state.runs_team2 += runs;
@@ -1081,7 +1242,9 @@ pub fn defense<'b>(
     }
 }
 /// advance runners function - handles base runners and scoring after a hit/etc.
-// for now I think the best way is to handle advancing runners first, then add the batter after
+/// this function just clones state.runner1/2/3 so make sure you already have players in the right
+/// spot
+/// for now I think the best way is to handle advancing runners first, then add the batter after
 pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState {
     if *advance_num == 1 {
         // move 1
@@ -1091,15 +1254,20 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             } // no runners on, don't do anything
             RunnersOn::Runner100 => {
                 state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
                 return state;
             }
             RunnersOn::Runner010 => {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
                 return state;
             }
             RunnersOn::Runner001 => {
                 // runner scores, clear bases and update box score
                 state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1113,10 +1281,15 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner110 => {
                 state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
                 return state;
             }
             RunnersOn::Runner011 => {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1130,6 +1303,9 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner101 => {
                 state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner3 = None;
+                state.runner1 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1143,6 +1319,9 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner111 => {
                 state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         state.runs_team2 += 1;
@@ -1162,10 +1341,13 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             } // no runners on, don't do anything
             RunnersOn::Runner100 => {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
                 return state;
             }
             RunnersOn::Runner010 => {
                 state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         state.runs_team2 += 1;
@@ -1179,6 +1361,7 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             RunnersOn::Runner001 => {
                 // runner scores, clear bases and update box score
                 state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1192,6 +1375,8 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner110 => {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner2 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1205,6 +1390,8 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner011 => {
                 state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner3 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1218,6 +1405,8 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner101 => {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         // away team at bat, update team 2 score
@@ -1231,6 +1420,9 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
             }
             RunnersOn::Runner111 => {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
+                state.runner2 = None;
                 match state.inning_half {
                     InningTB::Top => {
                         state.runs_team2 += 2;
@@ -1246,6 +1438,9 @@ pub fn runners_advance<'b>(mut state: GameState, advance_num: &u32) -> GameState
         // all runners score
         let num_runners = runnerson(&state);
         state.runners = RunnersOn::Runner000;
+        state.runner1 = None;
+        state.runner2 = None;
+        state.runner3 = None;
         match state.inning_half {
             InningTB::Top => {
                 // away team at bat, update team 2 score
@@ -1292,25 +1487,32 @@ pub fn runnerson(state: &GameState) -> u32 {
 }
 
 /// function to put a hitter onto the bases
-// certain conditions shouldn't come up ever, so just skip them
-pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
+/// clone the current batter from GameModern struct roster to put on base
+pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameState {
+    // certain conditions shouldn't come up ever, so just skip them
     match state.runners {
         RunnersOn::Runner000 => {
             if *base == 1 {
                 state.runners = RunnersOn::Runner100;
+                state.runner1 = Some(batter);
             } else if *base == 2 {
                 state.runners = RunnersOn::Runner010;
+                state.runner2 = Some(batter);
             } else if *base == 3 {
                 state.runners = RunnersOn::Runner001;
+                state.runner3 = Some(batter);
             }
             return state;
         }
         RunnersOn::Runner100 => {
+            // TODO: is it even possible to get here? after advancing, no one should be on first
             // skip 1 in this case
             if *base == 2 {
                 state.runners = RunnersOn::Runner110;
+                state.runner2 = Some(batter);
             } else if *base == 3 {
                 state.runners = RunnersOn::Runner101;
+                state.runner3 = Some(batter);
             }
             return state;
         }
@@ -1318,8 +1520,11 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
             // skip 2 in this case
             if *base == 1 {
                 state.runners = RunnersOn::Runner110;
+                state.runner1 = Some(batter);
             } else if *base == 3 {
+                // TODO: delete these unecessary branches
                 state.runners = RunnersOn::Runner011;
+                state.runner3 = Some(batter);
             }
             return state;
         }
@@ -1327,22 +1532,28 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
             // skip 3
             if *base == 1 {
                 state.runners = RunnersOn::Runner101;
+                state.runner1 = Some(batter);
             } else if *base == 2 {
                 state.runners = RunnersOn::Runner011;
+                state.runner2 = Some(batter);
             }
             return state;
         }
         RunnersOn::Runner110 => {
             // skip 1 and 2
             if *base == 3 {
+                // TODO: delete
                 state.runners = RunnersOn::Runner111;
+                state.runner3 = Some(batter);
             }
             return state;
         }
         RunnersOn::Runner101 => {
             // skip 1 and 3
             if *base == 2 {
+                // TODO: delete
                 state.runners = RunnersOn::Runner111;
+                state.runner2 = Some(batter);
             }
             return state;
         }
@@ -1350,6 +1561,7 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32) -> GameState {
             // skip 2 and 3
             if *base == 1 {
                 state.runners = RunnersOn::Runner111;
+                state.runner1 = Some(batter);
             }
             return state;
         }
@@ -1375,6 +1587,9 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
         inning_half: InningTB::Top,
         outs: Outs::None,
         runners: RunnersOn::Runner000,
+        runner1: None,
+        runner2: None,
+        runner3: None,
         batting_team1: 0,
         batting_team2: 0,
         current_pitcher_team1: home_pitcher,
@@ -1405,6 +1620,37 @@ pub fn find_by_position(position: Position, roster: &Vec<Player>) -> Option<Play
     return None;
 }
 
+/// convert MSS digit to position
+pub fn position_by_number(mut last_digit: i32) -> Position {
+    let position: Position;
+    if last_digit < 1 {
+        last_digit = 1;
+    }
+    if last_digit > 9 {
+        last_digit = 9;
+    }
+    if last_digit == 1 {
+        position = Position::Pitcher;
+    } else if last_digit == 2 {
+        position = Position::Catcher;
+    } else if last_digit == 3 {
+        position = Position::Firstbase;
+    } else if last_digit == 4 {
+        position = Position::Secondbase;
+    } else if last_digit == 5 {
+        position = Position::Shortstop;
+    } else if last_digit == 6 {
+        position = Position::Thirdbase;
+    } else if last_digit == 7 {
+        position = Position::Leftfield;
+    } else if last_digit == 8 {
+        position = Position::Centerfield;
+    } else {
+        position = Position::Rightfield;
+    }
+    return position;
+}
+
 /// convenience function to return a default GameState struct
 pub fn new_game_state_struct() -> GameState {
     let new_state = GameState {
@@ -1413,6 +1659,9 @@ pub fn new_game_state_struct() -> GameState {
         inning_half: InningTB::Top,
         outs: Outs::None,
         runners: RunnersOn::Runner000,
+        runner1: None,
+        runner2: None,
+        runner3: None,
         batting_team1: 1,
         batting_team2: 1,
         current_pitcher_team1: generate_player(
@@ -1442,10 +1691,19 @@ pub fn new_game_state_struct() -> GameState {
 }
 
 /// handle PossibleError swing result
-fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
+fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameModern) -> GameState {
     // TODO: Not sure I am implementing this correctly, see page 29
     // get position
     // TODO: get player traits
+    let batter: Player;
+    match state.inning_half {
+        InningTB::Top => {
+            batter = game.away_active.batting_order[(state.batting_team2 - 1) as usize].clone();
+        }
+        InningTB::Bottom => {
+            batter = game.home_active.batting_order[(state.batting_team1 - 1) as usize].clone();
+        }
+    }
     state.game_text += "\n Possible error -> ";
     let def_roll: i32;
     if debug.mode {
@@ -1467,9 +1725,9 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState) -> GameState {
             }
         }
         state = runners_advance(state, &1);
-        state = add_runner(state, &1);
+        state = add_runner(state, &1, batter);
     } else {
-        state.game_text += "-> No error.";
+        state.game_text += "-> No error.  Out!";
         // fielder makes the out like normal
         match state.outs {
             Outs::None => {
@@ -1522,9 +1780,12 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
                         // can't use normal runners advance function because
                         // runner at first doesn't move
                         state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
                     }
                     RunnersOn::Runner101 => {
                         state.runners = RunnersOn::Runner100;
+                        state.runner3 = None;
                         match state.inning_half {
                             InningTB::Top => {
                                 state.runs_team2 += 1;
@@ -1536,6 +1797,8 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                     RunnersOn::Runner111 => {
                         state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
                         match state.inning_half {
                             InningTB::Top => {
                                 state.runs_team2 += 1;
@@ -1547,34 +1810,46 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                 }
             } else {
+                let pitcher: &Player;
+                match state.inning_half {
+                    InningTB::Top => pitcher = &state.current_pitcher_team1,
+                    InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+                }
                 // check for runner on first
                 match state.runners {
                     RunnersOn::Runner100 => {
-                        state.game_text += "\nRunner at first advances, batter is out.";
-                        state.runners = RunnersOn::Runner010;
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner000;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // one extra
+                        } else {
+                            state.game_text += "\nRunner at first advances, batter is out.";
+                            state.runners = RunnersOn::Runner010;
+                            state.runner2 = state.runner1.clone();
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1);
+                        }
                     }
                     RunnersOn::Runner101 => {
-                        state.game_text += "\nRunner at first advances, batter is out.";
-                        state.runners = RunnersOn::Runner011;
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner001;
+                            state.runner1 = None;
+                        } else {
+                            state.game_text += "\nRunner at first advances, batter is out.";
+                            state.runners = RunnersOn::Runner011;
+                            state.runner2 = state.runner1.clone();
+                            state.runner1 = None;
+                        }
                     }
                     _ => {}
                 }
             }
             // update out
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
         }
     }
 
@@ -1582,10 +1857,15 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
 }
 
 /// handles ProductiveOut2 swing_results
-fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
+fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> GameState {
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner is out and batter makes it to first
     // the first line is the same as ProductiveOut1
+    let pitcher: &Player;
+    match state.inning_half {
+        InningTB::Top => pitcher = &state.current_pitcher_team1,
+        InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+    }
     match state.outs {
         Outs::Three => {}
         Outs::Two => {
@@ -1612,9 +1892,12 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
                         // can't use normal runners advance function because
                         // runner at first doesn't move
                         state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
                     }
                     RunnersOn::Runner101 => {
                         state.runners = RunnersOn::Runner100;
+                        state.runner3 = None;
                         match state.inning_half {
                             InningTB::Top => {
                                 state.runs_team2 += 1;
@@ -1626,6 +1909,8 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
                     }
                     RunnersOn::Runner111 => {
                         state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
                         match state.inning_half {
                             InningTB::Top => {
                                 state.runs_team2 += 1;
@@ -1643,37 +1928,50 @@ fn productive_out2(mut state: GameState, pitch_result: &i32) -> GameState {
                 state.game_text += "\nFielder's choice.";
                 match state.runners {
                     RunnersOn::Runner000 => {}
-                    RunnersOn::Runner100 => {}
+                    RunnersOn::Runner100 => {
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner000;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // 1 extra
+                        } else {
+                            state.runner1 = Some(batter);
+                        }
+                    }
                     RunnersOn::Runner010 => {
                         state.runners = RunnersOn::Runner100;
+                        state.runner2 = None;
+                        state.runner1 = Some(batter);
                     }
                     RunnersOn::Runner001 => {
                         state.runners = RunnersOn::Runner100;
+                        state.runner3 = None;
+                        state.runner1 = Some(batter);
                     }
                     RunnersOn::Runner110 => {}
                     RunnersOn::Runner011 => {
                         state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
+                        state.runner1 = Some(batter);
                     }
                     RunnersOn::Runner101 => {
+                        // NOTE: special rules for GB+ pitchers
+                        if pitcher.groundball() && fielder == 2 {
+                            state.game_text += "\nGB+ automatic double play.";
+                            state.runners = RunnersOn::Runner001;
+                            state.runner1 = None;
+                            state.outs = increment_out(state.outs, 1); // 1 extra
+                        }
                         state.runners = RunnersOn::Runner110;
+                        state.runner3 = None;
+                        state.runner1 = Some(batter);
                     }
                     RunnersOn::Runner111 => {}
                 }
             }
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
         }
     }
 
@@ -1697,6 +1995,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                 RunnersOn::Runner100 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner000;
+                    state.runner1 = None;
                     match state.outs {
                         Outs::None => {
                             state.outs = Outs::Two;
@@ -1709,6 +2008,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                 RunnersOn::Runner110 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner010;
+                    state.runner1 = None;
                     match state.outs {
                         Outs::None => {
                             state.outs = Outs::Two;
@@ -1721,6 +2021,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                 RunnersOn::Runner101 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner001;
+                    state.runner1 = None;
                     match state.outs {
                         Outs::None => {
                             state.outs = Outs::Two;
@@ -1733,6 +2034,7 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                 RunnersOn::Runner111 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner011;
+                    state.runner1 = None;
                     match state.outs {
                         Outs::None => {
                             state.outs = Outs::Two;
@@ -1796,6 +2098,7 @@ fn mega_out(mut state: GameState) -> GameState {
         RunnersOn::Runner100 => {
             state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner000;
+            state.runner1 = None;
             match state.outs {
                 Outs::None => {
                     state.outs = Outs::Two;
@@ -1808,6 +2111,7 @@ fn mega_out(mut state: GameState) -> GameState {
         RunnersOn::Runner101 => {
             state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner001;
+            state.runner1 = None;
             match state.outs {
                 Outs::None => {
                     state.outs = Outs::Two;
@@ -1831,6 +2135,670 @@ fn mega_out(mut state: GameState) -> GameState {
                 state.outs = Outs::Three;
             }
         },
+    }
+
+    return state;
+}
+
+// TODO: check catcher's defense trait
+/// takes a game state and processes steals of the indicated type
+/// includes rules for S+/S-
+/// (!) assumes you have checked for valid steal scenarios before calling it
+pub fn process_steals(
+    steal_type: StealType,
+    mut state: GameState,
+    mut debug: DebugConfig,
+    catcher: &Player,
+) -> GameState {
+    let catcher_mod = catcher.defense();
+    match steal_type {
+        StealType::Second => {
+            let mut steal_mod = 0 + catcher_mod;
+            let stealer = state.runner1.clone().unwrap(); // TODO: error proof?
+            if stealer.speedy() {
+                steal_mod = 1;
+            }
+            if stealer.slow() {
+                steal_mod = -2;
+            }
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) + steal_mod;
+            } else {
+                steal_result = roll(8) + steal_mod;
+            }
+
+            if steal_result > 3 {
+                // successful steal
+                match state.runners {
+                    RunnersOn::Runner100 => {
+                        state.runners = RunnersOn::Runner010;
+                        state.runner2 = state.runner1.clone();
+                        state.runner1 = None;
+                    }
+                    RunnersOn::Runner101 => {
+                        state.runners = RunnersOn::Runner011;
+                        state.runner2 = state.runner1.clone();
+                        state.runner1 = None;
+                    }
+                    _ => {} // only valid configurations
+                }
+                state.game_text +=
+                    &format!("\n{} {} stole 2B!", stealer.first_name, stealer.last_name);
+            } else {
+                // runner is out
+                match state.runners {
+                    RunnersOn::Runner100 => {
+                        state.runners = RunnersOn::Runner000;
+                        state.runner1 = None;
+                    }
+                    RunnersOn::Runner101 => {
+                        state.runners = RunnersOn::Runner001;
+                        state.runner1 = None;
+                    }
+                    _ => {}
+                }
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+                state.game_text += &format!(
+                    "\n{} {} thrown out stealing 2B!",
+                    stealer.first_name, stealer.last_name
+                );
+            }
+        }
+        StealType::Third => {
+            let mut steal_mod = 0 + catcher_mod;
+            let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
+            if stealer.speedy() {
+                steal_mod = 1;
+            }
+            if stealer.slow() {
+                steal_mod = -2;
+            }
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) - 1 + steal_mod;
+            } else {
+                steal_result = roll(8) - 1 + steal_mod;
+            }
+
+            if steal_result > 3 {
+                match state.runners {
+                    RunnersOn::Runner010 => {
+                        state.runners = RunnersOn::Runner001;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
+                    }
+                    RunnersOn::Runner110 => {
+                        state.runners = RunnersOn::Runner101;
+                        state.runner3 = state.runner2.clone();
+                        state.runner2 = None;
+                    }
+                    _ => {}
+                }
+                state.game_text +=
+                    &format!("\n{} {} stole 3B!", stealer.first_name, stealer.last_name);
+            } else {
+                match state.runners {
+                    RunnersOn::Runner010 => {
+                        state.runners = RunnersOn::Runner000;
+                        state.runner2 = None;
+                    }
+                    RunnersOn::Runner110 => {
+                        state.runners = RunnersOn::Runner100;
+                        state.runner2 = None;
+                    }
+                    _ => {}
+                }
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+                state.game_text += &format!(
+                    "\n{} {} thrown out stealing 3B!",
+                    stealer.first_name, stealer.last_name
+                );
+            }
+        }
+        StealType::Home => {
+            // NOTE: your runner should have S+ to end up here!
+            let stealer = state.runner3.clone().unwrap();
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) + 1 + catcher_mod;
+            } else {
+                steal_result = roll(8) + 1 + catcher_mod;
+            }
+
+            // runner leaves 3rd no matter outcome of steal attempt
+            match state.runners {
+                RunnersOn::Runner001 => {
+                    state.runners = RunnersOn::Runner000;
+                    state.runner3 = None;
+                }
+                RunnersOn::Runner101 => {
+                    state.runners = RunnersOn::Runner100;
+                    state.runner3 = None;
+                }
+                RunnersOn::Runner011 => {
+                    state.runners = RunnersOn::Runner010;
+                    state.runner3 = None;
+                }
+                RunnersOn::Runner111 => {
+                    state.runners = RunnersOn::Runner110;
+                    state.runner3 = None;
+                }
+                _ => {}
+            }
+            if steal_result >= 8 {
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+                state.game_text +=
+                    &format!("\n{} {} stole home!", stealer.first_name, stealer.last_name);
+            } else {
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+                state.game_text += &format!(
+                    "\n{} {} thrown out stealing home.",
+                    stealer.first_name, stealer.last_name
+                );
+            }
+        }
+        StealType::Double => {
+            let mut steal_mod = 0 + catcher_mod;
+            // look at traits of lead runner
+            let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
+            let stealer2 = state.runner1.clone().unwrap();
+            if stealer.speedy() {
+                steal_mod = 1;
+            }
+            if stealer.slow() {
+                steal_mod = -1; // see 2nd ed. pg. 31 - is it a typo?
+            }
+            let steal_result: i32;
+            if debug.mode {
+                steal_result = debug_roll(&mut debug, 8) + steal_mod;
+            } else {
+                steal_result = roll(8) + steal_mod;
+            }
+
+            if steal_result <= 3 {
+                // lead runner is out - only valid condition is Runner110
+                state.runners = RunnersOn::Runner010;
+                state.runner3 = None;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+                state.game_text += &format!(
+                    "\n{} {} thrown out at third",
+                    stealer.first_name, stealer.last_name
+                );
+                state.game_text += &format!(
+                    "\n{} {} steals 2B safely.",
+                    stealer2.first_name, stealer2.last_name
+                );
+            } else if steal_result > 3 && steal_result <= 5 {
+                // trailing runner is out
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.outs {
+                    Outs::None => state.outs = Outs::One,
+                    Outs::One => state.outs = Outs::Two,
+                    Outs::Two => state.outs = Outs::Three,
+                    _ => {}
+                }
+                state.game_text += &format!(
+                    "\n{} {} steals 3B safely.",
+                    stealer.first_name, stealer.last_name
+                );
+                state.game_text += &format!(
+                    "\n{} {} thrown out at 2B.",
+                    stealer2.first_name, stealer2.last_name
+                );
+            } else {
+                // both runners reach safely
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                state.game_text +=
+                    &format!("\n{} {} stole 3B!", stealer.first_name, stealer.last_name);
+                state.game_text +=
+                    &format!("\n{} {} stole 2B!", stealer2.first_name, stealer2.last_name);
+            }
+        }
+    }
+    return state;
+}
+
+/// process bunting
+pub fn bunt(
+    mut state: GameState,
+    game: &GameModern,
+    mut debug: DebugConfig,
+    batter: Player,
+) -> GameState {
+    // check traits, get bunt roll result
+    let mut bunt_mod: i32 = 0;
+    if batter.contact_hit() {
+        bunt_mod = 1;
+    }
+    if batter.free_swing() {
+        bunt_mod = -1;
+    }
+    let bunt_result: i32;
+    if debug.mode {
+        bunt_result = debug_roll(&mut debug, 6) + bunt_mod;
+    } else {
+        bunt_result = roll(6) + bunt_mod;
+    }
+    state.game_text += &format!("\nBunting!  Bunt roll: {}", &bunt_result);
+
+    // process result
+    if bunt_result <= 2 {
+        // lead runner out, batter safe
+        state.game_text += "\nLead runner out, batter safe.";
+        match state.runners {
+            RunnersOn::Runner000 => state.game_text += "\nNo runners, no bunt.",
+            RunnersOn::Runner100 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runner1 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner010 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner001 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner110 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner101 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner011 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                state = add_runner(state, &1, batter);
+            }
+            RunnersOn::Runner111 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            }
+        }
+    } else if bunt_result == 3 {
+        // 1st & 2nd -> lead runner advances, batter out
+        // 3rd -> lead runner out, batter safe
+        match state.runners {
+            RunnersOn::Runner000 => state.game_text += "\nNo runners, no bunt.", // TODO: allow bunt against shift
+            RunnersOn::Runner100 => {
+                state.outs = increment_out(state.outs, 1);
+                state = runners_advance(state, &1);
+                state.game_text += "\nLead runner advances, batter out.";
+            }
+            RunnersOn::Runner010 => {
+                state.outs = increment_out(state.outs, 1);
+                state = runners_advance(state, &1);
+                state.game_text += "\nLead runner advances, batter out.";
+            }
+            RunnersOn::Runner001 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+            RunnersOn::Runner110 => {
+                state.outs = increment_out(state.outs, 1);
+                state = runners_advance(state, &1);
+                state.game_text += "\nLead runner advances, batter out.";
+            }
+            RunnersOn::Runner101 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner3 = None;
+                state = add_runner(state, &1, batter);
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+            RunnersOn::Runner011 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                state = add_runner(state, &1, batter);
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+            RunnersOn::Runner111 => {
+                state.outs = increment_out(state.outs, 1);
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                state.game_text += "\nLead runner out, batter safe.";
+            }
+        }
+    } else if bunt_result == 4 || bunt_result == 5 {
+        // lead runner advances, batter out
+        state.outs = increment_out(state.outs, 1);
+        state = runners_advance(state, &1);
+        state.game_text += "\nLead runner advances, batter out.";
+    } else {
+        // >= 6
+        // S+ -> Single, DEF 3B
+        // lead runner advances, batter out
+        if batter.speedy() {
+            state = hit_table(&5, state, game, &mut debug);
+            state.game_text += "\nLead runner advances, bunter races for first!";
+        } else {
+            state.outs = increment_out(state.outs, 1);
+            state = runners_advance(state, &1);
+            state.game_text += "\nLead runner advances, batter out.";
+        }
+    }
+    return state;
+}
+
+/// increment outs
+pub fn increment_out(current: Outs, mut increment: u32) -> Outs {
+    let mut outs = Outs::None;
+    if increment > 3 {
+        increment = 3;
+    }
+    if increment == 0 {
+        increment = 1;
+    }
+    match current {
+        Outs::None => {
+            if increment == 1 {
+                outs = Outs::One;
+            }
+            if increment == 2 {
+                outs = Outs::Two;
+            }
+            if increment == 3 {
+                outs = Outs::Three;
+            }
+        }
+        Outs::One => {
+            if increment == 1 {
+                outs = Outs::Two;
+            }
+            if increment >= 2 {
+                outs = Outs::Three;
+            }
+        }
+        Outs::Two => {
+            outs = Outs::Three;
+        }
+        Outs::Three => outs = Outs::Three,
+    }
+    return outs;
+}
+
+/// hit and run - should be RUnner100 otherwise can't do it
+pub fn hit_and_run(
+    mut state: GameState,
+    game: &GameModern,
+    debug: &mut DebugConfig,
+    batter: Player,
+) -> GameState {
+    state.game_text += "\n\nThe hit and run is on!";
+    // first roll a steal like normal
+    let stealer = state.runner1.clone().unwrap();
+    let mut steal_mod = 0;
+    if stealer.speedy() {
+        steal_mod = 1;
+    }
+    if stealer.slow() {
+        steal_mod = -1;
+    }
+    let steal_result: i32;
+    if debug.mode {
+        steal_result = debug_roll(debug, 8) + steal_mod;
+    } else {
+        steal_result = roll(8) + steal_mod;
+    }
+    state.game_text += &format!("\nSteal result: {} -> ", steal_result);
+    let steal_success: bool;
+    if steal_result >= 4 {
+        steal_success = true;
+        state.game_text += "Success!";
+    } else {
+        steal_success = false;
+        state.game_text += "Fail!";
+    }
+
+    // now handle hit chance
+    let mut pd: i32;
+    let mut pitch_mod: i32 = 0;
+    let control_mod: i32;
+    match state.inning_half {
+        InningTB::Top => {
+            pd = state.current_pitcher_team1.pitch_die;
+            if state.current_pitcher_team1.strikeout() {
+                pitch_mod = -1;
+            }
+            control_mod = state.current_pitcher_team1.control();
+        }
+        InningTB::Bottom => {
+            pd = state.current_pitcher_team2.pitch_die;
+            if state.current_pitcher_team2.strikeout() {
+                pitch_mod = -1;
+            }
+            control_mod = state.current_pitcher_team2.control();
+        }
+    }
+    // NOTE: special rules for GB+
+    if state.runners == RunnersOn::Runner111 {
+        pd = change_pitch_die(pd, 1);
+    }
+    let mut pitch_result: i32;
+    if pd > 0 {
+        if debug.mode {
+            pitch_result = debug_roll(debug, pd);
+        } else {
+            pitch_result = roll(pd)
+        }
+    } else {
+        if debug.mode {
+            pitch_result = -1 * debug_roll(debug, pd.abs());
+        } else {
+            pitch_result = -1 * roll(pd.abs());
+        }
+    }
+    state.game_text += &format!("\nPitch result: {}", &pitch_result);
+    if debug.mode {
+        pitch_result += debug_roll(debug, 100);
+    } else {
+        pitch_result += roll(100);
+    }
+    state.game_text += &format!("\nMSS: {}", &pitch_result);
+    let mut hit_bonus = 5;
+    if batter.contact_hit() {
+        hit_bonus = 10;
+    }
+    if batter.free_swing() {
+        hit_bonus = 0;
+    }
+    let swing_result = at_bat(
+        batter.batter_target + hit_bonus + pitch_mod,
+        batter.on_base_target + control_mod + hit_bonus,
+        pitch_result,
+    );
+    state.game_text += &format!(" -> {:?}", swing_result);
+    match state.inning_half {
+        InningTB::Top => {
+            if state.batting_team2 == 8 {
+                state.batting_team2 = 0;
+            } else {
+                state.batting_team2 += 1;
+            }
+        }
+        InningTB::Bottom => {
+            if state.batting_team1 == 8 {
+                state.batting_team1 = 0;
+            } else {
+                state.batting_team1 += 1;
+            }
+        }
+    }
+    let hnr: HitAndRun;
+    let out_type = get_swing_position(&pitch_result);
+    match swing_result {
+        AtBatResults::Hit => hnr = HitAndRun::Hit,
+        AtBatResults::Out => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+        AtBatResults::Walk => hnr = HitAndRun::Hit,
+        AtBatResults::Oddity => hnr = HitAndRun::Hit,
+        AtBatResults::MegaOut => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+        AtBatResults::CriticalHit => hnr = HitAndRun::Hit,
+        AtBatResults::PossibleError => {
+            let defender: Option<Player>;
+            match state.inning_half {
+                InningTB::Top => {
+                    let defender_position = position_by_number(out_type);
+                    defender = find_by_position(defender_position, &game.home_active.batting_order);
+                }
+                InningTB::Bottom => {
+                    let defender_position = position_by_number(out_type);
+                    defender = find_by_position(defender_position, &game.away_active.batting_order);
+                }
+            }
+            let mut defense_bonus = 0;
+            if defender.is_some() {
+                defense_bonus += defender.unwrap().defense();
+            }
+            let def_roll: i32;
+            if debug.mode {
+                def_roll = debug_roll(debug, 12) + defense_bonus;
+            } else {
+                def_roll = roll(12) + defense_bonus;
+            }
+            if def_roll <= 2 {
+                hnr = HitAndRun::Hit;
+            } else {
+                if out_type <= 3 || out_type >= 7 {
+                    hnr = HitAndRun::PopUpK;
+                } else {
+                    hnr = HitAndRun::Groundball;
+                }
+            }
+        }
+        AtBatResults::ProductiveOut1 => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+        AtBatResults::ProductiveOut2 => {
+            if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
+            } else {
+                hnr = HitAndRun::Groundball;
+            }
+        }
+    }
+    state.game_text += &format!("\nHit result: {:?}", hnr);
+
+    // clean up bases
+    match hnr {
+        HitAndRun::Hit => {
+            if steal_success {
+                // runners at 1st and 3rd
+                state.game_text += "\nRunners on 1st and 3rd!";
+                state.runners = RunnersOn::Runner101;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = Some(batter);
+            } else {
+                // runners at 1st and 2nd
+                state.game_text += "\nRunners on 1st and 2nd!";
+                state.runners = RunnersOn::Runner110;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = Some(batter);
+            }
+        }
+        HitAndRun::PopUpK => {
+            if steal_success {
+                // batter out, runner stays at 1st
+                state.game_text += "\nBatter out, runner stays at 1st.";
+                state.outs = increment_out(state.outs, 1);
+            } else {
+                // double play
+                state.game_text += "\nDouble play!";
+                state.outs = increment_out(state.outs, 2);
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner1 = None;
+            }
+        }
+        HitAndRun::Groundball => {
+            if steal_success {
+                // batter out, runner reaches 2nd
+                state.game_text += "\nBatter out, runner reaches 2nd.";
+                state.outs = increment_out(state.outs, 1);
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                state.runners = RunnersOn::Runner010;
+            } else {
+                // double play
+                state.game_text += "\nDouble play!";
+                state.outs = increment_out(state.outs, 2);
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner1 = None;
+            }
+        }
     }
 
     return state;
