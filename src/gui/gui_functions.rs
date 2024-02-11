@@ -111,3 +111,12 @@ pub fn runners_on_bool(runners: RunnersOn) -> (bool, bool, bool) {
     }
     return (on_first, on_second, on_third);
 }
+
+/// builds string for tooltip for batters and baserunners
+pub fn batter_tooltip(player: &Player) -> String {
+    let tooltip = format!(
+        "{} | {} | {} | {:?} | {:?}",
+        player.first_name, player.nickname, player.last_name, player.handedness, player.traits
+    );
+    return tooltip;
+}
