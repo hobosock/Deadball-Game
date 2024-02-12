@@ -11,3 +11,4 @@ text-colorizer = "1"
 eframe = "0.22.0"
 egui_extras = { version = "0.22.0", features = ["image"] }
 egui_file = "0.9"
+egui-toast = "0.12.0"

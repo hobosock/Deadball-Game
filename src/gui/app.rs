@@ -4,6 +4,7 @@
 // LOCAL IMPORTS
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
+use super::gui_functions::{batter_tooltip, ToastData};
 use crate::core::game_functions::{
     bunt, create_modern_game, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
     new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
@@ -24,9 +25,9 @@ use eframe::{
 use egui::{Rect, RichText};
 use egui_extras::RetainedImage;
 use egui_file::FileDialog;
+use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
 use std::path::PathBuf;
 
-use super::gui_functions::batter_tooltip;
 /*==============================================================================================
  * CONSTANTS
  * ===========================================================================================*/
@@ -141,6 +142,7 @@ pub struct DeadballApp {
     debug_errors2_text: String,
     debug_roll_state: DebugConfig,
     debug_roll_text: String,
+    toast_options: ToastData,
 }
 
 impl<'a> Default for DeadballApp {
@@ -236,6 +238,7 @@ impl<'a> Default for DeadballApp {
             debug_errors2_text: "0".to_string(),
             debug_roll_state: DebugConfig::default(),
             debug_roll_text: "0".to_string(),
+            toast_options: ToastData::default(),
         }
     }
 }
@@ -252,6 +255,12 @@ impl<'a> eframe::App for DeadballApp {
         draw_create_new_game(ctx, self);
         draw_debug_roll_window(ctx, self);
         draw_console_window(ctx, self);
+
+        // toast notification stuff
+        let mut toasts = Toasts::new()
+            .anchor(self.toast_options.alignment, self.toast_options.offset)
+            .direction(self.toast_options.direction)
+            .custom_contents(CUSTOM_TOAST, toast_contents);
 
         // main window
         draw_bottom_panel(ctx, self);
