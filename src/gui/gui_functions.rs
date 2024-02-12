@@ -1,8 +1,8 @@
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
-
-use eframe::egui::{Align2, Direction, Pos2};
+use eframe::egui;
+use egui::{Align2, Direction, Pos2};
 
 use crate::{
     characters::{

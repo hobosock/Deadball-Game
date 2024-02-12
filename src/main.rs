@@ -8,17 +8,25 @@ mod gui;
 use gui::app::*;
 
 // EXTERNAL IMPORTS
-use eframe::egui;
+use eframe::egui::{self, ViewportBuilder};
 
 fn main() -> Result<(), eframe::Error> {
+    let viewport = ViewportBuilder {
+        title: Some("Deadball".to_string()),
+        inner_size: Some(egui::vec2(800.0, 600.0)),
+        ..Default::default()
+    };
     let options = eframe::NativeOptions {
-        initial_window_size: Some(egui::vec2(800.0, 600.0)),
+        viewport: viewport,
         ..Default::default()
     };
     eframe::run_native(
         "Deadball",
         options,
-        Box::new(|_cc| Box::<DeadballApp>::default()),
+        Box::new(|cc| {
+            egui_extras::install_image_loaders(&cc.egui_ctx);
+            Box::<DeadballApp>::default()
+        }),
     )
     /* SEGMENT OF CODE TO GENERATE TEAMS, DON'T NEED IT EVERY TIME
     // need to load in databases for generating names, etc.

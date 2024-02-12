@@ -17,13 +17,13 @@ use crate::{
 
 use std::{fs, usize};
 
+use eframe::egui::Image;
 // EXTERNAL IMPORTS
 use eframe::{
     egui::{self, Context},
     epaint::{pos2, Color32},
 };
 use egui::{Rect, RichText};
-use egui_extras::RetainedImage;
 use egui_file::FileDialog;
 use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
 use std::path::PathBuf;
@@ -35,6 +35,15 @@ pub const ABOUT_DEABALL: &str =
     "Deadball: Baseball With Dice is a tabletop game developed by W.M. Akers.  For more information about the game, or to purchase the rules, please visit the Deadball website.";
 
 pub const ABOUT_APP: &str = "This application was developed as practice with the Rust programming language.  All credit goes to the creator of Deadball, W.M. Akers.  Please purchase and consult the official rulebooks for questions about game mechanics.";
+
+pub const CUSTOM_TOAST: u32 = 0;
+fn custom_toast_contents(ui: &mut egui::Ui, toast: &mut Toast) -> egui::Response {
+    egui::Frame::window(ui.style())
+        .show(ui, |ui| {
+            ui.label(toast.text.clone());
+        })
+        .response
+}
 
 /*==============================================================================================
  * ENUMS
@@ -50,7 +59,7 @@ enum Panel {
 /*==============================================================================================
  * STRUCTS
  * ===========================================================================================*/
-pub struct DeadballApp {
+pub struct DeadballApp<'a> {
     // score information
     current_inning: String,
     current_outs: String,
@@ -61,8 +70,8 @@ pub struct DeadballApp {
     home_errors: String,
     home_runs: String,
     // ballfield interface
-    diamond_image: RetainedImage,
-    helmet_image: RetainedImage,
+    diamond_image: Image<'a>,
+    helmet_image: Image<'a>,
     pitcher_label: String,
     catcher_label: String,
     firstbase_label: String,
@@ -145,7 +154,7 @@ pub struct DeadballApp {
     toast_options: ToastData,
 }
 
-impl<'a> Default for DeadballApp {
+impl<'a> Default for DeadballApp<'_> {
     fn default() -> Self {
         Self {
             current_inning: "1^".to_string(),
@@ -156,16 +165,8 @@ impl<'a> Default for DeadballApp {
             home_hits: "0".to_string(),
             home_errors: "0".to_string(),
             home_runs: "0".to_string(),
-            diamond_image: RetainedImage::from_image_bytes(
-                "baseball_diamond.png",
-                include_bytes!("images/baseball_diamond.png"),
-            )
-            .unwrap(),
-            helmet_image: RetainedImage::from_image_bytes(
-                "helmet.png",
-                include_bytes!("images/helmet.png"),
-            )
-            .unwrap(),
+            diamond_image: Image::new(egui::include_image!("images/baseball_diamond.png")),
+            helmet_image: Image::new(egui::include_image!("images/helmet.png")),
             pitcher_label: "P: Seth Loveall".to_string(),
             catcher_label: "C: Seth Loveall".to_string(),
             firstbase_label: "1B: Seth Loveall".to_string(),
@@ -243,7 +244,7 @@ impl<'a> Default for DeadballApp {
     }
 }
 
-impl<'a> eframe::App for DeadballApp {
+impl<'a> eframe::App for DeadballApp<'_> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // app state updates
         update_debug_textedits(self);
@@ -260,7 +261,7 @@ impl<'a> eframe::App for DeadballApp {
         let mut toasts = Toasts::new()
             .anchor(self.toast_options.alignment, self.toast_options.offset)
             .direction(self.toast_options.direction)
-            .custom_contents(CUSTOM_TOAST, toast_contents);
+            .custom_contents(CUSTOM_TOAST, custom_toast_contents);
 
         // main window
         draw_bottom_panel(ctx, self);
@@ -320,10 +321,11 @@ impl<'a> eframe::App for DeadballApp {
                 ui.label(&self.home_runs);
             });
             // draw baseball field and label players
-            ui.add(egui::Image::new(
-                self.diamond_image.texture_id(ctx),
-                self.diamond_image.size_vec2() * 0.3,
-            ));
+            ui.add(
+                self.diamond_image
+                    .clone()
+                    .max_size(egui::Vec2 { x: 511.8, y: 445.2 }),
+            );
             // draw helmets to indicate runners on base
             if on_first {
                 // no error, game state should already exist
@@ -332,10 +334,9 @@ impl<'a> eframe::App for DeadballApp {
                         min: pos2(490.0, 260.0),
                         max: pos2(590.0, 360.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image
+                        .clone()
+                        .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
                 .on_hover_text(batter_tooltip(
                     &self.game_state.as_ref().unwrap().runner1.clone().unwrap(),
@@ -347,10 +348,9 @@ impl<'a> eframe::App for DeadballApp {
                         min: pos2(340.0, 120.0),
                         max: pos2(440.0, 220.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image
+                        .clone()
+                        .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
                 .on_hover_text(batter_tooltip(
                     &self.game_state.as_ref().unwrap().runner2.clone().unwrap(),
@@ -362,10 +362,9 @@ impl<'a> eframe::App for DeadballApp {
                         min: pos2(205.0, 270.0),
                         max: pos2(305.0, 370.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image
+                        .clone()
+                        .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
                 .on_hover_text(batter_tooltip(
                     &self.game_state.as_ref().unwrap().runner3.clone().unwrap(),
@@ -389,10 +388,7 @@ impl<'a> eframe::App for DeadballApp {
                         min: pos2(340.0, 475.0),
                         max: pos2(440.0, 495.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image.clone(),
                 )
                 .on_hover_text(batter_tooltip(batter));
             }
@@ -1163,7 +1159,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                 if let Some(dialog) = &mut app.away_team_file_dialog {
                     if dialog.show(ctx).selected() {
                         if let Some(file) = dialog.path() {
-                            app.away_team_file = Some(file);
+                            app.away_team_file = Some(file.to_path_buf());
                         }
                     }
                 }
@@ -1184,7 +1180,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                 if let Some(dialog) = &mut app.home_team_file_dialog {
                     if dialog.show(ctx).selected() {
                         if let Some(file) = dialog.path() {
-                            app.home_team_file = Some(file);
+                            app.home_team_file = Some(file.to_path_buf());
                         }
                     }
                 }
@@ -1205,7 +1201,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                 if let Some(dialog) = &mut app.ballpark_file_dialog {
                     if dialog.show(ctx).selected() {
                         if let Some(file) = dialog.path() {
-                            app.ballpark_file = Some(file);
+                            app.ballpark_file = Some(file.to_path_buf());
                         }
                     }
                 }
