@@ -246,6 +246,12 @@ impl<'a> Default for DeadballApp<'_> {
 
 impl<'a> eframe::App for DeadballApp<'_> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // toast notification stuff
+        let mut toasts = Toasts::new()
+            .anchor(self.toast_options.alignment, self.toast_options.offset)
+            .direction(self.toast_options.direction)
+            .custom_contents(CUSTOM_TOAST, custom_toast_contents);
+
         // app state updates
         update_debug_textedits(self);
         // draw other windows (if needed)
@@ -253,15 +259,9 @@ impl<'a> eframe::App for DeadballApp<'_> {
         draw_about_deadball_window(ctx, self);
         draw_about_app_window(ctx, self);
         draw_debug_window(ctx, self);
-        draw_create_new_game(ctx, self);
+        draw_create_new_game(ctx, self, &mut toasts);
         draw_debug_roll_window(ctx, self);
         draw_console_window(ctx, self);
-
-        // toast notification stuff
-        let mut toasts = Toasts::new()
-            .anchor(self.toast_options.alignment, self.toast_options.offset)
-            .direction(self.toast_options.direction)
-            .custom_contents(CUSTOM_TOAST, custom_toast_contents);
 
         // main window
         draw_bottom_panel(ctx, self);
@@ -526,6 +526,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                 ),
             );
         });
+        toasts.show(ctx);
     }
 }
 
@@ -1132,7 +1133,7 @@ fn draw_console_window(ctx: &Context, app: &mut DeadballApp) {
 }
 
 /// renders the new game window
-fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
+fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
     egui::Window::new("Create new game")
         .open(&mut app.create_game_window)
         .show(ctx, |ui| {
@@ -1268,6 +1269,14 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                                 app.create_game_error.clone() + "Please select an Era.";
                         }
                     }
+                    toasts.add(Toast {
+                        text: "Game created.".into(),
+                        kind: ToastKind::Info,
+                        options: ToastOptions::default()
+                            .duration_in_seconds(3.0)
+                            .show_progress(true)
+                            .show_icon(true),
+                    });
                 } else {
                     // update error message and display error window
                     if app.away_team_file.is_none() {
