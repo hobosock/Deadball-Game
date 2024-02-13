@@ -6,7 +6,7 @@ use text_colorizer::*;
 
 use super::roll;
 use crate::characters::{players::*, teams::*};
-use crate::gui::debug::{debug_roll, DebugConfig};
+use crate::gui::debug::{combined_roll, debug_roll, DebugConfig};
 
 /*========================================================
 ENUM DEFINITIONS
@@ -488,24 +488,12 @@ pub fn modern_inning_flow<'a>(
                     let control_mod = state.current_pitcher_team1.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
-                        if debug.mode {
-                            pitch_result = debug_roll(&mut debug, pd);
-                        } else {
-                            pitch_result = roll(pd);
-                        }
+                        pitch_result = combined_roll(&mut debug, pd);
                     } else {
-                        if debug.mode {
-                            pitch_result = -1 * debug_roll(&mut debug, pd.abs());
-                        } else {
-                            pitch_result = -1 * roll(pd.abs());
-                        }
+                        pitch_result = -1 * combined_roll(&mut debug, pd.abs());
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    if debug.mode {
-                        pitch_result += debug_roll(&mut debug, 100);
-                    } else {
-                        pitch_result += roll(100);
-                    }
+                    pitch_result += combined_roll(&mut debug, 100);
                     let batter =
                         game.away_active.batting_order[state.batting_team2 as usize].clone();
                     let mut hit_mod: i32 = 0;
@@ -535,25 +523,15 @@ pub fn modern_inning_flow<'a>(
 
                     match swing_result {
                         AtBatResults::Oddity => {
-                            let oddity_result: i32;
-                            if debug.mode {
-                                oddity_result =
-                                    debug_roll(&mut debug, 10) + debug_roll(&mut debug, 10);
-                            } else {
-                                oddity_result = roll(10) + roll(10);
-                            }
+                            let oddity_result =
+                                combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
                             state = oddity(&oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
-                            let mut hit_result: i32;
-                            if debug.mode {
-                                hit_result =
-                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            } else {
-                                hit_result = roll(20) + pow_trait_check(game, &state);
-                            }
+                            let mut hit_result =
+                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state, game, &mut debug);
@@ -561,13 +539,8 @@ pub fn modern_inning_flow<'a>(
                         }
                         AtBatResults::Hit => {
                             // hit roll
-                            let hit_result: i32;
-                            if debug.mode {
-                                hit_result =
-                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            } else {
-                                hit_result = roll(20) + pow_trait_check(game, &state);
-                            }
+                            let hit_result =
+                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state, game, &mut debug);
                         }
@@ -581,7 +554,12 @@ pub fn modern_inning_flow<'a>(
                             state = add_runner(state, &1, batter);
                         }
                         AtBatResults::PossibleError => {
-                            state = possible_error(&mut debug, state, game);
+                            state = possible_error(
+                                &mut debug,
+                                state,
+                                game,
+                                position_by_number(get_swing_position(&pitch_result)),
+                            );
                         }
                         AtBatResults::ProductiveOut1 => {
                             state = productive_out1(state, &pitch_result);
@@ -622,24 +600,12 @@ pub fn modern_inning_flow<'a>(
                     let control_mod = state.current_pitcher_team2.control();
                     let mut pitch_result: i32;
                     if pd > 0 {
-                        if debug.mode {
-                            pitch_result = debug_roll(&mut debug, pd);
-                        } else {
-                            pitch_result = roll(pd);
-                        }
+                        pitch_result = combined_roll(&mut debug, pd);
                     } else {
-                        if debug.mode {
-                            pitch_result = -1 * debug_roll(&mut debug, pd.abs());
-                        } else {
-                            pitch_result = -1 * roll(pd.abs());
-                        }
+                        pitch_result = -1 * combined_roll(&mut debug, pd.abs());
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    if debug.mode {
-                        pitch_result += debug_roll(&mut debug, 100);
-                    } else {
-                        pitch_result += roll(100);
-                    }
+                    pitch_result += combined_roll(&mut debug, 100);
                     state.game_text += &format!("\nMSS: {}", &pitch_result);
                     let batter =
                         game.home_active.batting_order[state.batting_team1 as usize].clone();
@@ -669,25 +635,15 @@ pub fn modern_inning_flow<'a>(
 
                     match swing_result {
                         AtBatResults::Oddity => {
-                            let oddity_result: i32;
-                            if debug.mode {
-                                oddity_result =
-                                    debug_roll(&mut debug, 10) + debug_roll(&mut debug, 10);
-                            } else {
-                                oddity_result = roll(10) + roll(10);
-                            }
+                            let oddity_result =
+                                combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
                             state = oddity(&oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
-                            let mut hit_result: i32;
-                            if debug.mode {
-                                hit_result =
-                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            } else {
-                                hit_result = roll(20) + pow_trait_check(game, &state);
-                            }
+                            let mut hit_result =
+                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                             hit_result = crit_hit(&hit_result);
                             state = hit_table(&hit_result, state, game, &mut debug);
@@ -695,13 +651,8 @@ pub fn modern_inning_flow<'a>(
                         }
                         AtBatResults::Hit => {
                             // hit roll
-                            let hit_result: i32;
-                            if debug.mode {
-                                hit_result =
-                                    debug_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            } else {
-                                hit_result = roll(20) + pow_trait_check(game, &state);
-                            }
+                            let hit_result =
+                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
                             state.game_text += &format!("\nHit roll: {}", &hit_result);
                             state = hit_table(&hit_result, state, game, &mut debug);
                         }
@@ -715,7 +666,12 @@ pub fn modern_inning_flow<'a>(
                             state = add_runner(state, &1, batter);
                         }
                         AtBatResults::PossibleError => {
-                            state = possible_error(&mut debug, state, game);
+                            state = possible_error(
+                                &mut debug,
+                                state,
+                                game,
+                                position_by_number(get_swing_position(&pitch_result)),
+                            );
                         }
                         AtBatResults::ProductiveOut1 => {
                             state = productive_out1(state, &pitch_result);
@@ -921,13 +877,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Firstbase);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Firstbase);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Firstbase);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -945,13 +896,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Secondbase);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Secondbase);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Secondbase);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -969,13 +915,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Thirdbase);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Thirdbase);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Thirdbase);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -993,13 +934,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Shortstop);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Shortstop);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Shortstop);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -1045,13 +981,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Leftfield);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Leftfield);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Leftfield);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -1069,13 +1000,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Centerfield);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Centerfield);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Centerfield);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -1093,13 +1019,8 @@ pub fn hit_table<'b>(
                 state.hits_team1 += 1;
             }
         }
-        let def_roll: i32;
-        if debug.mode {
-            def_roll = debug_roll(debug, 12)
-                + def_trait_check(&state.inning_half, game, Position::Rightfield);
-        } else {
-            def_roll = roll(12) + def_trait_check(&state.inning_half, game, Position::Rightfield);
-        }
+        let def_roll = combined_roll(debug, 12)
+            + def_trait_check(&state.inning_half, game, Position::Rightfield);
         (state, advance, base) = defense(state, &def_roll, advance, base);
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
@@ -1660,7 +1581,12 @@ pub fn new_game_state_struct() -> GameState {
 }
 
 /// handle PossibleError swing result
-fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameModern) -> GameState {
+fn possible_error(
+    debug: &mut DebugConfig,
+    mut state: GameState,
+    game: &GameModern,
+    position: Position,
+) -> GameState {
     // TODO: Not sure I am implementing this correctly, see page 29
     // get position
     // TODO: get player traits
@@ -1674,12 +1600,7 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameMode
         }
     }
     state.game_text += "\n Possible error -> ";
-    let def_roll: i32;
-    if debug.mode {
-        def_roll = debug_roll(debug, 12);
-    } else {
-        def_roll = roll(12);
-    }
+    let def_roll = combined_roll(debug, 12) + def_trait_check(&state.inning_half, game, position);
     state.game_text += &format!("defense roll: {}", &def_roll);
     if def_roll <= 2 {
         state.game_text += "-> Error!";
@@ -2036,12 +1957,7 @@ pub fn process_steals(
             if stealer.slow() {
                 steal_mod = -2;
             }
-            let steal_result: i32;
-            if debug.mode {
-                steal_result = debug_roll(&mut debug, 8) + steal_mod;
-            } else {
-                steal_result = roll(8) + steal_mod;
-            }
+            let steal_result = combined_roll(&mut debug, 8) + steal_mod;
 
             if steal_result > 3 {
                 // successful steal
@@ -2089,12 +2005,7 @@ pub fn process_steals(
             if stealer.slow() {
                 steal_mod = -2;
             }
-            let steal_result: i32;
-            if debug.mode {
-                steal_result = debug_roll(&mut debug, 8) - 1 + steal_mod;
-            } else {
-                steal_result = roll(8) - 1 + steal_mod;
-            }
+            let steal_result = combined_roll(&mut debug, 8) - 1 + steal_mod;
 
             if steal_result > 3 {
                 match state.runners {
@@ -2134,12 +2045,7 @@ pub fn process_steals(
         StealType::Home => {
             // NOTE: your runner should have S+ to end up here!
             let stealer = state.runner3.clone().unwrap();
-            let steal_result: i32;
-            if debug.mode {
-                steal_result = debug_roll(&mut debug, 8) + 1 + catcher_mod;
-            } else {
-                steal_result = roll(8) + 1 + catcher_mod;
-            }
+            let steal_result = combined_roll(&mut debug, 8) + 1 + catcher_mod;
 
             // runner leaves 3rd no matter outcome of steal attempt
             match state.runners {
@@ -2187,12 +2093,7 @@ pub fn process_steals(
             if stealer.slow() {
                 steal_mod = -1; // see 2nd ed. pg. 31 - is it a typo?
             }
-            let steal_result: i32;
-            if debug.mode {
-                steal_result = debug_roll(&mut debug, 8) + steal_mod;
-            } else {
-                steal_result = roll(8) + steal_mod;
-            }
+            let steal_result = combined_roll(&mut debug, 8) + steal_mod;
 
             if steal_result <= 3 {
                 // lead runner is out - only valid condition is Runner110
@@ -2255,12 +2156,7 @@ pub fn bunt(
     if batter.free_swing() {
         bunt_mod = -1;
     }
-    let bunt_result: i32;
-    if debug.mode {
-        bunt_result = debug_roll(&mut debug, 6) + bunt_mod;
-    } else {
-        bunt_result = roll(6) + bunt_mod;
-    }
+    let bunt_result = combined_roll(&mut debug, 6) + bunt_mod;
     state.game_text += &format!("\nBunting!  Bunt roll: {}", &bunt_result);
 
     // process result
@@ -2441,12 +2337,7 @@ pub fn hit_and_run(
     if stealer.slow() {
         steal_mod = -1;
     }
-    let steal_result: i32;
-    if debug.mode {
-        steal_result = debug_roll(debug, 8) + steal_mod;
-    } else {
-        steal_result = roll(8) + steal_mod;
-    }
+    let steal_result = combined_roll(debug, 8) + steal_mod;
     state.game_text += &format!("\nSteal result: {} -> ", steal_result);
     let steal_success: bool;
     if steal_result >= 4 {
@@ -2483,24 +2374,12 @@ pub fn hit_and_run(
     }
     let mut pitch_result: i32;
     if pd > 0 {
-        if debug.mode {
-            pitch_result = debug_roll(debug, pd);
-        } else {
-            pitch_result = roll(pd)
-        }
+        pitch_result = combined_roll(debug, pd);
     } else {
-        if debug.mode {
-            pitch_result = -1 * debug_roll(debug, pd.abs());
-        } else {
-            pitch_result = -1 * roll(pd.abs());
-        }
+        pitch_result = -1 * combined_roll(debug, pd.abs());
     }
     state.game_text += &format!("\nPitch result: {}", &pitch_result);
-    if debug.mode {
-        pitch_result += debug_roll(debug, 100);
-    } else {
-        pitch_result += roll(100);
-    }
+    pitch_result += combined_roll(debug, 100);
     state.game_text += &format!("\nMSS: {}", &pitch_result);
     let mut hit_bonus = 5;
     if batter.contact_hit() {
@@ -2568,12 +2447,7 @@ pub fn hit_and_run(
             if defender.is_some() {
                 defense_bonus += defender.unwrap().defense();
             }
-            let def_roll: i32;
-            if debug.mode {
-                def_roll = debug_roll(debug, 12) + defense_bonus;
-            } else {
-                def_roll = roll(12) + defense_bonus;
-            }
+            let def_roll = combined_roll(debug, 12) + defense_bonus;
             if def_roll <= 2 {
                 hnr = HitAndRun::Hit;
             } else {
