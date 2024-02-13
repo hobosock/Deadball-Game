@@ -4,9 +4,8 @@ MODULE INCLUSIONS
 use std::fs;
 use text_colorizer::*;
 
-use super::roll;
 use crate::characters::{players::*, teams::*};
-use crate::gui::debug::{combined_roll, debug_roll, DebugConfig};
+use crate::gui::debug::{combined_roll, DebugConfig};
 
 /*========================================================
 ENUM DEFINITIONS
@@ -89,6 +88,7 @@ pub enum Oddity {
     CatcherInterference,
 }
 
+/*
 // d20
 pub enum HitTable {
     Single,
@@ -131,6 +131,7 @@ pub enum Defense {
     DoubleToSingle,
     HitToOut,
 }
+*/
 
 pub enum Animal {
     Bird,
