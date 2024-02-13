@@ -756,12 +756,7 @@ pub fn oddity<'b>(
                     //state.batting_team1 -= 1;
                 } else {
                     // home run overturned, batter out
-                    match state.outs {
-                        Outs::None => state.outs = Outs::One,
-                        Outs::One => state.outs = Outs::Two,
-                        Outs::Two => state.outs = Outs::Three,
-                        Outs::Three => state.outs = Outs::Three,
-                    }
+                    state.outs = increment_out(state.outs, 1);
                 }
                 return state;
             } else if *oddity_result == 3 {
@@ -1188,20 +1183,7 @@ pub fn defense<'b>(
         state.game_text += " -> good defense, reduce hit level by 1";
         // double turns to single, runners advance 2, single turns to out, runners advance 1
         if base == 1 {
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::One;
-                }
-                Outs::One => {
-                    state.outs = Outs::Two;
-                }
-                Outs::Two => {
-                    state.outs = Outs::Three;
-                }
-                Outs::Three => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 1);
             base = 0;
             advance = 1;
         } else if base == 2 {
@@ -1212,20 +1194,7 @@ pub fn defense<'b>(
     } else if *def_result >= 12 {
         state.game_text += " -> Out!  What a play, Runners hold.";
         // hit turned to out, runners hold
-        match state.outs {
-            Outs::None => {
-                state.outs = Outs::One;
-            }
-            Outs::One => {
-                state.outs = Outs::Two;
-            }
-            Outs::Two => {
-                state.outs = Outs::Three;
-            }
-            Outs::Three => {
-                state.outs = Outs::Three;
-            }
-        }
+        state.outs = increment_out(state.outs, 1);
         match state.inning_half {
             InningTB::Top => {
                 state.hits_team2 -= 1;
@@ -1729,20 +1698,7 @@ fn possible_error(debug: &mut DebugConfig, mut state: GameState, game: &GameMode
     } else {
         state.game_text += "-> No error.  Out!";
         // fielder makes the out like normal
-        match state.outs {
-            Outs::None => {
-                state.outs = Outs::One;
-            }
-            Outs::One => {
-                state.outs = Outs::Two;
-            }
-            Outs::Two => {
-                state.outs = Outs::Three;
-            }
-            Outs::Three => {
-                state.outs = Outs::Three;
-            }
-        }
+        state.outs = increment_out(state.outs, 1);
     }
 
     return state;
@@ -1996,85 +1952,31 @@ fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner000;
                     state.runner1 = None;
-                    match state.outs {
-                        Outs::None => {
-                            state.outs = Outs::Two;
-                        }
-                        _ => {
-                            state.outs = Outs::Three;
-                        }
-                    }
+                    state.outs = increment_out(state.outs, 2);
                 }
                 RunnersOn::Runner110 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner010;
                     state.runner1 = None;
-                    match state.outs {
-                        Outs::None => {
-                            state.outs = Outs::Two;
-                        }
-                        _ => {
-                            state.outs = Outs::Three;
-                        }
-                    }
+                    state.outs = increment_out(state.outs, 2);
                 }
                 RunnersOn::Runner101 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner001;
                     state.runner1 = None;
-                    match state.outs {
-                        Outs::None => {
-                            state.outs = Outs::Two;
-                        }
-                        _ => {
-                            state.outs = Outs::Three;
-                        }
-                    }
+                    state.outs = increment_out(state.outs, 2);
                 }
                 RunnersOn::Runner111 => {
                     state.game_text += "\nDouble Play!  Runner at first and batter are out.";
                     state.runners = RunnersOn::Runner011;
                     state.runner1 = None;
-                    match state.outs {
-                        Outs::None => {
-                            state.outs = Outs::Two;
-                        }
-                        _ => {
-                            state.outs = Outs::Three;
-                        }
-                    }
+                    state.outs = increment_out(state.outs, 2);
                 }
-                _ => match state.outs {
-                    Outs::None => {
-                        state.outs = Outs::One;
-                    }
-                    Outs::One => {
-                        state.outs = Outs::Two;
-                    }
-                    Outs::Two => {
-                        state.outs = Outs::Three;
-                    }
-                    Outs::Three => {
-                        state.outs = Outs::Three;
-                    }
-                },
+                _ => state.outs = increment_out(state.outs, 1),
             },
         }
     } else {
-        match state.outs {
-            Outs::None => {
-                state.outs = Outs::One;
-            }
-            Outs::One => {
-                state.outs = Outs::Two;
-            }
-            Outs::Two => {
-                state.outs = Outs::Three;
-            }
-            Outs::Three => {
-                state.outs = Outs::Three;
-            }
-        }
+        state.outs = increment_out(state.outs, 1);
     }
 
     return state;
@@ -2099,42 +2001,15 @@ fn mega_out(mut state: GameState) -> GameState {
             state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner000;
             state.runner1 = None;
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::Two;
-                }
-                _ => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 2);
         }
         RunnersOn::Runner101 => {
             state.game_text += "\nDouble Play!  Runner at first and batter are out.";
             state.runners = RunnersOn::Runner001;
             state.runner1 = None;
-            match state.outs {
-                Outs::None => {
-                    state.outs = Outs::Two;
-                }
-                _ => {
-                    state.outs = Outs::Three;
-                }
-            }
+            state.outs = increment_out(state.outs, 2);
         }
-        _ => match state.outs {
-            Outs::None => {
-                state.outs = Outs::One;
-            }
-            Outs::One => {
-                state.outs = Outs::Two;
-            }
-            Outs::Two => {
-                state.outs = Outs::Three;
-            }
-            Outs::Three => {
-                state.outs = Outs::Three;
-            }
-        },
+        _ => state.outs = increment_out(state.outs, 2),
     }
 
     return state;
@@ -2198,12 +2073,7 @@ pub fn process_steals(
                     }
                     _ => {}
                 }
-                match state.outs {
-                    Outs::None => state.outs = Outs::One,
-                    Outs::One => state.outs = Outs::Two,
-                    Outs::Two => state.outs = Outs::Three,
-                    _ => {}
-                }
+                state.outs = increment_out(state.outs, 1);
                 state.game_text += &format!(
                     "\n{} {} thrown out stealing 2B!",
                     stealer.first_name, stealer.last_name
@@ -2254,12 +2124,7 @@ pub fn process_steals(
                     }
                     _ => {}
                 }
-                match state.outs {
-                    Outs::None => state.outs = Outs::One,
-                    Outs::One => state.outs = Outs::Two,
-                    Outs::Two => state.outs = Outs::Three,
-                    _ => {}
-                }
+                state.outs = increment_out(state.outs, 1);
                 state.game_text += &format!(
                     "\n{} {} thrown out stealing 3B!",
                     stealer.first_name, stealer.last_name
@@ -2304,12 +2169,7 @@ pub fn process_steals(
                 state.game_text +=
                     &format!("\n{} {} stole home!", stealer.first_name, stealer.last_name);
             } else {
-                match state.outs {
-                    Outs::None => state.outs = Outs::One,
-                    Outs::One => state.outs = Outs::Two,
-                    Outs::Two => state.outs = Outs::Three,
-                    _ => {}
-                }
+                state.outs = increment_out(state.outs, 1);
                 state.game_text += &format!(
                     "\n{} {} thrown out stealing home.",
                     stealer.first_name, stealer.last_name
@@ -2340,12 +2200,7 @@ pub fn process_steals(
                 state.runner3 = None;
                 state.runner2 = state.runner1.clone();
                 state.runner1 = None;
-                match state.outs {
-                    Outs::None => state.outs = Outs::One,
-                    Outs::One => state.outs = Outs::Two,
-                    Outs::Two => state.outs = Outs::Three,
-                    _ => {}
-                }
+                state.outs = increment_out(state.outs, 1);
                 state.game_text += &format!(
                     "\n{} {} thrown out at third",
                     stealer.first_name, stealer.last_name
@@ -2360,12 +2215,7 @@ pub fn process_steals(
                 state.runner3 = state.runner2.clone();
                 state.runner2 = None;
                 state.runner1 = None;
-                match state.outs {
-                    Outs::None => state.outs = Outs::One,
-                    Outs::One => state.outs = Outs::Two,
-                    Outs::Two => state.outs = Outs::Three,
-                    _ => {}
-                }
+                state.outs = increment_out(state.outs, 1);
                 state.game_text += &format!(
                     "\n{} {} steals 3B safely.",
                     stealer.first_name, stealer.last_name

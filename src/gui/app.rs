@@ -1588,6 +1588,8 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 });
                             }
                         } else {
+                            // NOTE: I think the fact that these are in a menu means a bunch get
+                            // spammed, going to have to do something different
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
