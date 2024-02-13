@@ -264,7 +264,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
         draw_console_window(ctx, self);
 
         // main window
-        draw_bottom_panel(ctx, self);
+        draw_bottom_panel(ctx, self, &mut toasts);
         draw_left_panel(ctx, self);
         draw_right_panel(ctx, self);
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -1282,14 +1282,38 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toast
                     if app.away_team_file.is_none() {
                         app.create_game_error = app.create_game_error.clone()
                             + "Must select a *.dbt file for away team.\n";
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Must select a *.dbt file for away team.".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
                     }
                     if app.home_team_file.is_none() {
                         app.create_game_error = app.create_game_error.clone()
                             + "Must select a *.dbt file for home team.\n";
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Must select a *.dbt file for home team.".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
                     }
                     if app.ballpark_file.is_none() {
                         app.create_game_error = app.create_game_error.clone()
                             + "Must select a *.dbb file for ballpark.\n";
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Must select a *.dbb file for ballpark.".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
                     }
                 }
                 match app.create_game_era {
@@ -1338,7 +1362,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toast
 }
 
 /// renders the bottom panel
-fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
+fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
     egui::TopBottomPanel::bottom("Control Panel").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut app.bottom_panel, Panel::Game, "Game");
@@ -1362,13 +1386,24 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     app.home_team_active.clone().unwrap().pitching[0].clone(),
                                     app.away_team_active.clone().unwrap().pitching[0].clone(),
                                 ));
-                                println!(
-                                    "Away: {} | Home: {}",
-                                    app.game_state.as_ref().unwrap().batting_team2,
-                                    app.game_state.as_ref().unwrap().batting_team1
-                                ); // TODO: delete this
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "Play ball!".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
                             } else {
                                 println!("Load teams first.");
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "Create a game first.".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
                             }
                         }
                         if ui.button("Load Game").clicked() {
