@@ -1,6 +1,8 @@
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
+use eframe::egui;
+use egui::{Align2, Direction, Pos2};
 
 use crate::{
     characters::{
@@ -9,6 +11,25 @@ use crate::{
     },
     core::game_functions::{find_by_position, RunnersOn},
 };
+
+/*========================================================
+STRUCT DEFINITIONS
+========================================================*/
+pub struct ToastData {
+    pub alignment: Align2,
+    pub offset: Pos2,
+    pub direction: Direction,
+}
+
+impl Default for ToastData {
+    fn default() -> Self {
+        Self {
+            alignment: Align2::RIGHT_BOTTOM,
+            offset: Pos2::new(5.0, 5.0),
+            direction: Direction::BottomUp,
+        }
+    }
+}
 
 /*========================================================
 FUNCTION DEFINITIONS
@@ -110,4 +131,13 @@ pub fn runners_on_bool(runners: RunnersOn) -> (bool, bool, bool) {
         }
     }
     return (on_first, on_second, on_third);
+}
+
+/// builds string for tooltip for batters and baserunners
+pub fn batter_tooltip(player: &Player) -> String {
+    let tooltip = format!(
+        "{} | {} | {} | {:?} | {:?}",
+        player.first_name, player.nickname, player.last_name, player.handedness, player.traits
+    );
+    return tooltip;
 }

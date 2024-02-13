@@ -4,6 +4,7 @@
 // LOCAL IMPORTS
 use crate::characters::{players::*, teams::*};
 //use deadball::core::file_locations::*;
+use super::gui_functions::{batter_tooltip, ToastData};
 use crate::core::game_functions::{
     bunt, create_modern_game, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
     new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
@@ -16,15 +17,17 @@ use crate::{
 
 use std::{fs, usize};
 
+use eframe::egui::Image;
 // EXTERNAL IMPORTS
 use eframe::{
     egui::{self, Context},
     epaint::{pos2, Color32},
 };
 use egui::{Rect, RichText};
-use egui_extras::RetainedImage;
 use egui_file::FileDialog;
+use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
 use std::path::PathBuf;
+
 /*==============================================================================================
  * CONSTANTS
  * ===========================================================================================*/
@@ -32,6 +35,15 @@ pub const ABOUT_DEABALL: &str =
     "Deadball: Baseball With Dice is a tabletop game developed by W.M. Akers.  For more information about the game, or to purchase the rules, please visit the Deadball website.";
 
 pub const ABOUT_APP: &str = "This application was developed as practice with the Rust programming language.  All credit goes to the creator of Deadball, W.M. Akers.  Please purchase and consult the official rulebooks for questions about game mechanics.";
+
+pub const CUSTOM_TOAST: u32 = 0;
+fn custom_toast_contents(ui: &mut egui::Ui, toast: &mut Toast) -> egui::Response {
+    egui::Frame::window(ui.style())
+        .show(ui, |ui| {
+            ui.label(toast.text.clone());
+        })
+        .response
+}
 
 /*==============================================================================================
  * ENUMS
@@ -47,7 +59,7 @@ enum Panel {
 /*==============================================================================================
  * STRUCTS
  * ===========================================================================================*/
-pub struct DeadballApp {
+pub struct DeadballApp<'a> {
     // score information
     current_inning: String,
     current_outs: String,
@@ -58,8 +70,8 @@ pub struct DeadballApp {
     home_errors: String,
     home_runs: String,
     // ballfield interface
-    diamond_image: RetainedImage,
-    helmet_image: RetainedImage,
+    diamond_image: Image<'a>,
+    helmet_image: Image<'a>,
     pitcher_label: String,
     catcher_label: String,
     firstbase_label: String,
@@ -139,9 +151,10 @@ pub struct DeadballApp {
     debug_errors2_text: String,
     debug_roll_state: DebugConfig,
     debug_roll_text: String,
+    toast_options: ToastData,
 }
 
-impl<'a> Default for DeadballApp {
+impl<'a> Default for DeadballApp<'_> {
     fn default() -> Self {
         Self {
             current_inning: "1^".to_string(),
@@ -152,16 +165,8 @@ impl<'a> Default for DeadballApp {
             home_hits: "0".to_string(),
             home_errors: "0".to_string(),
             home_runs: "0".to_string(),
-            diamond_image: RetainedImage::from_image_bytes(
-                "baseball_diamond.png",
-                include_bytes!("images/baseball_diamond.png"),
-            )
-            .unwrap(),
-            helmet_image: RetainedImage::from_image_bytes(
-                "helmet.png",
-                include_bytes!("images/helmet.png"),
-            )
-            .unwrap(),
+            diamond_image: Image::new(egui::include_image!("images/baseball_diamond.png")),
+            helmet_image: Image::new(egui::include_image!("images/helmet.png")),
             pitcher_label: "P: Seth Loveall".to_string(),
             catcher_label: "C: Seth Loveall".to_string(),
             firstbase_label: "1B: Seth Loveall".to_string(),
@@ -234,12 +239,19 @@ impl<'a> Default for DeadballApp {
             debug_errors2_text: "0".to_string(),
             debug_roll_state: DebugConfig::default(),
             debug_roll_text: "0".to_string(),
+            toast_options: ToastData::default(),
         }
     }
 }
 
-impl<'a> eframe::App for DeadballApp {
+impl<'a> eframe::App for DeadballApp<'_> {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        // toast notification stuff
+        let mut toasts = Toasts::new()
+            .anchor(self.toast_options.alignment, self.toast_options.offset)
+            .direction(self.toast_options.direction)
+            .custom_contents(CUSTOM_TOAST, custom_toast_contents);
+
         // app state updates
         update_debug_textedits(self);
         // draw other windows (if needed)
@@ -247,12 +259,12 @@ impl<'a> eframe::App for DeadballApp {
         draw_about_deadball_window(ctx, self);
         draw_about_app_window(ctx, self);
         draw_debug_window(ctx, self);
-        draw_create_new_game(ctx, self);
+        draw_create_new_game(ctx, self, &mut toasts);
         draw_debug_roll_window(ctx, self);
         draw_console_window(ctx, self);
 
         // main window
-        draw_bottom_panel(ctx, self);
+        draw_bottom_panel(ctx, self, &mut toasts);
         draw_left_panel(ctx, self);
         draw_right_panel(ctx, self);
         egui::CentralPanel::default().show(ctx, |ui| {
@@ -309,65 +321,76 @@ impl<'a> eframe::App for DeadballApp {
                 ui.label(&self.home_runs);
             });
             // draw baseball field and label players
-            ui.add(egui::Image::new(
-                self.diamond_image.texture_id(ctx),
-                self.diamond_image.size_vec2() * 0.3,
-            ));
+            ui.add(
+                self.diamond_image
+                    .clone()
+                    .max_size(egui::Vec2 { x: 511.8, y: 445.2 }),
+            );
             // draw helmets to indicate runners on base
             if on_first {
                 // no error, game state should already exist
-                let runner1 = self.game_state.as_ref().unwrap().runner1.clone().unwrap();
-                let runner1_text = format!(
-                    "{} {} {} | {:?}",
-                    runner1.first_name, runner1.nickname, runner1.last_name, runner1.traits
-                );
                 ui.put(
                     Rect {
                         min: pos2(490.0, 260.0),
                         max: pos2(590.0, 360.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image
+                        .clone()
+                        .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
-                .on_hover_text(runner1_text);
+                .on_hover_text(batter_tooltip(
+                    &self.game_state.as_ref().unwrap().runner1.clone().unwrap(),
+                ));
             }
             if on_second {
-                let runner2 = self.game_state.as_ref().unwrap().runner2.clone().unwrap();
-                let runner2_text = format!(
-                    "{} {} {} | {:?}",
-                    runner2.first_name, runner2.nickname, runner2.last_name, runner2.traits
-                );
                 ui.put(
                     Rect {
                         min: pos2(340.0, 120.0),
                         max: pos2(440.0, 220.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image
+                        .clone()
+                        .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
-                .on_hover_text(runner2_text);
+                .on_hover_text(batter_tooltip(
+                    &self.game_state.as_ref().unwrap().runner2.clone().unwrap(),
+                ));
             }
             if on_third {
-                let runner3 = self.game_state.as_ref().unwrap().runner3.clone().unwrap();
-                let runner3_text = format!(
-                    "{} {} {} | {:?}",
-                    runner3.first_name, runner3.nickname, runner3.last_name, runner3.traits
-                );
                 ui.put(
                     Rect {
                         min: pos2(205.0, 270.0),
                         max: pos2(305.0, 370.0),
                     },
-                    eframe::egui::Image::new(
-                        self.helmet_image.texture_id(ctx),
-                        self.helmet_image.size_vec2() * 0.1,
-                    ),
+                    self.helmet_image
+                        .clone()
+                        .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
-                .on_hover_text(runner3_text);
+                .on_hover_text(batter_tooltip(
+                    &self.game_state.as_ref().unwrap().runner3.clone().unwrap(),
+                ));
+            }
+            if self.game_state.is_some() {
+                // always draw batter
+                let batter: &Player;
+                match self.game_state.as_ref().unwrap().inning_half {
+                    InningTB::Top => {
+                        batter = &self.game_modern.as_ref().unwrap().away_active.batting_order
+                            [self.game_state.as_ref().unwrap().batting_team2 as usize]
+                    }
+                    InningTB::Bottom => {
+                        batter = &self.game_modern.as_ref().unwrap().home_active.batting_order
+                            [self.game_state.as_ref().unwrap().batting_team1 as usize]
+                    }
+                }
+                ui.put(
+                    Rect {
+                        min: pos2(340.0, 475.0),
+                        max: pos2(440.0, 495.0),
+                    },
+                    self.helmet_image.clone(),
+                )
+                .on_hover_text(batter_tooltip(batter));
             }
             // update player labels
             if self.home_team_active.is_some()
@@ -503,6 +526,7 @@ impl<'a> eframe::App for DeadballApp {
                 ),
             );
         });
+        toasts.show(ctx);
     }
 }
 
@@ -560,7 +584,7 @@ fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
         .open(&mut app.version_window)
         .show(ctx, |ui| {
-            ui.label("Version 0.3.2");
+            ui.label("Version 0.3.3");
         });
 }
 
@@ -1109,7 +1133,7 @@ fn draw_console_window(ctx: &Context, app: &mut DeadballApp) {
 }
 
 /// renders the new game window
-fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
+fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
     egui::Window::new("Create new game")
         .open(&mut app.create_game_window)
         .show(ctx, |ui| {
@@ -1136,7 +1160,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                 if let Some(dialog) = &mut app.away_team_file_dialog {
                     if dialog.show(ctx).selected() {
                         if let Some(file) = dialog.path() {
-                            app.away_team_file = Some(file);
+                            app.away_team_file = Some(file.to_path_buf());
                         }
                     }
                 }
@@ -1157,7 +1181,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                 if let Some(dialog) = &mut app.home_team_file_dialog {
                     if dialog.show(ctx).selected() {
                         if let Some(file) = dialog.path() {
-                            app.home_team_file = Some(file);
+                            app.home_team_file = Some(file.to_path_buf());
                         }
                     }
                 }
@@ -1178,15 +1202,15 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                 if let Some(dialog) = &mut app.ballpark_file_dialog {
                     if dialog.show(ctx).selected() {
                         if let Some(file) = dialog.path() {
-                            app.ballpark_file = Some(file);
+                            app.ballpark_file = Some(file.to_path_buf());
                         }
                     }
                 }
             });
             ui.separator();
             // button to create game and return to main screen
-            app.create_game_error = "".to_owned();
             if ui.button("Create").clicked() {
+                app.create_game_error = "".to_owned();
                 // check and make sure options are set properly
                 if app.away_team_file.is_some()
                     && app.home_team_file.is_some()
@@ -1245,19 +1269,51 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
                                 app.create_game_error.clone() + "Please select an Era.";
                         }
                     }
+                    toasts.add(Toast {
+                        text: "Game created.".into(),
+                        kind: ToastKind::Info,
+                        options: ToastOptions::default()
+                            .duration_in_seconds(3.0)
+                            .show_progress(true)
+                            .show_icon(true),
+                    });
                 } else {
                     // update error message and display error window
                     if app.away_team_file.is_none() {
                         app.create_game_error = app.create_game_error.clone()
                             + "Must select a *.dbt file for away team.\n";
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Must select a *.dbt file for away team.".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
                     }
                     if app.home_team_file.is_none() {
                         app.create_game_error = app.create_game_error.clone()
                             + "Must select a *.dbt file for home team.\n";
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Must select a *.dbt file for home team.".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
                     }
                     if app.ballpark_file.is_none() {
                         app.create_game_error = app.create_game_error.clone()
                             + "Must select a *.dbb file for ballpark.\n";
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Must select a *.dbb file for ballpark.".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
                     }
                 }
                 match app.create_game_era {
@@ -1306,7 +1362,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp) {
 }
 
 /// renders the bottom panel
-fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
+fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
     egui::TopBottomPanel::bottom("Control Panel").show(ctx, |ui| {
         ui.horizontal(|ui| {
             ui.selectable_value(&mut app.bottom_panel, Panel::Game, "Game");
@@ -1330,13 +1386,24 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     app.home_team_active.clone().unwrap().pitching[0].clone(),
                                     app.away_team_active.clone().unwrap().pitching[0].clone(),
                                 ));
-                                println!(
-                                    "Away: {} | Home: {}",
-                                    app.game_state.as_ref().unwrap().batting_team2,
-                                    app.game_state.as_ref().unwrap().batting_team1
-                                ); // TODO: delete this
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "Play ball!".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
                             } else {
                                 println!("Load teams first.");
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "Create a game first.".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
                             }
                         }
                         if ui.button("Load Game").clicked() {
@@ -1388,13 +1455,17 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     ));
                                     println!("{:?}", app.game_state);
                                 }
-                                GameStatus::Over => {}
+                                GameStatus::Over => {
+                                    toasts.add(Toast {
+                                        kind: ToastKind::Info,
+                                        text: "That's game!".into(),
+                                        options: ToastOptions::default()
+                                            .duration_in_seconds(3.0)
+                                            .show_progress(true)
+                                            .show_icon(true),
+                                    });
+                                }
                             }
-                            println!(
-                                "Away: {} | Home: {}",
-                                app.game_state.as_ref().unwrap().batting_team2,
-                                app.game_state.as_ref().unwrap().batting_team1
-                            ); // TODO: delete this
                         }
                     }
                     ui.menu_button("Steal", |ui| {
@@ -1506,13 +1577,42 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                     ));
                                 }
                             }
+                            if !steal2 && !steal3 && !steal4 && !double_steal {
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "No runners on base.".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
+                            }
                         } else {
-                            ui.label("No active game.");
+                            // NOTE: I think the fact that these are in a menu means a bunch get
+                            // spammed, going to have to do something different
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     });
                     if ui.button("Bunt").clicked() {
                         if app.game_state.is_some() && app.game_modern.is_some() {
                             // TODO: check and make sure base runners make sense
+                            if app.game_state.as_ref().unwrap().runners == RunnersOn::Runner000 {
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "No runners on, why bunt?".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
+                            }
                             let batter: Player;
                             match app.game_state.as_ref().unwrap().inning_half {
                                 InningTB::Top => {
@@ -1536,33 +1636,73 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp) {
                                 app.debug_roll_state.clone(),
                                 batter,
                             ));
+                        } else {
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     }
                     if ui.button("Hit & Run").clicked() {
                         if app.game_state.is_some() && app.game_modern.is_some() {
-                            let batter: Player;
-                            match app.game_state.as_ref().unwrap().inning_half {
-                                InningTB::Top => {
-                                    let bat_num = app.game_state.as_ref().unwrap().batting_team2;
-                                    batter =
-                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                            if app.game_state.as_ref().unwrap().runners == RunnersOn::Runner100 {
+                                let batter: Player;
+                                match app.game_state.as_ref().unwrap().inning_half {
+                                    InningTB::Top => {
+                                        let bat_num =
+                                            app.game_state.as_ref().unwrap().batting_team2;
+                                        batter = app
+                                            .game_modern
+                                            .as_ref()
+                                            .unwrap()
+                                            .away_active
+                                            .batting_order
                                             [bat_num as usize]
                                             .clone();
-                                }
-                                InningTB::Bottom => {
-                                    let bat_num = app.game_state.as_ref().unwrap().batting_team1;
-                                    batter =
-                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                    }
+                                    InningTB::Bottom => {
+                                        let bat_num =
+                                            app.game_state.as_ref().unwrap().batting_team1;
+                                        batter = app
+                                            .game_modern
+                                            .as_ref()
+                                            .unwrap()
+                                            .home_active
+                                            .batting_order
                                             [bat_num as usize]
                                             .clone();
+                                    }
                                 }
+                                app.game_state = Some(hit_and_run(
+                                    app.game_state.clone().unwrap(),
+                                    app.game_modern.as_ref().unwrap(),
+                                    &mut app.debug_roll_state,
+                                    batter,
+                                ));
+                            } else {
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "Hit and run only available with a runner on first."
+                                        .into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
                             }
-                            app.game_state = Some(hit_and_run(
-                                app.game_state.clone().unwrap(),
-                                app.game_modern.as_ref().unwrap(),
-                                &mut app.debug_roll_state,
-                                batter,
-                            ));
+                        } else {
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     }
                 });
