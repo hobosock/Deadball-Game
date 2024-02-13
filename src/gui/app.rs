@@ -1455,13 +1455,17 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     ));
                                     println!("{:?}", app.game_state);
                                 }
-                                GameStatus::Over => {}
+                                GameStatus::Over => {
+                                    toasts.add(Toast {
+                                        kind: ToastKind::Info,
+                                        text: "That's game!".into(),
+                                        options: ToastOptions::default()
+                                            .duration_in_seconds(3.0)
+                                            .show_progress(true)
+                                            .show_icon(true),
+                                    });
+                                }
                             }
-                            println!(
-                                "Away: {} | Home: {}",
-                                app.game_state.as_ref().unwrap().batting_team2,
-                                app.game_state.as_ref().unwrap().batting_team1
-                            ); // TODO: delete this
                         }
                     }
                     ui.menu_button("Steal", |ui| {
@@ -1573,13 +1577,40 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     ));
                                 }
                             }
+                            if !steal2 && !steal3 && !steal4 && !double_steal {
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "No runners on base.".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
+                            }
                         } else {
-                            ui.label("No active game.");
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     });
                     if ui.button("Bunt").clicked() {
                         if app.game_state.is_some() && app.game_modern.is_some() {
                             // TODO: check and make sure base runners make sense
+                            if app.game_state.as_ref().unwrap().runners == RunnersOn::Runner000 {
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "No runners on, why bunt?".into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
+                            }
                             let batter: Player;
                             match app.game_state.as_ref().unwrap().inning_half {
                                 InningTB::Top => {
@@ -1603,33 +1634,73 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 app.debug_roll_state.clone(),
                                 batter,
                             ));
+                        } else {
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     }
                     if ui.button("Hit & Run").clicked() {
                         if app.game_state.is_some() && app.game_modern.is_some() {
-                            let batter: Player;
-                            match app.game_state.as_ref().unwrap().inning_half {
-                                InningTB::Top => {
-                                    let bat_num = app.game_state.as_ref().unwrap().batting_team2;
-                                    batter =
-                                        app.game_modern.as_ref().unwrap().away_active.batting_order
+                            if app.game_state.as_ref().unwrap().runners == RunnersOn::Runner100 {
+                                let batter: Player;
+                                match app.game_state.as_ref().unwrap().inning_half {
+                                    InningTB::Top => {
+                                        let bat_num =
+                                            app.game_state.as_ref().unwrap().batting_team2;
+                                        batter = app
+                                            .game_modern
+                                            .as_ref()
+                                            .unwrap()
+                                            .away_active
+                                            .batting_order
                                             [bat_num as usize]
                                             .clone();
-                                }
-                                InningTB::Bottom => {
-                                    let bat_num = app.game_state.as_ref().unwrap().batting_team1;
-                                    batter =
-                                        app.game_modern.as_ref().unwrap().home_active.batting_order
+                                    }
+                                    InningTB::Bottom => {
+                                        let bat_num =
+                                            app.game_state.as_ref().unwrap().batting_team1;
+                                        batter = app
+                                            .game_modern
+                                            .as_ref()
+                                            .unwrap()
+                                            .home_active
+                                            .batting_order
                                             [bat_num as usize]
                                             .clone();
+                                    }
                                 }
+                                app.game_state = Some(hit_and_run(
+                                    app.game_state.clone().unwrap(),
+                                    app.game_modern.as_ref().unwrap(),
+                                    &mut app.debug_roll_state,
+                                    batter,
+                                ));
+                            } else {
+                                toasts.add(Toast {
+                                    kind: ToastKind::Info,
+                                    text: "Hit and run only available with a runner on first."
+                                        .into(),
+                                    options: ToastOptions::default()
+                                        .duration_in_seconds(3.0)
+                                        .show_progress(true)
+                                        .show_icon(true),
+                                });
                             }
-                            app.game_state = Some(hit_and_run(
-                                app.game_state.clone().unwrap(),
-                                app.game_modern.as_ref().unwrap(),
-                                &mut app.debug_roll_state,
-                                batter,
-                            ));
+                        } else {
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     }
                 });
