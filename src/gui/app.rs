@@ -1209,8 +1209,8 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toast
             });
             ui.separator();
             // button to create game and return to main screen
-            app.create_game_error = "".to_owned();
             if ui.button("Create").clicked() {
+                app.create_game_error = "".to_owned();
                 // check and make sure options are set properly
                 if app.away_team_file.is_some()
                     && app.home_team_file.is_some()
