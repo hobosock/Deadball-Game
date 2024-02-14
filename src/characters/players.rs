@@ -539,6 +539,9 @@ pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error>
     write_result
 }
 
+// NOTE: pretty sure this function has been replaced by the load_csv function - not deleting yet
+// just in case
+/*
 // reads in name CSVs and puts them into memory for reference during player generation function
 pub fn load_names() -> (Vec<String>, Vec<String>) {
     let firstnames: Vec<String>;
@@ -559,6 +562,7 @@ pub fn load_names() -> (Vec<String>, Vec<String>) {
     }
     return (firstnames, lastnames);
 }
+*/
 
 // TODO: player generation should take into account target ERA - will fix later
 // TODO: might add aging at a later date

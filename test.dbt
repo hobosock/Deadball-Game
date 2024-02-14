@@ -1,0 +1,42 @@
+TEAM: Test
+BALLPARK: src/testfiles/game/ballparks/Candlestick Stadium.dbb
+LOGO: Grenadiers
+ERA: Modern
+Location: Small Town
+MASCOT: Grenadiers
+TEAM PRIORITY: Defense
+TEAM MAKEUP: Mostly Veterans
+YEARS IN LEAGUE: 98
+MOST RECENT CHAMPIONSHIP: 93
+FANBASE: Loyal/n/n## MANAGER INFO
+MANAGER: JohnnyGibson
+POSITION: CF
+LEAGUE: Majors
+RETIRED: 8
+PERSONALITY: Quixotic
+DARING: 16
+MOTTO: There are two theories on hitting the knuckleball.  Unfortunately, neither one of them works.
+
+## OWNER INFO
+BACKGROUND: Millionaire Recluse
+OWNER PERSONALITY: Humble
+
+## ROSTER
+PLAYER: src/testfiles/game/players/Rip_Prince.dbp
+PLAYER: src/testfiles/game/players/Jack_Finch.dbp
+PLAYER: src/testfiles/game/players/Gair_Abbott.dbp
+PLAYER: src/testfiles/game/players/Jack_Wells.dbp
+PLAYER: src/testfiles/game/players/Adrian_Pechous.dbp
+PLAYER: src/testfiles/game/players/Gavin_Zito.dbp
+PLAYER: src/testfiles/game/players/Ned_Hicks.dbp
+PLAYER: src/testfiles/game/players/Charlie_Esasky.dbp
+BENCH: src/testfiles/game/players/Doug_Voigt.dbp
+BENCH: src/testfiles/game/players/Robert_McLarney.dbp
+BENCH: src/testfiles/game/players/Joe_Quentin.dbp
+BENCH: src/testfiles/game/players/Buck_Hankins.dbp
+PITCHER: src/testfiles/game/players/Hank_Rasmussen.dbp
+BULLPEN: src/testfiles/game/players/Dave_Spencer.dbp
+BULLPEN: src/testfiles/game/players/Cal_Kashiwada.dbp
+BULLPEN: src/testfiles/game/players/Pop_Gamel.dbp
+BULLPEN: src/testfiles/game/players/Tony_Wilhelm.dbp
+BULLPEN: src/testfiles/game/players/Keith_Conyers.dbp
