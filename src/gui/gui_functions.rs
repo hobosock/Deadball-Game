@@ -7,7 +7,7 @@ use egui::{Align2, Direction, Pos2};
 use crate::{
     characters::{
         players::{Player, Position},
-        teams::ActiveTeam,
+        teams::{ActiveTeam, Era},
     },
     core::game_functions::{find_by_position, RunnersOn},
 };
@@ -15,6 +15,7 @@ use crate::{
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
+/// configuration for toast notifications
 pub struct ToastData {
     pub alignment: Align2,
     pub offset: Pos2,
@@ -25,8 +26,33 @@ impl Default for ToastData {
     fn default() -> Self {
         Self {
             alignment: Align2::RIGHT_BOTTOM,
-            offset: Pos2::new(5.0, 5.0),
+            offset: Pos2::new(2.0, 2.0),
             direction: Direction::BottomUp,
+        }
+    }
+}
+
+/// state variables for the Create Team window
+pub struct CreateTeamWindow {
+    pub is_visible: bool,
+    pub era: Era,
+    pub name_override: bool,
+    pub name: String,
+    pub location_override: bool,
+    pub location: String,
+    pub save_location: String,
+}
+
+impl Default for CreateTeamWindow {
+    fn default() -> Self {
+        Self {
+            is_visible: false,
+            era: Era::Modern,
+            name_override: false,
+            name: "".to_string(),
+            location_override: false,
+            location: "".to_string(),
+            save_location: "".to_string(),
         }
     }
 }

@@ -3,8 +3,9 @@
  * ===========================================================================================*/
 // LOCAL IMPORTS
 use crate::characters::{players::*, teams::*};
+use crate::core::file_locations::{load_databases, DeadballDatabases};
 //use deadball::core::file_locations::*;
-use super::gui_functions::{batter_tooltip, ToastData};
+use super::gui_functions::{batter_tooltip, CreateTeamWindow, ToastData};
 use crate::core::game_functions::{
     bunt, create_modern_game, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
     new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
@@ -152,6 +153,8 @@ pub struct DeadballApp<'a> {
     debug_roll_state: DebugConfig,
     debug_roll_text: String,
     toast_options: ToastData,
+    create_team: CreateTeamWindow,
+    databases: DeadballDatabases,
 }
 
 impl<'a> Default for DeadballApp<'_> {
@@ -240,6 +243,8 @@ impl<'a> Default for DeadballApp<'_> {
             debug_roll_state: DebugConfig::default(),
             debug_roll_text: "0".to_string(),
             toast_options: ToastData::default(),
+            create_team: CreateTeamWindow::default(),
+            databases: DeadballDatabases::default(),
         }
     }
 }
@@ -252,6 +257,11 @@ impl<'a> eframe::App for DeadballApp<'_> {
             .direction(self.toast_options.direction)
             .custom_contents(CUSTOM_TOAST, custom_toast_contents);
 
+        // check if databases need to be loaded
+        if !self.databases.loaded {
+            self.databases = load_databases(&mut toasts);
+        }
+
         // app state updates
         update_debug_textedits(self);
         // draw other windows (if needed)
@@ -262,6 +272,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
         draw_create_new_game(ctx, self, &mut toasts);
         draw_debug_roll_window(ctx, self);
         draw_console_window(ctx, self);
+        draw_create_team_window(ctx, self, &mut toasts);
 
         // main window
         draw_bottom_panel(ctx, self, &mut toasts);
@@ -588,7 +599,7 @@ fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
         });
 }
 
-// populates ui for the "About Deadball Game" window
+/// populates ui for the "About Deadball Game" window
 fn draw_about_deadball_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("About Deadball Game")
         .open(&mut app.about_deadball_window)
@@ -1434,7 +1445,20 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             app.about_app_window = true;
                             ui.close_menu();
                         }
-                    })
+                    });
+                    ui.menu_button("Teams", |ui| {
+                        // create/edit/find teams
+                        if ui.button("Create New Team").clicked() {
+                            app.create_team.is_visible = true;
+                            ui.close_menu();
+                        }
+                    });
+                    ui.menu_button("Players", |ui| {
+                        // create/edit/find players
+                    });
+                    ui.menu_button("Ballparks", |ui| {
+                        // create/edit/find ballparks
+                    });
                 });
             }
             Panel::Game => {
@@ -2180,4 +2204,78 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
             }
         });
     });
+}
+
+/// draws and handles logic for "Create Team" window
+fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Create New Team")
+        .open(&mut app.create_team.is_visible)
+        .show(ctx, |ui| {
+            ui.heading("New Team");
+            // TODO: add Era selector
+            ui.horizontal(|ui| {
+                ui.label("Team Name: ");
+                ui.text_edit_singleline(&mut app.create_team.name);
+                ui.checkbox(&mut app.create_team.name_override, "override")
+                    .on_hover_text("will generate random name if unchecked");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Location: ");
+                ui.text_edit_singleline(&mut app.create_team.location);
+                ui.checkbox(&mut app.create_team.location_override, "override")
+                    .on_hover_text("will generate random location if unchecked");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Save location: ");
+                ui.text_edit_singleline(&mut app.create_team.save_location);
+            });
+            if ui.button("Create").clicked() {
+                // generate and write team
+                let name: &str;
+                if app.create_team.name_override {
+                    name = &app.create_team.name;
+                } else {
+                    name = "New Team";
+                }
+                let new_team = generate_team(
+                    app.create_team.era.clone(),
+                    8,
+                    4,
+                    1,
+                    5,
+                    name,
+                    &app.databases.first_names,
+                    &app.databases.last_names,
+                    &app.databases.logos,
+                    &app.databases.mascots,
+                    &app.databases.mottos,
+                    &app.databases.personalities,
+                    &app.databases.backgrounds,
+                    &app.databases.park1,
+                    &app.databases.park2,
+                );
+                match write_team(new_team, &app.create_team.save_location) {
+                    Ok(()) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Team created!".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
+                    }
+                    Err(e) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: format!("Create failed: {}", e).into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
+                    }
+                }
+            }
+        });
 }

@@ -239,7 +239,7 @@ pub struct BallparkAncient {
     pub quirks: Vec<Quirks>,
 }
 
-// struct for teams in a game - loads player files into Player structs for easier reference
+/// struct for teams in a game - loads player files into Player structs for easier reference
 #[derive(Clone)]
 pub struct ActiveTeam {
     pub roster: Vec<Player>,
