@@ -1455,9 +1455,31 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                     });
                     ui.menu_button("Players", |ui| {
                         // create/edit/find players
+                        if ui.button("Create New Player").clicked() {
+                            // TODO: player creation window - after figuring out file structure
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "Feature in Development".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
+                        }
                     });
                     ui.menu_button("Ballparks", |ui| {
                         // create/edit/find ballparks
+                        if ui.button("Create New Ballpark").clicked() {
+                            // TODO: ballpark creation window - after figuring out file structure
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "Feature in Development".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
+                        }
                     });
                 });
             }

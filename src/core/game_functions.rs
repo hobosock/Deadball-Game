@@ -1,7 +1,6 @@
 /*========================================================
 MODULE INCLUSIONS
 ========================================================*/
-use std::fs;
 use text_colorizer::*;
 
 use crate::characters::{players::*, teams::*};
@@ -278,6 +277,13 @@ pub fn create_modern_game<'a>(
         bullpen: vec![],
         batting_order: vec![],
     };
+    (
+        home_active.roster,
+        home_active.bench,
+        home_active.pitching,
+        home_active.bullpen,
+    ) = load_roster(&home);
+    /*
     // try to load all the players, return error if it fails
     for i in 0..home.roster.len() {
         let read_results = fs::read_to_string(&home.roster[i]);
@@ -319,6 +325,7 @@ pub fn create_modern_game<'a>(
             ),
         }
     }
+    */
     // for now, make batting order roster + pitcher
     home_active.batting_order = home_active.roster.clone();
     home_active
@@ -332,6 +339,13 @@ pub fn create_modern_game<'a>(
         bullpen: vec![],
         batting_order: vec![],
     };
+    (
+        away_active.roster,
+        away_active.bench,
+        away_active.pitching,
+        away_active.bullpen,
+    ) = load_roster(&away);
+    /*
     for i in 0..away.roster.len() {
         let read_results = fs::read_to_string(&away.roster[i]);
         match read_results {
@@ -372,6 +386,7 @@ pub fn create_modern_game<'a>(
             ),
         }
     }
+    */
     // for now, make batting order roster + pitcher
     away_active.batting_order = away_active.roster.clone();
     away_active
