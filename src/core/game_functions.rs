@@ -64,6 +64,7 @@ pub enum StealType {
     Double,
 }
 
+/*
 // 2d10
 pub enum Oddity {
     FanInterference,
@@ -86,6 +87,7 @@ pub enum Oddity {
     Balk,
     CatcherInterference,
 }
+*/
 
 /*
 // d20
@@ -132,6 +134,7 @@ pub enum Defense {
 }
 */
 
+#[derive(Debug)]
 pub enum Animal {
     Bird,
     Rodent,
@@ -542,7 +545,7 @@ pub fn modern_inning_flow<'a>(
                             let oddity_result =
                                 combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&oddity_result, &pitch_result, game, state);
+                            state = oddity(&mut debug, &oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
@@ -654,7 +657,7 @@ pub fn modern_inning_flow<'a>(
                             let oddity_result =
                                 combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&oddity_result, &mss_result, game, state);
+                            state = oddity(&mut debug, &oddity_result, &mss_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
@@ -714,6 +717,7 @@ pub fn modern_inning_flow<'a>(
 
 /// rolls on the oddity table and updates game state
 pub fn oddity<'b>(
+    debug: &mut DebugConfig,
     oddity_result: &i32,
     pitch_result: &i32,
     _game: &'b GameModern, // TODO: program oddities
@@ -725,16 +729,20 @@ pub fn oddity<'b>(
             if *oddity_result == 2 {
                 if pitch_result % 2 == 1 {
                     // fan catches sure out, at bat continues
-                    //state.batting_team1 -= 1;
+                    state.batting_team1 -= 1;
+                    state.game_text += "\nFan catches a sure out, at bat continues!";
                 } else {
                     // home run overturned, batter out
                     state.outs = increment_out(state.outs, 1);
+                    state.game_text += "\nHome run overturned, batter is out.";
                 }
                 return state;
             } else if *oddity_result == 3 {
                 // animal on the field
                 // animal function here
                 println!("{}", "Animal on the field!".bold().yellow());
+                let animal = animal(debug);
+                state.game_text += &format!("\n{:?} on the field!  [more to come]", animal);
                 return state;
             } else if *oddity_result == 4 {
                 // rain delay
@@ -2542,4 +2550,20 @@ pub fn hit_and_run(
     }
 
     return state;
+}
+
+/// function to generate random animal on the field
+pub fn animal(debug: &mut DebugConfig) -> Animal {
+    let animal_result = combined_roll(debug, 4);
+    let animal: Animal;
+    if animal_result == 1 {
+        animal = Animal::Bird;
+    } else if animal_result == 2 {
+        animal = Animal::Rodent;
+    } else if animal_result == 3 {
+        animal = Animal::Cat;
+    } else {
+        animal = Animal::Streaker;
+    }
+    return animal;
 }
