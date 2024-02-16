@@ -195,28 +195,28 @@ pub struct TeamError {
 FUNCTION DEFINITIONS
 ========================================================*/
 /// takes MSS and batter targets, return AtBatResults enum
-pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatResults {
+pub fn at_bat(bat_target: i32, on_base_target: i32, mss_result: i32) -> AtBatResults {
     let mut at_bat_result = AtBatResults::MegaOut;
 
-    if pitch_result == 1 {
+    if mss_result == 1 {
         at_bat_result = AtBatResults::Oddity;
-    } else if pitch_result >= 2 && pitch_result <= 5 {
+    } else if mss_result >= 2 && mss_result <= 5 {
         at_bat_result = AtBatResults::CriticalHit;
-    } else if pitch_result >= 6 && pitch_result <= bat_target {
+    } else if mss_result >= 6 && mss_result <= bat_target {
         at_bat_result = AtBatResults::Hit;
-    } else if pitch_result > bat_target && pitch_result <= on_base_target {
+    } else if mss_result > bat_target && mss_result <= on_base_target {
         at_bat_result = AtBatResults::Walk;
-    } else if pitch_result > on_base_target && pitch_result <= on_base_target + 5 {
+    } else if mss_result > on_base_target && mss_result <= on_base_target + 5 {
         at_bat_result = AtBatResults::PossibleError;
-    } else if pitch_result >= on_base_target + 6 && pitch_result <= 49 {
+    } else if mss_result >= on_base_target + 6 && mss_result <= 49 {
         at_bat_result = AtBatResults::ProductiveOut1;
-    } else if pitch_result >= 50 && pitch_result <= 69 {
+    } else if mss_result >= 50 && mss_result <= 69 {
         at_bat_result = AtBatResults::ProductiveOut2;
-    } else if pitch_result >= 70 && pitch_result <= 98 {
+    } else if mss_result >= 70 && mss_result <= 98 {
         at_bat_result = AtBatResults::Out;
-    } else if pitch_result == 99 {
+    } else if mss_result == 99 {
         at_bat_result = AtBatResults::Oddity;
-    } else if pitch_result >= 100 {
+    } else if mss_result >= 100 {
         at_bat_result = AtBatResults::MegaOut;
     }
 
@@ -502,14 +502,14 @@ pub fn modern_inning_flow<'a>(
                         pitch_mod = -1;
                     }
                     let control_mod = state.current_pitcher_team1.control();
-                    let mut pitch_result: i32;
+                    let pitch_result: i32;
                     if pd > 0 {
                         pitch_result = combined_roll(&mut debug, pd);
                     } else {
                         pitch_result = -1 * combined_roll(&mut debug, pd.abs());
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    pitch_result += combined_roll(&mut debug, 100);
+                    let mss_result = pitch_result + combined_roll(&mut debug, 100);
                     let batter =
                         game.away_active.batting_order[state.batting_team2 as usize].clone();
                     let mut hit_mod: i32 = 0;
@@ -524,11 +524,11 @@ pub fn modern_inning_flow<'a>(
                             _ => hit_mod = 0,
                         }
                     }
-                    state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    state.game_text += &format!("\nMSS: {}", &mss_result);
                     let swing_result = at_bat(
                         batter.batter_target + pitch_mod + hit_mod,
                         batter.on_base_target + control_mod + hit_mod,
-                        pitch_result,
+                        mss_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team2 == 8 {
@@ -574,20 +574,20 @@ pub fn modern_inning_flow<'a>(
                                 &mut debug,
                                 state,
                                 game,
-                                position_by_number(get_swing_position(&pitch_result)),
+                                position_by_number(get_swing_position(&mss_result)),
                             );
                         }
                         AtBatResults::ProductiveOut1 => {
-                            state = productive_out1(state, &pitch_result);
+                            state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.away_active.batting_order
                                 [(state.batting_team2 - 2) as usize]
                                 .clone();
-                            state = productive_out2(state, &pitch_result, batter);
+                            state = productive_out2(state, &mss_result, batter);
                         }
                         AtBatResults::Out => {
-                            state = actual_out(state, &pitch_result);
+                            state = actual_out(state, &mss_result);
                         }
                         AtBatResults::MegaOut => {
                             state = mega_out(state);
@@ -614,15 +614,15 @@ pub fn modern_inning_flow<'a>(
                         pitch_mod = -1;
                     }
                     let control_mod = state.current_pitcher_team2.control();
-                    let mut pitch_result: i32;
+                    let pitch_result: i32;
                     if pd > 0 {
                         pitch_result = combined_roll(&mut debug, pd);
                     } else {
                         pitch_result = -1 * combined_roll(&mut debug, pd.abs());
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    pitch_result += combined_roll(&mut debug, 100);
-                    state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    let mss_result = pitch_result + combined_roll(&mut debug, 100);
+                    state.game_text += &format!("\nMSS: {}", &mss_result);
                     let batter =
                         game.home_active.batting_order[state.batting_team1 as usize].clone();
                     let mut hit_mod: i32 = 0;
@@ -640,7 +640,7 @@ pub fn modern_inning_flow<'a>(
                     let swing_result = at_bat(
                         batter.batter_target + pitch_mod + hit_mod,
                         batter.on_base_target + control_mod + hit_mod,
-                        pitch_result,
+                        mss_result,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team1 == 8 {
@@ -654,7 +654,7 @@ pub fn modern_inning_flow<'a>(
                             let oddity_result =
                                 combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&oddity_result, &pitch_result, game, state);
+                            state = oddity(&oddity_result, &mss_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
@@ -686,20 +686,20 @@ pub fn modern_inning_flow<'a>(
                                 &mut debug,
                                 state,
                                 game,
-                                position_by_number(get_swing_position(&pitch_result)),
+                                position_by_number(get_swing_position(&mss_result)),
                             );
                         }
                         AtBatResults::ProductiveOut1 => {
-                            state = productive_out1(state, &pitch_result);
+                            state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.home_active.batting_order
                                 [(state.batting_team1 - 2) as usize]
                                 .clone();
-                            state = productive_out2(state, &pitch_result, batter);
+                            state = productive_out2(state, &mss_result, batter);
                         }
                         AtBatResults::Out => {
-                            state = actual_out(state, &pitch_result);
+                            state = actual_out(state, &mss_result);
                         }
                         AtBatResults::MegaOut => {
                             state = mega_out(state);
@@ -1479,8 +1479,8 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
 }
 
 /// function to get last digit of swing_result - used for determining which fielder makes the out
-pub fn get_swing_position(pitch_result: &i32) -> i32 {
-    let last_digit = *pitch_result % 10;
+pub fn get_swing_position(mss_result: &i32) -> i32 {
+    let last_digit = *mss_result % 10;
     return last_digit;
 }
 
@@ -1642,7 +1642,7 @@ fn possible_error(
 }
 
 /// handles ProductiveOut1 swing result
-fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
+fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner at first advances and batter is out
     match state.outs {
@@ -1652,7 +1652,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
         }
         _ => {
             state.game_text += "\nPossible productive out (type 1).";
-            let fielder = get_swing_position(pitch_result);
+            let fielder = get_swing_position(mss_result);
             if fielder == 3 || fielder >= 7 {
                 // check for runners on second and third
                 // advance if they exist
@@ -1750,7 +1750,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
 }
 
 /// handles ProductiveOut2 swing_results
-fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> GameState {
+fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> GameState {
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner is out and batter makes it to first
     // the first line is the same as ProductiveOut1
@@ -1766,7 +1766,7 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
         }
         _ => {
             state.game_text += "\nPossible producive out 2.";
-            let fielder = get_swing_position(pitch_result);
+            let fielder = get_swing_position(mss_result);
             if fielder == 3 || fielder >= 7 {
                 state.game_text += "\nBall hit to 1B or OF, runners at 2nd and 3rd advance.";
                 match state.runners {
@@ -1872,12 +1872,12 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
 }
 
 /// process non-productive out swing results
-fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
+fn actual_out(mut state: GameState, mss_result: &i32) -> GameState {
     state.game_text += "\nOut!";
     // runners at second and third cannot advance on a flyball
     // TODO: check if runner at first can advance
     // anywhere in the infield, runner at first and batter are out
-    let fielder = get_swing_position(pitch_result);
+    let fielder = get_swing_position(mss_result);
     if fielder >= 3 && fielder <= 6 {
         match state.outs {
             Outs::Three => {}
@@ -2388,15 +2388,15 @@ pub fn hit_and_run(
     if state.runners == RunnersOn::Runner111 {
         pd = change_pitch_die(pd, 1);
     }
-    let mut pitch_result: i32;
+    let pitch_result: i32;
     if pd > 0 {
         pitch_result = combined_roll(debug, pd);
     } else {
         pitch_result = -1 * combined_roll(debug, pd.abs());
     }
     state.game_text += &format!("\nPitch result: {}", &pitch_result);
-    pitch_result += combined_roll(debug, 100);
-    state.game_text += &format!("\nMSS: {}", &pitch_result);
+    let mss_result = pitch_result + combined_roll(debug, 100);
+    state.game_text += &format!("\nMSS: {}", &mss_result);
     let mut hit_bonus = 5;
     if batter.contact_hit() {
         hit_bonus = 10;
@@ -2407,7 +2407,7 @@ pub fn hit_and_run(
     let swing_result = at_bat(
         batter.batter_target + hit_bonus + pitch_mod,
         batter.on_base_target + control_mod + hit_bonus,
-        pitch_result,
+        mss_result,
     );
     state.game_text += &format!(" -> {:?}", swing_result);
     match state.inning_half {
@@ -2427,7 +2427,7 @@ pub fn hit_and_run(
         }
     }
     let hnr: HitAndRun;
-    let out_type = get_swing_position(&pitch_result);
+    let out_type = get_swing_position(&mss_result);
     match swing_result {
         AtBatResults::Hit => hnr = HitAndRun::Hit,
         AtBatResults::Out => {
