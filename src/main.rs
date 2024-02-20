@@ -188,7 +188,7 @@ mod tests {
         let on_base_target = 40;
         let bat_target = 32;
         let pitch_result = 20;
-        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result);
+        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result, false);
         assert!(matches!(game_functions::AtBatResults::Hit, at_bat_result));
     }
 
@@ -197,7 +197,7 @@ mod tests {
         let on_base_target = 40;
         let bat_target = 32;
         let pitch_result = 78;
-        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result);
+        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result, false);
         assert!(matches!(game_functions::AtBatResults::Out, at_bat_result));
     }
 

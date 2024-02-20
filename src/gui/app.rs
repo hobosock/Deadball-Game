@@ -1157,6 +1157,12 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toast
                 ui.selectable_value(&mut app.create_game_era, Era::Modern, "Modern");
                 ui.selectable_value(&mut app.create_game_era, Era::Ancient, "Ancient");
             });
+            // selectable value for oddities
+            ui.horizontal(|ui| {
+                ui.label("Oddities:");
+                ui.selectable_value(&mut app.oddity, false, "Disabled");
+                ui.selectable_value(&mut app.oddity, true, "Enabled");
+            });
             // file dialog for away team
             ui.horizontal(|ui| {
                 ui.label("Away Team:");

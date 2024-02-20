@@ -200,11 +200,16 @@ pub struct TeamError {
 FUNCTION DEFINITIONS
 ========================================================*/
 /// takes MSS and batter targets, return AtBatResults enum
-pub fn at_bat(bat_target: i32, on_base_target: i32, mss_result: i32) -> AtBatResults {
+/// oddity is boolean indicating if oddity rules are enabled
+pub fn at_bat(bat_target: i32, on_base_target: i32, mss_result: i32, oddity: bool) -> AtBatResults {
     let mut at_bat_result = AtBatResults::MegaOut;
 
     if mss_result == 1 {
-        at_bat_result = AtBatResults::Oddity;
+        if oddity {
+            at_bat_result = AtBatResults::Oddity;
+        } else {
+            at_bat_result = AtBatResults::CriticalHit;
+        }
     } else if mss_result >= 2 && mss_result <= 5 {
         at_bat_result = AtBatResults::CriticalHit;
     } else if mss_result >= 6 && mss_result <= bat_target {
@@ -220,7 +225,11 @@ pub fn at_bat(bat_target: i32, on_base_target: i32, mss_result: i32) -> AtBatRes
     } else if mss_result >= 70 && mss_result <= 98 {
         at_bat_result = AtBatResults::Out;
     } else if mss_result == 99 {
-        at_bat_result = AtBatResults::Oddity;
+        if oddity {
+            at_bat_result = AtBatResults::Oddity;
+        } else {
+            at_bat_result = AtBatResults::Out;
+        }
     } else if mss_result >= 100 {
         at_bat_result = AtBatResults::MegaOut;
     }
@@ -536,6 +545,7 @@ pub fn modern_inning_flow<'a>(
                         batter.batter_target + pitch_mod + hit_mod,
                         batter.on_base_target + control_mod + hit_mod,
                         mss_result,
+                        game.oddity,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team2 == 8 {
@@ -648,6 +658,7 @@ pub fn modern_inning_flow<'a>(
                         batter.batter_target + pitch_mod + hit_mod,
                         batter.on_base_target + control_mod + hit_mod,
                         mss_result,
+                        game.oddity,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team1 == 8 {
@@ -2446,6 +2457,7 @@ pub fn hit_and_run(
         batter.batter_target + hit_bonus + pitch_mod,
         batter.on_base_target + control_mod + hit_bonus,
         mss_result,
+        game.oddity,
     );
     state.game_text += &format!(" -> {:?}", swing_result);
     match state.inning_half {
