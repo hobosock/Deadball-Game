@@ -4,6 +4,7 @@ MODULE INCLUSIONS
 use text_colorizer::*;
 
 use crate::characters::{players::*, teams::*};
+use crate::core::roll;
 use crate::gui::debug::{combined_roll, DebugConfig};
 
 /*========================================================
@@ -64,6 +65,7 @@ pub enum StealType {
     Double,
 }
 
+/*
 // 2d10
 pub enum Oddity {
     FanInterference,
@@ -86,6 +88,7 @@ pub enum Oddity {
     Balk,
     CatcherInterference,
 }
+*/
 
 /*
 // d20
@@ -132,6 +135,7 @@ pub enum Defense {
 }
 */
 
+#[derive(Debug)]
 pub enum Animal {
     Bird,
     Rodent,
@@ -156,6 +160,7 @@ pub struct GameModern {
     pub home_active: ActiveTeam,
     pub away_active: ActiveTeam,
     pub ballpark: BallparkModern,
+    pub oddity: bool, // enables oddity roll (option rule)
 }
 
 #[derive(Debug, Clone)]
@@ -195,28 +200,37 @@ pub struct TeamError {
 FUNCTION DEFINITIONS
 ========================================================*/
 /// takes MSS and batter targets, return AtBatResults enum
-pub fn at_bat(bat_target: i32, on_base_target: i32, pitch_result: i32) -> AtBatResults {
+/// oddity is boolean indicating if oddity rules are enabled
+pub fn at_bat(bat_target: i32, on_base_target: i32, mss_result: i32, oddity: bool) -> AtBatResults {
     let mut at_bat_result = AtBatResults::MegaOut;
 
-    if pitch_result == 1 {
-        at_bat_result = AtBatResults::Oddity;
-    } else if pitch_result >= 2 && pitch_result <= 5 {
+    if mss_result == 1 {
+        if oddity {
+            at_bat_result = AtBatResults::Oddity;
+        } else {
+            at_bat_result = AtBatResults::CriticalHit;
+        }
+    } else if mss_result >= 2 && mss_result <= 5 {
         at_bat_result = AtBatResults::CriticalHit;
-    } else if pitch_result >= 6 && pitch_result <= bat_target {
+    } else if mss_result >= 6 && mss_result <= bat_target {
         at_bat_result = AtBatResults::Hit;
-    } else if pitch_result > bat_target && pitch_result <= on_base_target {
+    } else if mss_result > bat_target && mss_result <= on_base_target {
         at_bat_result = AtBatResults::Walk;
-    } else if pitch_result > on_base_target && pitch_result <= on_base_target + 5 {
+    } else if mss_result > on_base_target && mss_result <= on_base_target + 5 {
         at_bat_result = AtBatResults::PossibleError;
-    } else if pitch_result >= on_base_target + 6 && pitch_result <= 49 {
+    } else if mss_result >= on_base_target + 6 && mss_result <= 49 {
         at_bat_result = AtBatResults::ProductiveOut1;
-    } else if pitch_result >= 50 && pitch_result <= 69 {
+    } else if mss_result >= 50 && mss_result <= 69 {
         at_bat_result = AtBatResults::ProductiveOut2;
-    } else if pitch_result >= 70 && pitch_result <= 98 {
+    } else if mss_result >= 70 && mss_result <= 98 {
         at_bat_result = AtBatResults::Out;
-    } else if pitch_result == 99 {
-        at_bat_result = AtBatResults::Oddity;
-    } else if pitch_result >= 100 {
+    } else if mss_result == 99 {
+        if oddity {
+            at_bat_result = AtBatResults::Oddity;
+        } else {
+            at_bat_result = AtBatResults::Out;
+        }
+    } else if mss_result >= 100 {
         at_bat_result = AtBatResults::MegaOut;
     }
 
@@ -228,6 +242,7 @@ pub fn create_modern_game<'a>(
     home: Team,
     away: Team,
     ballpark: BallparkModern,
+    oddity: bool,
 ) -> Result<GameModern, TeamError> {
     // check teams and park for complete information
     if home.roster.len() < 8 {
@@ -399,6 +414,7 @@ pub fn create_modern_game<'a>(
         ballpark: ballpark,
         home_active: home_active,
         away_active: away_active,
+        oddity: oddity,
     };
     return Ok(game);
 }
@@ -502,14 +518,14 @@ pub fn modern_inning_flow<'a>(
                         pitch_mod = -1;
                     }
                     let control_mod = state.current_pitcher_team1.control();
-                    let mut pitch_result: i32;
+                    let pitch_result: i32;
                     if pd > 0 {
                         pitch_result = combined_roll(&mut debug, pd);
                     } else {
                         pitch_result = -1 * combined_roll(&mut debug, pd.abs());
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    pitch_result += combined_roll(&mut debug, 100);
+                    let mss_result = pitch_result + combined_roll(&mut debug, 100);
                     let batter =
                         game.away_active.batting_order[state.batting_team2 as usize].clone();
                     let mut hit_mod: i32 = 0;
@@ -524,11 +540,12 @@ pub fn modern_inning_flow<'a>(
                             _ => hit_mod = 0,
                         }
                     }
-                    state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    state.game_text += &format!("\nMSS: {}", &mss_result);
                     let swing_result = at_bat(
                         batter.batter_target + pitch_mod + hit_mod,
                         batter.on_base_target + control_mod + hit_mod,
-                        pitch_result,
+                        mss_result,
+                        game.oddity,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team2 == 8 {
@@ -542,7 +559,7 @@ pub fn modern_inning_flow<'a>(
                             let oddity_result =
                                 combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&oddity_result, &pitch_result, game, state);
+                            state = oddity(&mut debug, &oddity_result, &pitch_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
@@ -574,20 +591,20 @@ pub fn modern_inning_flow<'a>(
                                 &mut debug,
                                 state,
                                 game,
-                                position_by_number(get_swing_position(&pitch_result)),
+                                position_by_number(get_swing_position(&mss_result)),
                             );
                         }
                         AtBatResults::ProductiveOut1 => {
-                            state = productive_out1(state, &pitch_result);
+                            state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.away_active.batting_order
                                 [(state.batting_team2 - 2) as usize]
                                 .clone();
-                            state = productive_out2(state, &pitch_result, batter);
+                            state = productive_out2(state, &mss_result, batter);
                         }
                         AtBatResults::Out => {
-                            state = actual_out(state, &pitch_result);
+                            state = actual_out(state, &mss_result);
                         }
                         AtBatResults::MegaOut => {
                             state = mega_out(state);
@@ -614,15 +631,15 @@ pub fn modern_inning_flow<'a>(
                         pitch_mod = -1;
                     }
                     let control_mod = state.current_pitcher_team2.control();
-                    let mut pitch_result: i32;
+                    let pitch_result: i32;
                     if pd > 0 {
                         pitch_result = combined_roll(&mut debug, pd);
                     } else {
                         pitch_result = -1 * combined_roll(&mut debug, pd.abs());
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    pitch_result += combined_roll(&mut debug, 100);
-                    state.game_text += &format!("\nMSS: {}", &pitch_result);
+                    let mss_result = pitch_result + combined_roll(&mut debug, 100);
+                    state.game_text += &format!("\nMSS: {}", &mss_result);
                     let batter =
                         game.home_active.batting_order[state.batting_team1 as usize].clone();
                     let mut hit_mod: i32 = 0;
@@ -640,7 +657,8 @@ pub fn modern_inning_flow<'a>(
                     let swing_result = at_bat(
                         batter.batter_target + pitch_mod + hit_mod,
                         batter.on_base_target + control_mod + hit_mod,
-                        pitch_result,
+                        mss_result,
+                        game.oddity,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
                     if state.batting_team1 == 8 {
@@ -654,7 +672,7 @@ pub fn modern_inning_flow<'a>(
                             let oddity_result =
                                 combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
                             state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&oddity_result, &pitch_result, game, state);
+                            state = oddity(&mut debug, &oddity_result, &mss_result, game, state);
                         }
                         AtBatResults::CriticalHit => {
                             // make hit roll, bump up a level
@@ -686,20 +704,20 @@ pub fn modern_inning_flow<'a>(
                                 &mut debug,
                                 state,
                                 game,
-                                position_by_number(get_swing_position(&pitch_result)),
+                                position_by_number(get_swing_position(&mss_result)),
                             );
                         }
                         AtBatResults::ProductiveOut1 => {
-                            state = productive_out1(state, &pitch_result);
+                            state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.home_active.batting_order
                                 [(state.batting_team1 - 2) as usize]
                                 .clone();
-                            state = productive_out2(state, &pitch_result, batter);
+                            state = productive_out2(state, &mss_result, batter);
                         }
                         AtBatResults::Out => {
-                            state = actual_out(state, &pitch_result);
+                            state = actual_out(state, &mss_result);
                         }
                         AtBatResults::MegaOut => {
                             state = mega_out(state);
@@ -714,88 +732,119 @@ pub fn modern_inning_flow<'a>(
 
 /// rolls on the oddity table and updates game state
 pub fn oddity<'b>(
+    debug: &mut DebugConfig,
     oddity_result: &i32,
     pitch_result: &i32,
-    _game: &'b GameModern, // TODO: program oddities
+    game: &'b GameModern, // TODO: program oddities
     mut state: GameState,
 ) -> GameState {
+    let batter: Player;
+    let batting_order: &mut u32;
     match state.inning_half {
-        InningTB::Top => return state,
+        InningTB::Top => {
+            batter = game.away_active.batting_order[(state.batting_team2 - 1) as usize].clone();
+            batting_order = &mut state.batting_team2;
+        }
         InningTB::Bottom => {
-            if *oddity_result == 2 {
-                if pitch_result % 2 == 1 {
-                    // fan catches sure out, at bat continues
-                    //state.batting_team1 -= 1;
-                } else {
-                    // home run overturned, batter out
-                    state.outs = increment_out(state.outs, 1);
-                }
-                return state;
-            } else if *oddity_result == 3 {
-                // animal on the field
-                // animal function here
-                println!("{}", "Animal on the field!".bold().yellow());
-                return state;
-            } else if *oddity_result == 4 {
-                // rain delay
-                println!("{}", "Rain delay.".bold().cyan());
-                // rain delay function
-                return state;
-            } else if *oddity_result == 5 {
-                // player injured
-                // player injured function
-                return state;
-            } else if *oddity_result == 6 {
-                // pitcher appears injured
-                // player injured function
-                return state;
-            } else if *oddity_result == 7 {
-                // TOOTBLAN
-                return state;
-            } else if *oddity_result == 8 {
-                // pick off
-                return state;
-            } else if *oddity_result == 9 {
-                // call blown at first
-                return state;
-            } else if *oddity_result == 10 {
-                // call blown at home
-                return state;
-            } else if *oddity_result == 11 {
-                // hit by pitch
-                return state;
-            } else if *oddity_result == 12 {
-                // wild pitch
-                return state;
-            } else if *oddity_result == 13 {
-                // pitcher distracted
-                return state;
-            } else if *oddity_result == 14 {
-                // dropped third strike
-                return state;
-            } else if *oddity_result == 15 {
-                // passed ball
-                return state;
-            } else if *oddity_result == 16 {
-                // current batter appears injured
-                return state;
-            } else if *oddity_result == 17 {
-                // previous batter appears injured
-                return state;
-            } else if *oddity_result == 18 {
-                // pitcher error
-                return state;
-            } else if *oddity_result == 19 {
-                // balk
-                return state;
-            } else if *oddity_result == 20 {
-                // catcher interference
-                return state;
-            } else {
-                return state;
-            }
+            batter = game.home_active.batting_order[(state.batting_team1 - 1) as usize].clone();
+            batting_order = &mut state.batting_team1;
         }
     }
+    if *oddity_result == 2 {
+        if pitch_result % 2 == 1 {
+            // fan catches sure out, at bat continues
+            *batting_order -= 1;
+            state.game_text += "\nFan catches a sure out, at bat continues!";
+        } else {
+            // home run overturned, batter out
+            state.outs = increment_out(state.outs, 1);
+            state.game_text += "\nHome run overturned, batter is out.";
+        }
+    } else if *oddity_result == 3 {
+        // animal on the field
+        println!("{}", "Animal on the field!".bold().yellow());
+        let animal = animal(debug);
+        state.game_text += &format!("\n{:?} on the field!  [development]", animal);
+        *batting_order -= 1;
+    } else if *oddity_result == 4 {
+        // rain delay
+        println!("{}", "Rain delay.".bold().cyan());
+        let delay = roll(100) + roll(100);
+        state.game_text += &format!("\nRain delay for {} minutes.", delay);
+        *batting_order -= 1;
+    } else if *oddity_result == 5 {
+        // player injured
+        state.game_text += "\nPlayer injured!  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 6 {
+        // pitcher appears injured
+        state.game_text += "\nPitcher inured!  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 7 {
+        // TOOTBLAN
+        state.game_text += "\nTOOTBLAN [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 8 {
+        // pick off
+        state.game_text += "\nPick off!  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 9 {
+        // call blown at first
+        state.game_text += "\nCall blown at first [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 10 {
+        // call blown at home
+        state.game_text += "\nCall blown at home [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 11 {
+        // hit by pitch
+        state.game_text += "\nHit by pitch!";
+        state = force_advance(state, 1);
+        state = add_runner(state, &1, batter);
+    } else if *oddity_result == 12 {
+        // wild pitch
+        state.game_text += "\nWild pitch! [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 13 {
+        // pitcher distracted
+        state.game_text += "\nPitcher distracted.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 14 {
+        // dropped third strike
+        state.game_text += "\nDropped 3rd strike.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 15 {
+        // passed ball
+        state.game_text += "\nPassed ball.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 16 {
+        // current batter appears injured
+        state.game_text += "\nCurrent batter appears injured.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 17 {
+        // previous batter appears injured
+        state.game_text += "\nPrevious batter appears injured.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 18 {
+        // pitcher error
+        state.game_text += "\nPitcher error.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 19 {
+        // balk
+        state.game_text += "\nBalk!";
+        state = force_advance(state, 1);
+        state = add_runner(state, &1, batter);
+    } else if *oddity_result == 20 {
+        // catcher interference
+        *batting_order -= 1;
+        state.game_text += "\nCatcher interference.";
+        state = force_advance(state, 1);
+        state = add_runner(state, &1, batter);
+    } else {
+        state.game_text += "\nYou shouldn't get here (oddity roll > 20 somehow)";
+        *batting_order -= 1;
+    }
+    return state;
 }
 
 /// bumps hit roll up a level on the hit table
@@ -1479,8 +1528,8 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
 }
 
 /// function to get last digit of swing_result - used for determining which fielder makes the out
-pub fn get_swing_position(pitch_result: &i32) -> i32 {
-    let last_digit = *pitch_result % 10;
+pub fn get_swing_position(mss_result: &i32) -> i32 {
+    let last_digit = *mss_result % 10;
     return last_digit;
 }
 
@@ -1642,7 +1691,7 @@ fn possible_error(
 }
 
 /// handles ProductiveOut1 swing result
-fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
+fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner at first advances and batter is out
     match state.outs {
@@ -1652,7 +1701,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
         }
         _ => {
             state.game_text += "\nPossible productive out (type 1).";
-            let fielder = get_swing_position(pitch_result);
+            let fielder = get_swing_position(mss_result);
             if fielder == 3 || fielder >= 7 {
                 // check for runners on second and third
                 // advance if they exist
@@ -1750,7 +1799,7 @@ fn productive_out1(mut state: GameState, pitch_result: &i32) -> GameState {
 }
 
 /// handles ProductiveOut2 swing_results
-fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> GameState {
+fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> GameState {
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner is out and batter makes it to first
     // the first line is the same as ProductiveOut1
@@ -1766,7 +1815,7 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
         }
         _ => {
             state.game_text += "\nPossible producive out 2.";
-            let fielder = get_swing_position(pitch_result);
+            let fielder = get_swing_position(mss_result);
             if fielder == 3 || fielder >= 7 {
                 state.game_text += "\nBall hit to 1B or OF, runners at 2nd and 3rd advance.";
                 match state.runners {
@@ -1872,12 +1921,12 @@ fn productive_out2(mut state: GameState, pitch_result: &i32, batter: Player) -> 
 }
 
 /// process non-productive out swing results
-fn actual_out(mut state: GameState, pitch_result: &i32) -> GameState {
+fn actual_out(mut state: GameState, mss_result: &i32) -> GameState {
     state.game_text += "\nOut!";
     // runners at second and third cannot advance on a flyball
     // TODO: check if runner at first can advance
     // anywhere in the infield, runner at first and batter are out
-    let fielder = get_swing_position(pitch_result);
+    let fielder = get_swing_position(mss_result);
     if fielder >= 3 && fielder <= 6 {
         match state.outs {
             Outs::Three => {}
@@ -2388,15 +2437,15 @@ pub fn hit_and_run(
     if state.runners == RunnersOn::Runner111 {
         pd = change_pitch_die(pd, 1);
     }
-    let mut pitch_result: i32;
+    let pitch_result: i32;
     if pd > 0 {
         pitch_result = combined_roll(debug, pd);
     } else {
         pitch_result = -1 * combined_roll(debug, pd.abs());
     }
     state.game_text += &format!("\nPitch result: {}", &pitch_result);
-    pitch_result += combined_roll(debug, 100);
-    state.game_text += &format!("\nMSS: {}", &pitch_result);
+    let mss_result = pitch_result + combined_roll(debug, 100);
+    state.game_text += &format!("\nMSS: {}", &mss_result);
     let mut hit_bonus = 5;
     if batter.contact_hit() {
         hit_bonus = 10;
@@ -2407,7 +2456,8 @@ pub fn hit_and_run(
     let swing_result = at_bat(
         batter.batter_target + hit_bonus + pitch_mod,
         batter.on_base_target + control_mod + hit_bonus,
-        pitch_result,
+        mss_result,
+        game.oddity,
     );
     state.game_text += &format!(" -> {:?}", swing_result);
     match state.inning_half {
@@ -2427,7 +2477,7 @@ pub fn hit_and_run(
         }
     }
     let hnr: HitAndRun;
-    let out_type = get_swing_position(&pitch_result);
+    let out_type = get_swing_position(&mss_result);
     match swing_result {
         AtBatResults::Hit => hnr = HitAndRun::Hit,
         AtBatResults::Out => {
@@ -2541,5 +2591,168 @@ pub fn hit_and_run(
         }
     }
 
+    return state;
+}
+
+/// function to generate random animal on the field
+pub fn animal(debug: &mut DebugConfig) -> Animal {
+    let animal_result = combined_roll(debug, 4);
+    let animal: Animal;
+    if animal_result == 1 {
+        animal = Animal::Bird;
+    } else if animal_result == 2 {
+        animal = Animal::Rodent;
+    } else if animal_result == 3 {
+        animal = Animal::Cat;
+    } else {
+        animal = Animal::Streaker;
+    }
+    return animal;
+}
+
+/// advances only runners that are "forced", used for things like walks/balks/HBB
+pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
+    match state.runners {
+        RunnersOn::Runner000 => {}
+        RunnersOn::Runner100 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            }
+        }
+        RunnersOn::Runner010 => {
+            if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            }
+        }
+        RunnersOn::Runner001 => {
+            if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            }
+        }
+        RunnersOn::Runner110 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            }
+        }
+        RunnersOn::Runner101 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner011;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            }
+        }
+        RunnersOn::Runner011 => {
+            if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state.runner2 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            }
+        }
+        RunnersOn::Runner111 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            } else if advance == 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 3,
+                    InningTB::Bottom => state.runs_team1 += 3,
+                }
+            }
+        }
+    }
     return state;
 }

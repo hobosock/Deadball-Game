@@ -188,7 +188,7 @@ mod tests {
         let on_base_target = 40;
         let bat_target = 32;
         let pitch_result = 20;
-        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result);
+        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result, false);
         assert!(matches!(game_functions::AtBatResults::Hit, at_bat_result));
     }
 
@@ -197,7 +197,7 @@ mod tests {
         let on_base_target = 40;
         let bat_target = 32;
         let pitch_result = 78;
-        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result);
+        let at_bat_result = game_functions::at_bat(bat_target, on_base_target, pitch_result, false);
         assert!(matches!(game_functions::AtBatResults::Out, at_bat_result));
     }
 
@@ -619,7 +619,7 @@ mod tests {
             quirks: vec![Quirks::OddLeft],
         };
 
-        let test_result = create_modern_game(team1.clone(), team2.clone(), ballpark.clone());
+        let test_result = create_modern_game(team1.clone(), team2.clone(), ballpark.clone(), false);
         assert!(matches!(
             Err::<GameModern, core::game_functions::TeamError>(TeamError {
                 message: "Home team does not have a complete roster".to_string(),
@@ -640,7 +640,7 @@ mod tests {
             "test".to_string(),
         ];
 
-        let test_result2 = create_modern_game(team1, team2.clone(), ballpark);
+        let test_result2 = create_modern_game(team1, team2.clone(), ballpark, false);
         assert!(matches!(
             Err::<GameModern, core::game_functions::TeamError>(TeamError {
                 message: "Away team is not for the modern era".to_string(),
@@ -1138,7 +1138,7 @@ mod tests {
         let ballpark = load_park_modern(
             fs::read_to_string("src/testfiles/game/ballparks/Nightside Field.dbb").unwrap(),
         );
-        let game = create_modern_game(red_team, blue_team, ballpark).unwrap();
+        let game = create_modern_game(red_team, blue_team, ballpark, false).unwrap();
         let mut state = init_new_game_state(
             game.home_active.pitching[0].clone(),
             game.away_active.pitching[0].clone(),
@@ -1224,7 +1224,7 @@ mod tests {
         let ballpark = load_park_modern(
             fs::read_to_string("src/testfiles/game/ballparks/Nightside Field.dbb").unwrap(),
         );
-        let game = create_modern_game(red_team, blue_team, ballpark).unwrap();
+        let game = create_modern_game(red_team, blue_team, ballpark, false).unwrap();
         let mut state = init_new_game_state(
             game.home_active.pitching[0].clone(),
             game.away_active.pitching[0].clone(),
@@ -1289,7 +1289,7 @@ mod tests {
         let ballpark = load_park_modern(
             fs::read_to_string("src/testfiles/game/ballparks/Nightside Field.dbb").unwrap(),
         );
-        let game = create_modern_game(red_team, blue_team, ballpark).unwrap();
+        let game = create_modern_game(red_team, blue_team, ballpark, false).unwrap();
         let mut state = init_new_game_state(
             game.home_active.pitching[0].clone(),
             game.away_active.pitching[0].clone(),
