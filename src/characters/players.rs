@@ -90,7 +90,7 @@ pub enum InjurySeverity {
 }
 
 // this is used for team generation purposes, starting players get better stats, etc.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum PlayerClass {
     StartingHitter,
     PinchHitter,

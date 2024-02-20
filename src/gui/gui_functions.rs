@@ -6,7 +6,7 @@ use egui::{Align2, Direction, Pos2};
 
 use crate::{
     characters::{
-        players::{Player, Position},
+        players::{Player, PlayerClass, Position},
         teams::{ActiveTeam, Era},
     },
     core::game_functions::{find_by_position, RunnersOn},
@@ -52,6 +52,35 @@ impl Default for CreateTeamWindow {
             name: "".to_string(),
             location_override: false,
             location: "".to_string(),
+            save_location: "".to_string(),
+        }
+    }
+}
+
+/// state variables for the Create Player window
+pub struct CreatePlayerWindow {
+    pub is_visible: bool,
+    pub era: Era,
+    pub class: PlayerClass,
+    pub position: Position,
+    pub name_override: bool,
+    pub first_name: String,
+    pub nickname: String,
+    pub last_name: String,
+    pub save_location: String,
+}
+
+impl Default for CreatePlayerWindow {
+    fn default() -> Self {
+        Self {
+            is_visible: false,
+            era: Era::Modern,
+            class: PlayerClass::StartingHitter,
+            position: Position::Firstbase,
+            name_override: false,
+            first_name: "".to_string(),
+            nickname: "".to_string(),
+            last_name: "".to_string(),
             save_location: "".to_string(),
         }
     }
