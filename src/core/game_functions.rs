@@ -4,6 +4,7 @@ MODULE INCLUSIONS
 use text_colorizer::*;
 
 use crate::characters::{players::*, teams::*};
+use crate::core::roll;
 use crate::gui::debug::{combined_roll, DebugConfig};
 
 /*========================================================
@@ -720,90 +721,116 @@ pub fn oddity<'b>(
     debug: &mut DebugConfig,
     oddity_result: &i32,
     pitch_result: &i32,
-    _game: &'b GameModern, // TODO: program oddities
+    game: &'b GameModern, // TODO: program oddities
     mut state: GameState,
 ) -> GameState {
+    let batter: Player;
+    let batting_order: &mut u32;
     match state.inning_half {
-        InningTB::Top => return state,
+        InningTB::Top => {
+            batter = game.away_active.batting_order[(state.batting_team2 - 1) as usize].clone();
+            batting_order = &mut state.batting_team2;
+        }
         InningTB::Bottom => {
-            if *oddity_result == 2 {
-                if pitch_result % 2 == 1 {
-                    // fan catches sure out, at bat continues
-                    state.batting_team1 -= 1;
-                    state.game_text += "\nFan catches a sure out, at bat continues!";
-                } else {
-                    // home run overturned, batter out
-                    state.outs = increment_out(state.outs, 1);
-                    state.game_text += "\nHome run overturned, batter is out.";
-                }
-                return state;
-            } else if *oddity_result == 3 {
-                // animal on the field
-                // animal function here
-                println!("{}", "Animal on the field!".bold().yellow());
-                let animal = animal(debug);
-                state.game_text += &format!("\n{:?} on the field!  [more to come]", animal);
-                return state;
-            } else if *oddity_result == 4 {
-                // rain delay
-                println!("{}", "Rain delay.".bold().cyan());
-                // rain delay function
-                return state;
-            } else if *oddity_result == 5 {
-                // player injured
-                // player injured function
-                return state;
-            } else if *oddity_result == 6 {
-                // pitcher appears injured
-                // player injured function
-                return state;
-            } else if *oddity_result == 7 {
-                // TOOTBLAN
-                return state;
-            } else if *oddity_result == 8 {
-                // pick off
-                return state;
-            } else if *oddity_result == 9 {
-                // call blown at first
-                return state;
-            } else if *oddity_result == 10 {
-                // call blown at home
-                return state;
-            } else if *oddity_result == 11 {
-                // hit by pitch
-                return state;
-            } else if *oddity_result == 12 {
-                // wild pitch
-                return state;
-            } else if *oddity_result == 13 {
-                // pitcher distracted
-                return state;
-            } else if *oddity_result == 14 {
-                // dropped third strike
-                return state;
-            } else if *oddity_result == 15 {
-                // passed ball
-                return state;
-            } else if *oddity_result == 16 {
-                // current batter appears injured
-                return state;
-            } else if *oddity_result == 17 {
-                // previous batter appears injured
-                return state;
-            } else if *oddity_result == 18 {
-                // pitcher error
-                return state;
-            } else if *oddity_result == 19 {
-                // balk
-                return state;
-            } else if *oddity_result == 20 {
-                // catcher interference
-                return state;
-            } else {
-                return state;
-            }
+            batter = game.home_active.batting_order[(state.batting_team1 - 1) as usize].clone();
+            batting_order = &mut state.batting_team1;
         }
     }
+    if *oddity_result == 2 {
+        if pitch_result % 2 == 1 {
+            // fan catches sure out, at bat continues
+            *batting_order -= 1;
+            state.game_text += "\nFan catches a sure out, at bat continues!";
+        } else {
+            // home run overturned, batter out
+            state.outs = increment_out(state.outs, 1);
+            state.game_text += "\nHome run overturned, batter is out.";
+        }
+    } else if *oddity_result == 3 {
+        // animal on the field
+        println!("{}", "Animal on the field!".bold().yellow());
+        let animal = animal(debug);
+        state.game_text += &format!("\n{:?} on the field!  [development]", animal);
+        *batting_order -= 1;
+    } else if *oddity_result == 4 {
+        // rain delay
+        println!("{}", "Rain delay.".bold().cyan());
+        let delay = roll(100) + roll(100);
+        state.game_text += &format!("\nRain delay for {} minutes.", delay);
+        *batting_order -= 1;
+    } else if *oddity_result == 5 {
+        // player injured
+        state.game_text += "\nPlayer injured!  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 6 {
+        // pitcher appears injured
+        state.game_text += "\nPitcher inured!  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 7 {
+        // TOOTBLAN
+        state.game_text += "\nTOOTBLAN [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 8 {
+        // pick off
+        state.game_text += "\nPick off!  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 9 {
+        // call blown at first
+        state.game_text += "\nCall blown at first [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 10 {
+        // call blown at home
+        state.game_text += "\nCall blown at home [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 11 {
+        // hit by pitch
+        state.game_text += "\nHit by pitch!";
+        state = force_advance(state, 1);
+        state = add_runner(state, &1, batter);
+    } else if *oddity_result == 12 {
+        // wild pitch
+        state.game_text += "\nWild pitch! [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 13 {
+        // pitcher distracted
+        state.game_text += "\nPitcher distracted.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 14 {
+        // dropped third strike
+        state.game_text += "\nDropped 3rd strike.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 15 {
+        // passed ball
+        state.game_text += "\nPassed ball.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 16 {
+        // current batter appears injured
+        state.game_text += "\nCurrent batter appears injured.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 17 {
+        // previous batter appears injured
+        state.game_text += "\nPrevious batter appears injured.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 18 {
+        // pitcher error
+        state.game_text += "\nPitcher error.  [development]";
+        *batting_order -= 1;
+    } else if *oddity_result == 19 {
+        // balk
+        state.game_text += "\nBalk!";
+        state = force_advance(state, 1);
+        state = add_runner(state, &1, batter);
+    } else if *oddity_result == 20 {
+        // catcher interference
+        *batting_order -= 1;
+        state.game_text += "\nCatcher interference.";
+        state = force_advance(state, 1);
+        state = add_runner(state, &1, batter);
+    } else {
+        state.game_text += "\nYou shouldn't get here (oddity roll > 20 somehow)";
+        *batting_order -= 1;
+    }
+    return state;
 }
 
 /// bumps hit roll up a level on the hit table
@@ -2566,4 +2593,151 @@ pub fn animal(debug: &mut DebugConfig) -> Animal {
         animal = Animal::Streaker;
     }
     return animal;
+}
+
+/// advances only runners that are "forced", used for things like walks/balks/HBB
+pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
+    match state.runners {
+        RunnersOn::Runner000 => {}
+        RunnersOn::Runner100 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner010;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            }
+        }
+        RunnersOn::Runner010 => {
+            if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            }
+        }
+        RunnersOn::Runner001 => {
+            if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            }
+        }
+        RunnersOn::Runner110 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            }
+        }
+        RunnersOn::Runner101 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner011;
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            }
+        }
+        RunnersOn::Runner011 => {
+            if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance >= 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state.runner2 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            }
+        }
+        RunnersOn::Runner111 => {
+            if advance == 1 {
+                state.runners = RunnersOn::Runner011;
+                state.runner3 = state.runner2.clone();
+                state.runner2 = state.runner1.clone();
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 1,
+                    InningTB::Bottom => state.runs_team1 += 1,
+                }
+            } else if advance == 2 {
+                state.runners = RunnersOn::Runner001;
+                state.runner3 = state.runner1.clone();
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 2,
+                    InningTB::Bottom => state.runs_team1 += 2,
+                }
+            } else if advance == 3 {
+                state.runners = RunnersOn::Runner000;
+                state.runner3 = None;
+                state.runner2 = None;
+                state.runner1 = None;
+                match state.inning_half {
+                    InningTB::Top => state.runs_team2 += 3,
+                    InningTB::Bottom => state.runs_team1 += 3,
+                }
+            }
+        }
+    }
+    return state;
 }
