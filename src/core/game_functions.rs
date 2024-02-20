@@ -160,6 +160,7 @@ pub struct GameModern {
     pub home_active: ActiveTeam,
     pub away_active: ActiveTeam,
     pub ballpark: BallparkModern,
+    pub oddity: bool, // enables oddity roll (option rule)
 }
 
 #[derive(Debug, Clone)]
@@ -232,6 +233,7 @@ pub fn create_modern_game<'a>(
     home: Team,
     away: Team,
     ballpark: BallparkModern,
+    oddity: bool,
 ) -> Result<GameModern, TeamError> {
     // check teams and park for complete information
     if home.roster.len() < 8 {
@@ -403,6 +405,7 @@ pub fn create_modern_game<'a>(
         ballpark: ballpark,
         home_active: home_active,
         away_active: away_active,
+        oddity: oddity,
     };
     return Ok(game);
 }

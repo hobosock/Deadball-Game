@@ -103,6 +103,7 @@ pub struct DeadballApp<'a> {
     home_team_file_dialog: Option<FileDialog>,
     ballpark_file: Option<PathBuf>,
     ballpark_file_dialog: Option<FileDialog>,
+    oddity: bool,
     create_game_error: String,
     // game data
     away_team: Option<Team>,
@@ -196,6 +197,7 @@ impl<'a> Default for DeadballApp<'_> {
             home_team_file_dialog: None,
             ballpark_file: None,
             ballpark_file_dialog: None,
+            oddity: false,
             create_game_error: "".to_owned(),
             away_team: None,
             away_team_active: None,
@@ -1337,6 +1339,7 @@ fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toast
                                 app.home_team.clone().unwrap(),
                                 app.away_team.clone().unwrap(),
                                 app.ballpark_modern.clone().unwrap(),
+                                app.oddity,
                             ) {
                                 Ok(game) => {
                                     app.game_modern = Some(game);
