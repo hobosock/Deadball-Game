@@ -968,8 +968,8 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
 pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> String {
     let len1 = name1.len();
     let len2 = name2.len();
-    let roll1 = roll(len1 as i32);
-    let roll2 = roll(len2 as i32);
+    let roll1 = roll(len1 as i32) - 1; // NOTE: -1 for array indexing
+    let roll2 = roll(len2 as i32) - 1;
     let part1 = name1[roll1 as usize].clone();
     let part2 = name2[roll2 as usize].clone();
     let name = part1 + " " + &part2;
@@ -986,7 +986,7 @@ pub fn generate_manager(firstnames: &Vec<String>, lastnames: &Vec<String>) -> St
 /// generate logo
 pub fn generate_logo(logos: &Vec<String>) -> String {
     let len1 = logos.len();
-    let roll1 = roll(len1 as i32);
+    let roll1 = roll(len1 as i32) - 1;
     let logo = logos[roll1 as usize].clone();
     return logo;
 }
@@ -1022,7 +1022,7 @@ pub fn generate_location(locations: Vec<String>) -> String {
 /// generate mascot
 pub fn generate_mascot(mascots: &Vec<String>) -> String {
     let len1 = mascots.len();
-    let roll1 = roll(len1 as i32);
+    let roll1 = roll(len1 as i32) - 1;
     let mascot = mascots[roll1 as usize].clone();
     return mascot;
 }
@@ -1149,7 +1149,7 @@ pub fn generate_retired() -> i32 {
 /// generate personality
 pub fn generate_personality(personalities: &Vec<String>) -> String {
     let len1 = personalities.len();
-    let result = roll(len1 as i32);
+    let result = roll(len1 as i32) - 1;
     let personality = personalities[result as usize].clone();
     return personality;
 }
@@ -1209,7 +1209,7 @@ pub fn generate_personality() -> Personality {
 /// generate motto???
 pub fn generate_motto(mottos: &Vec<String>) -> String {
     let len1 = mottos.len();
-    let roll1 = roll(len1 as i32);
+    let roll1 = roll(len1 as i32) - 1;
     let motto = mottos[roll1 as usize].clone();
     return motto;
 }
@@ -1217,7 +1217,7 @@ pub fn generate_motto(mottos: &Vec<String>) -> String {
 /// generate owner background
 pub fn generate_background(backgrounds: &Vec<String>) -> String {
     let len1 = backgrounds.len();
-    let roll1 = roll(len1 as i32);
+    let roll1 = roll(len1 as i32) - 1;
     let background = backgrounds[roll1 as usize].clone();
     return background;
 }

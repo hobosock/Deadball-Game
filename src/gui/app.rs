@@ -5,7 +5,9 @@
 use crate::characters::{players::*, teams::*};
 use crate::core::file_locations::{load_databases, DeadballDatabases};
 //use deadball::core::file_locations::*;
-use super::gui_functions::{batter_tooltip, CreateTeamWindow, ToastData};
+use super::gui_functions::{
+    batter_tooltip, CreateBallparkWindow, CreatePlayerWindow, CreateTeamWindow, ToastData,
+};
 use crate::core::game_functions::{
     bunt, create_modern_game, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
     new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
@@ -155,6 +157,8 @@ pub struct DeadballApp<'a> {
     debug_roll_text: String,
     toast_options: ToastData,
     create_team: CreateTeamWindow,
+    create_player: CreatePlayerWindow,
+    create_ballpark: CreateBallparkWindow,
     databases: DeadballDatabases,
 }
 
@@ -246,6 +250,8 @@ impl<'a> Default for DeadballApp<'_> {
             debug_roll_text: "0".to_string(),
             toast_options: ToastData::default(),
             create_team: CreateTeamWindow::default(),
+            create_player: CreatePlayerWindow::default(),
+            create_ballpark: CreateBallparkWindow::default(),
             databases: DeadballDatabases::default(),
         }
     }
@@ -275,6 +281,8 @@ impl<'a> eframe::App for DeadballApp<'_> {
         draw_debug_roll_window(ctx, self);
         draw_console_window(ctx, self);
         draw_create_team_window(ctx, self, &mut toasts);
+        draw_create_player_window(ctx, self, &mut toasts);
+        draw_create_ballpark_window(ctx, self, &mut toasts);
 
         // main window
         draw_bottom_panel(ctx, self, &mut toasts);
@@ -1466,28 +1474,16 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                         // create/edit/find players
                         if ui.button("Create New Player").clicked() {
                             // TODO: player creation window - after figuring out file structure
-                            toasts.add(Toast {
-                                kind: ToastKind::Info,
-                                text: "Feature in Development".into(),
-                                options: ToastOptions::default()
-                                    .duration_in_seconds(3.0)
-                                    .show_progress(true)
-                                    .show_icon(true),
-                            });
+                            app.create_player.is_visible = true;
+                            ui.close_menu();
                         }
                     });
                     ui.menu_button("Ballparks", |ui| {
                         // create/edit/find ballparks
                         if ui.button("Create New Ballpark").clicked() {
                             // TODO: ballpark creation window - after figuring out file structure
-                            toasts.add(Toast {
-                                kind: ToastKind::Info,
-                                text: "Feature in Development".into(),
-                                options: ToastOptions::default()
-                                    .duration_in_seconds(3.0)
-                                    .show_progress(true)
-                                    .show_icon(true),
-                            });
+                            app.create_ballpark.is_visible = true;
+                            ui.close_menu();
                         }
                     });
                 });
@@ -2304,6 +2300,170 @@ fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut To
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
                                 .show_icon(true),
+                        });
+                    }
+                }
+            }
+        });
+}
+
+/// draws and handles logic for "Create Player" Window
+fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Create New Player")
+        .open(&mut app.create_player.is_visible)
+        .show(ctx, |ui| {
+            ui.heading("New Player");
+            // TODO: add Era selector
+            ui.horizontal(|ui| {
+                ui.label("First Name:");
+                ui.text_edit_singleline(&mut app.create_player.first_name);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Nickname:");
+                ui.text_edit_singleline(&mut app.create_player.nickname);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Last Name:");
+                ui.text_edit_singleline(&mut app.create_player.last_name);
+                ui.checkbox(&mut app.create_player.name_override, "override")
+                    .on_hover_text("will generate random name if unchecked");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Class:");
+                ui.selectable_value(
+                    &mut app.create_player.class,
+                    PlayerClass::StartingHitter,
+                    "Batter",
+                );
+                ui.selectable_value(
+                    &mut app.create_player.class,
+                    PlayerClass::Pitchers,
+                    "Pitcher",
+                );
+                ui.selectable_value(
+                    &mut app.create_player.class,
+                    PlayerClass::PinchHitter,
+                    "Bench",
+                );
+            });
+            egui::ComboBox::from_label("Position")
+                .selected_text(format!("{:?}", &app.create_player.position))
+                .show_ui(ui, |ui| {
+                    ui.selectable_value(&mut app.create_player.position, Position::Firstbase, "1B");
+                    ui.selectable_value(
+                        &mut app.create_player.position,
+                        Position::Secondbase,
+                        "2B",
+                    );
+                    ui.selectable_value(&mut app.create_player.position, Position::Shortstop, "SS");
+                    ui.selectable_value(&mut app.create_player.position, Position::Thirdbase, "3B");
+                    ui.selectable_value(&mut app.create_player.position, Position::Catcher, "C");
+                    ui.selectable_value(&mut app.create_player.position, Position::Pitcher, "P");
+                    ui.selectable_value(
+                        &mut app.create_player.position,
+                        Position::Rightfield,
+                        "RF",
+                    );
+                    ui.selectable_value(
+                        &mut app.create_player.position,
+                        Position::Centerfield,
+                        "CF",
+                    );
+                    ui.selectable_value(&mut app.create_player.position, Position::Leftfield, "LF");
+                });
+            ui.horizontal(|ui| {
+                ui.label("Save location:");
+                ui.text_edit_singleline(&mut app.create_player.save_location);
+            });
+            if ui.button("Create").clicked() {
+                // TODO: need to handle nicknames
+                let player: Player;
+                if app.create_player.name_override {
+                    player = generate_player(
+                        app.create_player.class.clone(),
+                        app.create_player.position.clone(),
+                        &vec![app.create_player.first_name.clone()],
+                        &vec![app.create_player.last_name.clone()],
+                    );
+                } else {
+                    player = generate_player(
+                        app.create_player.class.clone(),
+                        app.create_player.position.clone(),
+                        &app.databases.first_names,
+                        &app.databases.last_names,
+                    );
+                }
+                match write_player(&player, &app.create_player.save_location) {
+                    Ok(()) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Player created!".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
+                    }
+                    Err(e) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: format!("Create failed: {}", e).into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
+                    }
+                }
+            }
+        });
+}
+
+/// draws and handles logic for "Create Ballpark" window
+fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Create New Ballpark")
+        .open(&mut app.create_ballpark.is_visible)
+        .show(ctx, |ui| {
+            ui.heading("New Ballpark");
+            // TODO: add Era selector
+            ui.horizontal(|ui| {
+                ui.label("Name:");
+                ui.text_edit_singleline(&mut app.create_ballpark.name);
+                ui.checkbox(&mut app.create_ballpark.name_override, "override")
+                    .on_hover_text("will generate random name if unchecked");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Save location:");
+                ui.text_edit_singleline(&mut app.create_ballpark.save_location);
+            });
+            if ui.button("Create").clicked() {
+                let ballpark: BallparkModern;
+                if app.create_ballpark.name_override {
+                    ballpark = generate_modern_ballpark(
+                        &vec![app.create_ballpark.name.clone()],
+                        &vec!["".to_string()],
+                    );
+                } else {
+                    ballpark = generate_modern_ballpark(&app.databases.park1, &app.databases.park2);
+                }
+                match write_ballpark_modern(&ballpark, &app.create_ballpark.save_location) {
+                    Ok(()) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Ballpark created".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
+                    }
+                    Err(e) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Error,
+                            text: format!("Create failed: {}", e).into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true),
                         });
                     }
                 }
