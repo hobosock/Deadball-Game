@@ -86,6 +86,26 @@ impl Default for CreatePlayerWindow {
     }
 }
 
+pub struct CreateBallparkWindow {
+    pub is_visible: bool,
+    pub era: Era,
+    pub name_override: bool,
+    pub name: String,
+    pub save_location: String,
+}
+
+impl Default for CreateBallparkWindow {
+    fn default() -> Self {
+        Self {
+            is_visible: false,
+            era: Era::Modern,
+            name_override: false,
+            name: "".to_string(),
+            save_location: "".to_string(),
+        }
+    }
+}
+
 /*========================================================
 FUNCTION DEFINITIONS
 ========================================================*/

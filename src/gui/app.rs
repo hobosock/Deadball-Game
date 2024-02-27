@@ -5,7 +5,9 @@
 use crate::characters::{players::*, teams::*};
 use crate::core::file_locations::{load_databases, DeadballDatabases};
 //use deadball::core::file_locations::*;
-use super::gui_functions::{batter_tooltip, CreatePlayerWindow, CreateTeamWindow, ToastData};
+use super::gui_functions::{
+    batter_tooltip, CreateBallparkWindow, CreatePlayerWindow, CreateTeamWindow, ToastData,
+};
 use crate::core::game_functions::{
     bunt, create_modern_game, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
     new_game_state_struct, process_steals, GameModern, GameState, GameStatus, InningTB, Outs,
@@ -156,6 +158,7 @@ pub struct DeadballApp<'a> {
     toast_options: ToastData,
     create_team: CreateTeamWindow,
     create_player: CreatePlayerWindow,
+    create_ballpark: CreateBallparkWindow,
     databases: DeadballDatabases,
 }
 
@@ -248,6 +251,7 @@ impl<'a> Default for DeadballApp<'_> {
             toast_options: ToastData::default(),
             create_team: CreateTeamWindow::default(),
             create_player: CreatePlayerWindow::default(),
+            create_ballpark: CreateBallparkWindow::default(),
             databases: DeadballDatabases::default(),
         }
     }
@@ -278,6 +282,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
         draw_console_window(ctx, self);
         draw_create_team_window(ctx, self, &mut toasts);
         draw_create_player_window(ctx, self, &mut toasts);
+        draw_create_ballpark_window(ctx, self, &mut toasts);
 
         // main window
         draw_bottom_panel(ctx, self, &mut toasts);
@@ -1477,14 +1482,8 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                         // create/edit/find ballparks
                         if ui.button("Create New Ballpark").clicked() {
                             // TODO: ballpark creation window - after figuring out file structure
-                            toasts.add(Toast {
-                                kind: ToastKind::Info,
-                                text: "Feature in Development".into(),
-                                options: ToastOptions::default()
-                                    .duration_in_seconds(3.0)
-                                    .show_progress(true)
-                                    .show_icon(true),
-                            });
+                            app.create_ballpark.is_visible = true;
+                            ui.close_menu();
                         }
                     });
                 });
@@ -2413,6 +2412,58 @@ fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
                                 .show_icon(true),
+                        });
+                    }
+                }
+            }
+        });
+}
+
+/// draws and handles logic for "Create Ballpark" window
+fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Create New Ballpark")
+        .open(&mut app.create_ballpark.is_visible)
+        .show(ctx, |ui| {
+            ui.heading("New Ballpark");
+            // TODO: add Era selector
+            ui.horizontal(|ui| {
+                ui.label("Name:");
+                ui.text_edit_singleline(&mut app.create_ballpark.name);
+                ui.checkbox(&mut app.create_ballpark.name_override, "override")
+                    .on_hover_text("will generate random name if unchecked");
+            });
+            ui.horizontal(|ui| {
+                ui.label("Save location:");
+                ui.text_edit_singleline(&mut app.create_ballpark.save_location);
+            });
+            if ui.button("Create").clicked() {
+                let ballpark: BallparkModern;
+                if app.create_ballpark.name_override {
+                    ballpark = generate_modern_ballpark(
+                        &vec![app.create_ballpark.name.clone()],
+                        &vec!["".to_string()],
+                    );
+                } else {
+                    ballpark = generate_modern_ballpark(&app.databases.park1, &app.databases.park2);
+                }
+                match write_ballpark_modern(&ballpark, &app.create_ballpark.save_location) {
+                    Ok(()) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Info,
+                            text: "Ballpark created".into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true)
+                                .show_icon(true),
+                        });
+                    }
+                    Err(e) => {
+                        toasts.add(Toast {
+                            kind: ToastKind::Error,
+                            text: format!("Create failed: {}", e).into(),
+                            options: ToastOptions::default()
+                                .duration_in_seconds(3.0)
+                                .show_progress(true),
                         });
                     }
                 }
