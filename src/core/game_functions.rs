@@ -508,10 +508,17 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
+                    let batter =
+                        game.away_active.batting_order[state.batting_team2 as usize].clone();
                     let mut pd = state.current_pitcher_team1.pitch_die;
                     // NOTE: special rules for GB+
                     if state.runners == RunnersOn::Runner111 {
                         pd = change_pitch_die(pd, 1);
+                    }
+                    // NOTE: handedness check
+                    if state.current_pitcher_team1.handedness == batter.handedness {
+                        pd = change_pitch_die(pd, 1);
+                        // TODO: make distinction between starting pitcher and reliever
                     }
                     let mut pitch_mod: i32 = 0;
                     if state.current_pitcher_team1.strikeout() {
@@ -526,8 +533,6 @@ pub fn modern_inning_flow<'a>(
                     }
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
                     let mss_result = pitch_result + combined_roll(&mut debug, 100);
-                    let batter =
-                        game.away_active.batting_order[state.batting_team2 as usize].clone();
                     let mut hit_mod: i32 = 0;
                     if batter.free_swing() {
                         match state.runners {
@@ -621,10 +626,17 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
+                    let batter =
+                        game.home_active.batting_order[state.batting_team1 as usize].clone();
                     let mut pd = state.current_pitcher_team2.pitch_die;
                     // NOTE: special rules for GB+
                     if state.runners == RunnersOn::Runner111 {
                         pd = change_pitch_die(pd, 1);
+                    }
+                    // NOTE: handedness check
+                    if state.current_pitcher_team2.handedness == batter.handedness {
+                        pd = change_pitch_die(pd, 1);
+                        // TODO: make distinction between starting pitcher and reliever
                     }
                     let mut pitch_mod = 0;
                     if state.current_pitcher_team2.strikeout() {
@@ -640,8 +652,6 @@ pub fn modern_inning_flow<'a>(
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
                     let mss_result = pitch_result + combined_roll(&mut debug, 100);
                     state.game_text += &format!("\nMSS: {}", &mss_result);
-                    let batter =
-                        game.home_active.batting_order[state.batting_team1 as usize].clone();
                     let mut hit_mod: i32 = 0;
                     if batter.free_swing() {
                         match state.runners {
@@ -2436,6 +2446,11 @@ pub fn hit_and_run(
     // NOTE: special rules for GB+
     if state.runners == RunnersOn::Runner111 {
         pd = change_pitch_die(pd, 1);
+    }
+    // NOTE: handedness check
+    if state.current_pitcher_team2.handedness == batter.handedness {
+        pd = change_pitch_die(pd, 1);
+        // TODO: make distinction between starting pitcher and reliever
     }
     let pitch_result: i32;
     if pd > 0 {

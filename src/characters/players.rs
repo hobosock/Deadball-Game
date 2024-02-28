@@ -29,7 +29,7 @@ pub enum Position {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Handedness {
     Right,
     Left,
