@@ -3,12 +3,13 @@ use crate::characters::ballparks::{BallparkAncient, BallparkModern};
  * IMPORTS
  * ===========================================================================================*/
 // LOCAL IMPORTS
+use super::draw_fn::*;
 use crate::characters::{players::*, teams::*};
 use crate::core::file_locations::{load_databases, DeadballDatabases};
-use super::draw_fn::*;
 //use deadball::core::file_locations::*;
 use super::gui_functions::{
-    batter_tooltip, update_debug_textedits, CreateBallparkWindow, CreatePlayerWindow, CreateTeamWindow, ToastData
+    batter_tooltip, update_debug_textedits, CreateBallparkWindow, CreatePlayerWindow,
+    CreateTeamWindow, ToastData,
 };
 use crate::core::game_functions::{
     bunt, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
@@ -64,8 +65,8 @@ enum Panel {
 /*==============================================================================================
  * STRUCTS
  * ===========================================================================================*/
-pub struct DeadballApp<'a> {
-    // score information
+/// info for GUI scoreboard display
+pub struct Score {
     pub current_inning: String,
     pub current_outs: String,
     pub away_hits: String,
@@ -74,9 +75,40 @@ pub struct DeadballApp<'a> {
     pub home_hits: String,
     pub home_errors: String,
     pub home_runs: String,
-    // ballfield interface
+}
+
+impl Default for Score {
+    fn default() -> Self {
+        Self {
+            current_inning: "1^".to_string(),
+            current_outs: "0".to_string(),
+            away_hits: "0".to_string(),
+            away_errors: "0".to_string(),
+            away_runs: "0".to_string(),
+            home_hits: "0".to_string(),
+            home_errors: "0".to_string(),
+            home_runs: "0".to_string(),
+        }
+    }
+}
+
+/// images for GUI
+pub struct GuiImages<'a> {
     pub diamond_image: Image<'a>,
     pub helmet_image: Image<'a>,
+}
+
+impl Default for GuiImages<'_> {
+    fn default() -> Self {
+        Self {
+            diamond_image: Image::new(egui::include_image!("images/baseball_diamond.png")),
+            helmet_image: Image::new(egui::include_image!("images/helmet.png")),
+        }
+    }
+}
+
+/// labels for baseball diamond
+pub struct DiamondLabels {
     pub pitcher_label: String,
     pub catcher_label: String,
     pub firstbase_label: String,
@@ -86,12 +118,25 @@ pub struct DeadballApp<'a> {
     pub rightfield_label: String,
     pub centerfield_label: String,
     pub leftfield_label: String,
-    // batting order interface
-    pub away_team_name: String,
-    pub home_team_name: String,
-    // menu/controls interface
-    bottom_panel: Panel,
-    // tracking for other windows
+}
+
+impl Default for DiamondLabels {
+    fn default() -> Self {
+        Self {
+            pitcher_label: "P: Seth Loveall".to_string(),
+            catcher_label: "C: Seth Loveall".to_string(),
+            firstbase_label: "1B: Seth Loveall".to_string(),
+            secondbase_label: "2B: Seth Loveall".to_string(),
+            shortstop_label: "SS: Seth Loveall".to_string(),
+            thirdbase_label: "3B: Seth Loveall".to_string(),
+            rightfield_label: "RF: Seth Loveall".to_string(),
+            centerfield_label: "CF: Seth Loveall".to_string(),
+            leftfield_label: "LF: Seth Loveall".to_string(),
+        }
+    }
+}
+
+pub struct GuiWindows {
     pub version_window: bool,
     pub about_deadball_window: bool,
     pub about_app_window: bool,
@@ -99,6 +144,83 @@ pub struct DeadballApp<'a> {
     pub debug_window: bool,
     pub debug_roll_window: bool,
     pub console_window: bool,
+}
+
+impl Default for GuiWindows {
+    fn default() -> Self {
+        Self {
+            version_window: false,
+            about_deadball_window: false,
+            about_app_window: false,
+            create_game_window: false,
+            debug_window: false,
+            debug_roll_window: false,
+            console_window: true,
+        }
+    }
+}
+
+pub struct DebugSettings {
+    pub debug_copied: bool, // copy game state to debug state first time window is opened
+    pub debug_state: GameState,
+    pub debug_game_state_text: String,
+    pub debug_inning_text: String,
+    pub debug_inning_half_text: String,
+    pub debug_outs_text: String,
+    pub debug_runners_text: String,
+    pub debug_batting1_text: String,
+    pub debug_batting2_text: String,
+    pub debug_pitched1_text: String,
+    pub debug_pitched2_text: String,
+    pub debug_runs1_text: String,
+    pub debug_runs2_text: String,
+    pub debug_hits1_text: String,
+    pub debug_hits2_text: String,
+    pub debug_errors1_text: String,
+    pub debug_errors2_text: String,
+    pub debug_roll_state: DebugConfig,
+    pub debug_roll_text: String,
+}
+
+impl Default for DebugSettings {
+    fn default() -> Self {
+        Self {
+            debug_copied: false,
+            debug_state: new_game_state_struct(),
+            debug_game_state_text: "Not Started".to_string(),
+            debug_inning_text: "1".to_string(),
+            debug_inning_half_text: "^".to_string(),
+            debug_outs_text: "None".to_string(),
+            debug_runners_text: "000".to_string(),
+            debug_batting1_text: "1".to_string(),
+            debug_batting2_text: "1".to_string(),
+            debug_pitched1_text: "0".to_string(),
+            debug_pitched2_text: "0".to_string(),
+            debug_runs1_text: "0".to_string(),
+            debug_runs2_text: "0".to_string(),
+            debug_hits1_text: "0".to_string(),
+            debug_hits2_text: "0".to_string(),
+            debug_errors1_text: "0".to_string(),
+            debug_errors2_text: "0".to_string(),
+            debug_roll_state: DebugConfig::default(),
+            debug_roll_text: "0".to_string(),
+        }
+    }
+}
+
+pub struct DeadballApp<'a> {
+    // score information
+    pub score: Score,
+    // ballfield interface
+    pub gui_images: GuiImages<'a>,
+    pub diamond_labels: DiamondLabels,
+    // batting order interface
+    pub away_team_name: String,
+    pub home_team_name: String,
+    // menu/controls interface
+    bottom_panel: Panel,
+    // tracking for other windows
+    pub gui_windows: GuiWindows,
     // create game interface
     pub create_game_era: Era,
     pub away_team_file: Option<PathBuf>,
@@ -138,25 +260,7 @@ pub struct DeadballApp<'a> {
     pub game_state: Option<GameState>,
     // TODO: add ancient game
     // debug settings
-    pub debug_copied: bool, // copy game state to debug state first time window is opened
-    pub debug_state: GameState,
-    pub debug_game_state_text: String,
-    pub debug_inning_text: String,
-    pub debug_inning_half_text: String,
-    pub debug_outs_text: String,
-    pub debug_runners_text: String,
-    pub debug_batting1_text: String,
-    pub debug_batting2_text: String,
-    pub debug_pitched1_text: String,
-    pub debug_pitched2_text: String,
-    pub debug_runs1_text: String,
-    pub debug_runs2_text: String,
-    pub debug_hits1_text: String,
-    pub debug_hits2_text: String,
-    pub debug_errors1_text: String,
-    pub debug_errors2_text: String,
-    pub debug_roll_state: DebugConfig,
-    pub debug_roll_text: String,
+    pub debug_settings: DebugSettings,
     pub toast_options: ToastData,
     pub create_team: CreateTeamWindow,
     pub create_player: CreatePlayerWindow,
@@ -167,35 +271,13 @@ pub struct DeadballApp<'a> {
 impl<'a> Default for DeadballApp<'_> {
     fn default() -> Self {
         Self {
-            current_inning: "1^".to_string(),
-            current_outs: "0".to_string(),
-            away_hits: "0".to_string(),
-            away_errors: "0".to_string(),
-            away_runs: "0".to_string(),
-            home_hits: "0".to_string(),
-            home_errors: "0".to_string(),
-            home_runs: "0".to_string(),
-            diamond_image: Image::new(egui::include_image!("images/baseball_diamond.png")),
-            helmet_image: Image::new(egui::include_image!("images/helmet.png")),
-            pitcher_label: "P: Seth Loveall".to_string(),
-            catcher_label: "C: Seth Loveall".to_string(),
-            firstbase_label: "1B: Seth Loveall".to_string(),
-            secondbase_label: "2B: Seth Loveall".to_string(),
-            shortstop_label: "SS: Seth Loveall".to_string(),
-            thirdbase_label: "3B: Seth Loveall".to_string(),
-            rightfield_label: "RF: Seth Loveall".to_string(),
-            centerfield_label: "CF: Seth Loveall".to_string(),
-            leftfield_label: "LF: Seth Loveall".to_string(),
+            score: Score::default(),
+            gui_images: GuiImages::default(),
+            diamond_labels: DiamondLabels::default(),
             away_team_name: "Away Team".to_owned(),
             home_team_name: "Home Team".to_owned(),
             bottom_panel: Panel::Menu,
-            version_window: false,
-            about_deadball_window: false,
-            about_app_window: false,
-            create_game_window: false,
-            debug_window: false,
-            debug_roll_window: false,
-            console_window: false,
+            gui_windows: GuiWindows::default(),
             create_game_era: Era::None,
             away_team_file: None,
             away_team_file_dialog: None,
@@ -231,25 +313,7 @@ impl<'a> Default for DeadballApp<'_> {
             ballpark_ancient: None,
             game_modern: None,
             game_state: None,
-            debug_copied: false,
-            debug_state: new_game_state_struct(),
-            debug_game_state_text: "Not Started".to_string(),
-            debug_inning_text: "1".to_string(),
-            debug_inning_half_text: "^".to_string(),
-            debug_outs_text: "None".to_string(),
-            debug_runners_text: "000".to_string(),
-            debug_batting1_text: "1".to_string(),
-            debug_batting2_text: "1".to_string(),
-            debug_pitched1_text: "0".to_string(),
-            debug_pitched2_text: "0".to_string(),
-            debug_runs1_text: "0".to_string(),
-            debug_runs2_text: "0".to_string(),
-            debug_hits1_text: "0".to_string(),
-            debug_hits2_text: "0".to_string(),
-            debug_errors1_text: "0".to_string(),
-            debug_errors2_text: "0".to_string(),
-            debug_roll_state: DebugConfig::default(),
-            debug_roll_text: "0".to_string(),
+            debug_settings: DebugSettings::default(),
             toast_options: ToastData::default(),
             create_team: CreateTeamWindow::default(),
             create_player: CreatePlayerWindow::default(),
@@ -302,10 +366,10 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     InningTB::Top => inning_top_bottom = "^",
                     InningTB::Bottom => inning_top_bottom = "v",
                 }
-                self.current_inning = inning_number + inning_top_bottom;
-                self.away_hits = self.game_state.as_ref().unwrap().hits_team2.to_string();
-                self.away_errors = self.game_state.as_ref().unwrap().errors_team2.to_string();
-                self.away_runs = self.game_state.as_ref().unwrap().runs_team2.to_string();
+                self.score.current_inning = inning_number + inning_top_bottom;
+                self.score.away_hits = self.game_state.as_ref().unwrap().hits_team2.to_string();
+                self.score.away_errors = self.game_state.as_ref().unwrap().errors_team2.to_string();
+                self.score.away_runs = self.game_state.as_ref().unwrap().runs_team2.to_string();
                 let out_string: String;
                 match self.game_state.as_ref().unwrap().outs {
                     Outs::None => out_string = "0".to_string(),
@@ -313,39 +377,40 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     Outs::Two => out_string = "2".to_string(),
                     Outs::Three => out_string = "3".to_string(),
                 }
-                self.current_outs = out_string;
-                self.home_hits = self.game_state.as_ref().unwrap().hits_team1.to_string();
-                self.home_errors = self.game_state.as_ref().unwrap().errors_team1.to_string();
-                self.home_runs = self.game_state.as_ref().unwrap().runs_team1.to_string();
+                self.score.current_outs = out_string;
+                self.score.home_hits = self.game_state.as_ref().unwrap().hits_team1.to_string();
+                self.score.home_errors = self.game_state.as_ref().unwrap().errors_team1.to_string();
+                self.score.home_runs = self.game_state.as_ref().unwrap().runs_team1.to_string();
                 (on_first, on_second, on_third) =
                     runners_on_bool(self.game_state.clone().unwrap().runners);
             }
             // score line
             ui.horizontal(|ui| {
                 ui.label("Inning:");
-                ui.label(&self.current_inning);
+                ui.label(&self.score.current_inning);
                 ui.label("AWAY");
                 ui.label("hits:");
-                ui.label(&self.away_hits);
+                ui.label(&self.score.away_hits);
                 ui.label("errors:");
-                ui.label(&self.away_errors);
+                ui.label(&self.score.away_errors);
                 ui.label("runs:");
-                ui.label(&self.away_runs);
+                ui.label(&self.score.away_runs);
             });
             ui.horizontal(|ui| {
                 ui.label("Outs:");
-                ui.label(&self.current_outs);
+                ui.label(&self.score.current_outs);
                 ui.label("HOME");
                 ui.label("hits:");
-                ui.label(&self.home_hits);
+                ui.label(&self.score.home_hits);
                 ui.label("errors:");
-                ui.label(&self.home_errors);
+                ui.label(&self.score.home_errors);
                 ui.label("runs:");
-                ui.label(&self.home_runs);
+                ui.label(&self.score.home_runs);
             });
             // draw baseball field and label players
             ui.add(
-                self.diamond_image
+                self.gui_images
+                    .diamond_image
                     .clone()
                     .max_size(egui::Vec2 { x: 511.8, y: 445.2 }),
             );
@@ -357,7 +422,8 @@ impl<'a> eframe::App for DeadballApp<'_> {
                         min: pos2(490.0, 260.0),
                         max: pos2(590.0, 360.0),
                     },
-                    self.helmet_image
+                    self.gui_images
+                        .helmet_image
                         .clone()
                         .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
@@ -371,7 +437,8 @@ impl<'a> eframe::App for DeadballApp<'_> {
                         min: pos2(340.0, 120.0),
                         max: pos2(440.0, 220.0),
                     },
-                    self.helmet_image
+                    self.gui_images
+                        .helmet_image
                         .clone()
                         .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
@@ -385,7 +452,8 @@ impl<'a> eframe::App for DeadballApp<'_> {
                         min: pos2(205.0, 270.0),
                         max: pos2(305.0, 370.0),
                     },
-                    self.helmet_image
+                    self.gui_images
+                        .helmet_image
                         .clone()
                         .max_size(egui::Vec2 { x: 51.2, y: 51.2 }),
                 )
@@ -411,7 +479,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                         min: pos2(340.0, 475.0),
                         max: pos2(440.0, 495.0),
                     },
-                    self.helmet_image.clone(),
+                    self.gui_images.helmet_image.clone(),
                 )
                 .on_hover_text(batter_tooltip(batter));
             }
@@ -429,15 +497,15 @@ impl<'a> eframe::App for DeadballApp<'_> {
                         labels = update_player_labels(&self.away_team_active.as_ref().unwrap());
                     }
                 }
-                self.firstbase_label = labels[0].clone();
-                self.secondbase_label = labels[1].clone();
-                self.shortstop_label = labels[2].clone();
-                self.thirdbase_label = labels[3].clone();
-                self.catcher_label = labels[4].clone();
-                self.leftfield_label = labels[5].clone();
-                self.centerfield_label = labels[6].clone();
-                self.rightfield_label = labels[7].clone();
-                self.pitcher_label = labels[8].clone();
+                self.diamond_labels.firstbase_label = labels[0].clone();
+                self.diamond_labels.secondbase_label = labels[1].clone();
+                self.diamond_labels.shortstop_label = labels[2].clone();
+                self.diamond_labels.thirdbase_label = labels[3].clone();
+                self.diamond_labels.catcher_label = labels[4].clone();
+                self.diamond_labels.leftfield_label = labels[5].clone();
+                self.diamond_labels.centerfield_label = labels[6].clone();
+                self.diamond_labels.rightfield_label = labels[7].clone();
+                self.diamond_labels.pitcher_label = labels[8].clone();
             }
             // put player names
             ui.put(
@@ -446,7 +514,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(560.0, 280.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.firstbase_label)
+                    RichText::new(&self.diamond_labels.firstbase_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -458,7 +526,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(500.0, 200.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.secondbase_label)
+                    RichText::new(&self.diamond_labels.secondbase_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -470,7 +538,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(440.0, 325.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.pitcher_label)
+                    RichText::new(&self.diamond_labels.pitcher_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -482,7 +550,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(440.0, 495.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.catcher_label)
+                    RichText::new(&self.diamond_labels.catcher_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -494,7 +562,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(300.0, 290.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.thirdbase_label)
+                    RichText::new(&self.diamond_labels.thirdbase_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -506,7 +574,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(340.0, 220.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.shortstop_label)
+                    RichText::new(&self.diamond_labels.shortstop_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -518,7 +586,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(610.0, 120.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.rightfield_label)
+                    RichText::new(&self.diamond_labels.rightfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -530,7 +598,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(430.0, 120.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.centerfield_label)
+                    RichText::new(&self.diamond_labels.centerfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -542,7 +610,7 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     max: pos2(260.0, 120.0),
                 },
                 eframe::egui::Label::new(
-                    RichText::new(&self.leftfield_label)
+                    RichText::new(&self.diamond_labels.leftfield_label)
                         .color(Color32::BLACK)
                         .strong()
                         .background_color(Color32::WHITE), //.size(16.0),
@@ -568,7 +636,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                 ui.horizontal(|ui| {
                     ui.menu_button("Game", |ui| {
                         if ui.button("Create Game").clicked() {
-                            app.create_game_window = true;
+                            app.gui_windows.create_game_window = true;
                             ui.close_menu();
                         }
                         if ui.button("Start Game").clicked() {
@@ -610,7 +678,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                     });
                     ui.menu_button("About", |ui| {
                         if ui.button("Version").clicked() {
-                            app.version_window = true;
+                            app.gui_windows.version_window = true;
                             ui.close_menu();
                         }
                         if ui.button("Help").clicked() {
@@ -619,11 +687,11 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             ui.close_menu();
                         }
                         if ui.button("About Deadball").clicked() {
-                            app.about_deadball_window = true;
+                            app.gui_windows.about_deadball_window = true;
                             ui.close_menu();
                         }
                         if ui.button("About This App").clicked() {
-                            app.about_app_window = true;
+                            app.gui_windows.about_app_window = true;
                             ui.close_menu();
                         }
                     });
@@ -666,7 +734,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     app.game_state = Some(modern_game_flow(
                                         &app.game_modern.clone().unwrap(),
                                         app.game_state.clone().unwrap(),
-                                        app.debug_roll_state.clone(),
+                                        app.debug_settings.debug_roll_state.clone(),
                                     ));
                                     println!("{:?}", app.game_state);
                                 }
@@ -938,14 +1006,14 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
             Panel::Debug => {
                 ui.horizontal(|ui| {
                     if ui.button("Game").clicked() {
-                        app.debug_window = true;
+                        app.gui_windows.debug_window = true;
                         app.debug_copied = false;
                     }
                     if ui.button("Roll").clicked() {
-                        app.debug_roll_window = true;
+                        app.gui_windows.debug_roll_window = true;
                     }
                     if ui.button("Console").clicked() {
-                        app.console_window = true;
+                        app.gui_windows.console_window = true;
                     }
                 });
             }
@@ -1396,4 +1464,3 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         });
     });
 }
-
