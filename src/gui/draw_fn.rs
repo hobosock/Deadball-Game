@@ -4,13 +4,23 @@ use eframe::egui::{self, Color32, Context, RichText};
 use egui_file::FileDialog;
 use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
 
-use crate::{characters::{ballparks::{generate_modern_ballpark, load_park_ancient, load_park_modern, write_ballpark_modern, BallparkModern}, players::{generate_player, write_player, Player, PlayerClass, Position}, teams::{generate_team, load_team, write_team, Era}}, core::game_functions::{create_modern_game, GameStatus, InningTB, Outs, RunnersOn}, DeadballApp, ABOUT_APP, ABOUT_DEABALL};
-
+use crate::{
+    characters::{
+        ballparks::{
+            generate_modern_ballpark, load_park_ancient, load_park_modern, write_ballpark_modern,
+            BallparkModern,
+        },
+        players::{generate_player, write_player, Player, PlayerClass, Position},
+        teams::{generate_team, load_team, write_team, Era},
+    },
+    core::game_functions::{create_modern_game, GameStatus, InningTB, Outs, RunnersOn},
+    DeadballApp, ABOUT_APP, ABOUT_DEABALL,
+};
 
 /// populates ui for the version window
 pub fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
-        .open(&mut app.version_window)
+        .open(&mut app.gui_windows.version_window)
         .show(ctx, |ui| {
             ui.label("Version 0.3.3");
         });
@@ -19,7 +29,7 @@ pub fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
 /// populates ui for the "About Deadball Game" window
 pub fn draw_about_deadball_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("About Deadball Game")
-        .open(&mut app.about_deadball_window)
+        .open(&mut app.gui_windows.about_deadball_window)
         .show(ctx, |ui| {
             ui.label(ABOUT_DEABALL);
             ui.hyperlink("http://wmakers.net/deadball");
@@ -29,7 +39,7 @@ pub fn draw_about_deadball_window(ctx: &Context, app: &mut DeadballApp) {
 /// populates ui for the "About this app" window
 pub fn draw_about_app_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("About this app")
-        .open(&mut app.about_app_window)
+        .open(&mut app.gui_windows.about_app_window)
         .show(ctx, |ui| {
             ui.label(ABOUT_APP);
         });
@@ -44,7 +54,7 @@ pub fn draw_console_window(ctx: &Context, app: &mut DeadballApp) {
         console_text = "No game is currently active.".to_string();
     }
     egui::Window::new("Console")
-        .open(&mut app.console_window)
+        .open(&mut app.gui_windows.console_window)
         .show(ctx, |ui| {
             egui::ScrollArea::vertical()
                 .stick_to_bottom(true)
@@ -57,7 +67,7 @@ pub fn draw_console_window(ctx: &Context, app: &mut DeadballApp) {
 /// renders the new game window
 pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
     egui::Window::new("Create new game")
-        .open(&mut app.create_game_window)
+        .open(&mut app.gui_windows.create_game_window)
         .show(ctx, |ui| {
             // selectable value for game era
             ui.horizontal(|ui| {
@@ -531,24 +541,29 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
 /// draws the debug roll window
 pub fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Roll Debug Mode")
-        .open(&mut app.debug_roll_window)
+        .open(&mut app.gui_windows.debug_roll_window)
         .show(ctx, |ui| {
-            ui.checkbox(&mut app.debug_roll_state.mode, "Enable roll override.")
-                .on_hover_text("Check to replace rolls with predetermined values.");
+            ui.checkbox(
+                &mut app.debug_settings.debug_roll_state.mode,
+                "Enable roll override.",
+            )
+            .on_hover_text("Check to replace rolls with predetermined values.");
             ui.horizontal(|ui| {
-                ui.text_edit_singleline(&mut app.debug_roll_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_roll_text);
                 if ui
                     .button("Add")
                     .on_hover_text("Add value to roll list.")
                     .clicked()
                 {
-                    if app.debug_roll_state.rolls.len() == 1 && app.debug_roll_state.rolls[0] == 0 {
-                        if let Ok(val) = app.debug_roll_text.parse::<i32>() {
-                            app.debug_roll_state.rolls[0] = val;
+                    if app.debug_settings.debug_roll_state.rolls.len() == 1
+                        && app.debug_settings.debug_roll_state.rolls[0] == 0
+                    {
+                        if let Ok(val) = app.debug_settings.debug_roll_text.parse::<i32>() {
+                            app.debug_settings.debug_roll_state.rolls[0] = val;
                         }
                     } else {
-                        if let Ok(val) = app.debug_roll_text.parse::<i32>() {
-                            app.debug_roll_state.rolls.push(val);
+                        if let Ok(val) = app.debug_settings.debug_roll_text.parse::<i32>() {
+                            app.debug_settings.debug_roll_state.rolls.push(val);
                         }
                     }
                 }
@@ -557,12 +572,12 @@ pub fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
                     .on_hover_text("Clear roll list.")
                     .clicked()
                 {
-                    app.debug_roll_state.rolls = vec![0];
+                    app.debug_settings.debug_roll_state.rolls = vec![0];
                 }
             });
             ui.horizontal(|ui| {
                 ui.label("Rolls:");
-                for roll in app.debug_roll_state.rolls.iter() {
+                for roll in app.debug_settings.debug_roll_state.rolls.iter() {
                     ui.label(roll.to_string());
                 }
             });
@@ -572,44 +587,53 @@ pub fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
 /// draw the debug window
 pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Debug Mode")
-        .open(&mut app.debug_window)
+        .open(&mut app.gui_windows.debug_window)
         .show(ctx, |ui| {
             // set debug state to current game state (if it exists)
-            if app.game_state.is_some() && app.debug_copied == false {
-                app.debug_state = app.game_state.clone().unwrap();
-                app.debug_copied = true;
-                app.debug_inning_text = app.debug_state.inning.clone().to_string();
+            if app.game_state.is_some() && app.debug_settings.debug_copied == false {
+                app.debug_settings.debug_state = app.game_state.clone().unwrap();
+                app.debug_settings.debug_copied = true;
+                app.debug_settings.debug_inning_text =
+                    app.debug_settings.debug_state.inning.clone().to_string();
             }
             ui.horizontal(|ui| {
                 ui.label("Game Status:");
                 egui::ComboBox::from_label("Select status.")
-                    .selected_text(&app.debug_game_state_text)
+                    .selected_text(&app.debug_settings.debug_game_state_text)
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
-                            &mut app.debug_state.status,
+                            &mut app.debug_settings.debug_state.status,
                             GameStatus::NotStarted,
                             "Not Started",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.status,
+                            &mut app.debug_settings.debug_state.status,
                             GameStatus::Ongoing,
                             "Ongoing",
                         );
-                        ui.selectable_value(&mut app.debug_state.status, GameStatus::Over, "Over");
+                        ui.selectable_value(
+                            &mut app.debug_settings.debug_state.status,
+                            GameStatus::Over,
+                            "Over",
+                        );
                     })
             });
             ui.horizontal(|ui| {
                 ui.label("Inning:");
-                ui.text_edit_singleline(&mut app.debug_inning_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_inning_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Inning Half:");
                 egui::ComboBox::from_label("Select inning half.")
-                    .selected_text(app.debug_inning_half_text.clone())
+                    .selected_text(app.debug_settings.debug_inning_half_text.clone())
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut app.debug_state.inning_half, InningTB::Top, "^");
                         ui.selectable_value(
-                            &mut app.debug_state.inning_half,
+                            &mut app.debug_settings.debug_state.inning_half,
+                            InningTB::Top,
+                            "^",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_settings.debug_state.inning_half,
                             InningTB::Bottom,
                             "v",
                         );
@@ -618,56 +642,72 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
             ui.horizontal(|ui| {
                 ui.label("Outs:");
                 egui::ComboBox::from_label("Select outs.")
-                    .selected_text(app.debug_outs_text.clone())
+                    .selected_text(app.debug_settings.debug_outs_text.clone())
                     .show_ui(ui, |ui| {
-                        ui.selectable_value(&mut app.debug_state.outs, Outs::None, "None");
-                        ui.selectable_value(&mut app.debug_state.outs, Outs::One, "One");
-                        ui.selectable_value(&mut app.debug_state.outs, Outs::Two, "Two");
-                        ui.selectable_value(&mut app.debug_state.outs, Outs::Three, "Three");
+                        ui.selectable_value(
+                            &mut app.debug_settings.debug_state.outs,
+                            Outs::None,
+                            "None",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_settings.debug_state.outs,
+                            Outs::One,
+                            "One",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_settings.debug_state.outs,
+                            Outs::Two,
+                            "Two",
+                        );
+                        ui.selectable_value(
+                            &mut app.debug_settings.debug_state.outs,
+                            Outs::Three,
+                            "Three",
+                        );
                     });
             });
             ui.horizontal(|ui| {
                 ui.label("Runners On:");
                 egui::ComboBox::from_label("Select base runners.")
-                    .selected_text(app.debug_runners_text.clone())
+                    .selected_text(app.debug_settings.debug_runners_text.clone())
                     .show_ui(ui, |ui| {
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner000,
                             "000",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner001,
                             "001",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner010,
                             "010",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner100,
                             "100",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner011,
                             "011",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner110,
                             "110",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner101,
                             "101",
                         );
                         ui.selectable_value(
-                            &mut app.debug_state.runners,
+                            &mut app.debug_settings.debug_state.runners,
                             RunnersOn::Runner111,
                             "111",
                         );
@@ -675,92 +715,96 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
             });
             ui.horizontal(|ui| {
                 ui.label("Batting Team 1:");
-                ui.text_edit_singleline(&mut app.debug_batting1_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_batting1_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Batting Team 2:");
-                ui.text_edit_singleline(&mut app.debug_batting2_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_batting2_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Pitched Team 1:");
-                ui.text_edit_singleline(&mut app.debug_pitched1_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_pitched1_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Pitched Team 2:");
-                ui.text_edit_singleline(&mut app.debug_pitched2_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_pitched2_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Runs Team 1:");
-                ui.text_edit_singleline(&mut app.debug_runs1_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_runs1_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Runs Team 2:");
-                ui.text_edit_singleline(&mut app.debug_runs2_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_runs2_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Hits Team 1:");
-                ui.text_edit_singleline(&mut app.debug_hits1_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_hits1_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Hits Team 2:");
-                ui.text_edit_singleline(&mut app.debug_hits2_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_hits2_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Errors Team 1:");
-                ui.text_edit_singleline(&mut app.debug_errors1_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_errors1_text);
             });
             ui.horizontal(|ui| {
                 ui.label("Errors Team 2:");
-                ui.text_edit_singleline(&mut app.debug_errors2_text);
+                ui.text_edit_singleline(&mut app.debug_settings.debug_errors2_text);
             });
             // update debug game state combo box text
-            match &app.debug_state.status {
-                GameStatus::NotStarted => app.debug_game_state_text = "Not Started".to_string(),
-                GameStatus::Ongoing => app.debug_game_state_text = "Ongoing".to_string(),
-                GameStatus::Over => app.debug_game_state_text = "Over".to_string(),
+            match &app.debug_settings.debug_state.status {
+                GameStatus::NotStarted => {
+                    app.debug_settings.debug_game_state_text = "Not Started".to_string()
+                }
+                GameStatus::Ongoing => {
+                    app.debug_settings.debug_game_state_text = "Ongoing".to_string()
+                }
+                GameStatus::Over => app.debug_settings.debug_game_state_text = "Over".to_string(),
             }
             // update inning half combo box text
-            match &app.debug_state.inning_half {
-                InningTB::Top => app.debug_inning_half_text = "^".to_string(),
-                InningTB::Bottom => app.debug_inning_half_text = "v".to_string(),
+            match &app.debug_settings.debug_state.inning_half {
+                InningTB::Top => app.debug_settings.debug_inning_half_text = "^".to_string(),
+                InningTB::Bottom => app.debug_settings.debug_inning_half_text = "v".to_string(),
             }
             // update outs combo box text
-            match &app.debug_state.outs {
-                Outs::None => app.debug_outs_text = "None".to_string(),
-                Outs::One => app.debug_outs_text = "One".to_string(),
-                Outs::Two => app.debug_outs_text = "Two".to_string(),
-                Outs::Three => app.debug_outs_text = "Three".to_string(),
+            match &app.debug_settings.debug_state.outs {
+                Outs::None => app.debug_settings.debug_outs_text = "None".to_string(),
+                Outs::One => app.debug_settings.debug_outs_text = "One".to_string(),
+                Outs::Two => app.debug_settings.debug_outs_text = "Two".to_string(),
+                Outs::Three => app.debug_settings.debug_outs_text = "Three".to_string(),
             }
             // update runners on text
-            match &app.debug_state.runners {
-                RunnersOn::Runner000 => app.debug_runners_text = "000".to_string(),
-                RunnersOn::Runner001 => app.debug_runners_text = "001".to_string(),
-                RunnersOn::Runner010 => app.debug_runners_text = "010".to_string(),
-                RunnersOn::Runner100 => app.debug_runners_text = "100".to_string(),
-                RunnersOn::Runner011 => app.debug_runners_text = "011".to_string(),
-                RunnersOn::Runner110 => app.debug_runners_text = "110".to_string(),
-                RunnersOn::Runner101 => app.debug_runners_text = "101".to_string(),
-                RunnersOn::Runner111 => app.debug_runners_text = "111".to_string(),
+            match &app.debug_settings.debug_state.runners {
+                RunnersOn::Runner000 => app.debug_settings.debug_runners_text = "000".to_string(),
+                RunnersOn::Runner001 => app.debug_settings.debug_runners_text = "001".to_string(),
+                RunnersOn::Runner010 => app.debug_settings.debug_runners_text = "010".to_string(),
+                RunnersOn::Runner100 => app.debug_settings.debug_runners_text = "100".to_string(),
+                RunnersOn::Runner011 => app.debug_settings.debug_runners_text = "011".to_string(),
+                RunnersOn::Runner110 => app.debug_settings.debug_runners_text = "110".to_string(),
+                RunnersOn::Runner101 => app.debug_settings.debug_runners_text = "101".to_string(),
+                RunnersOn::Runner111 => app.debug_settings.debug_runners_text = "111".to_string(),
             }
             // button to write changes to game state
             ui.separator();
             if ui.button("Write Changes").clicked() {
                 // put players in the runner fields to avoid crashes
                 let current_batter: i32;
-                match app.debug_state.inning_half {
+                match app.debug_settings.debug_state.inning_half {
                     InningTB::Top => {
-                        current_batter = app.debug_state.batting_team2 as i32;
-                        match app.debug_state.runners {
+                        current_batter = app.debug_settings.debug_state.batting_team2 as i32;
+                        match app.debug_settings.debug_state.runners {
                             RunnersOn::Runner000 => {}
                             RunnersOn::Runner100 => {
                                 if current_batter == 1 {
-                                    app.debug_state.runner1 = Some(
+                                    app.debug_settings.debug_state.runner1 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [8]
                                         .clone(),
                                     );
                                 } else {
-                                    app.debug_state.runner1 = Some(
+                                    app.debug_settings.debug_state.runner1 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [(current_batter - 1) as usize]
                                             .clone(),
@@ -769,13 +813,13 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                             }
                             RunnersOn::Runner010 => {
                                 if current_batter == 1 {
-                                    app.debug_state.runner2 = Some(
+                                    app.debug_settings.debug_state.runner2 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [8]
                                         .clone(),
                                     );
                                 } else {
-                                    app.debug_state.runner2 = Some(
+                                    app.debug_settings.debug_state.runner2 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [(current_batter - 2) as usize]
                                             .clone(),
@@ -784,13 +828,13 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                             }
                             RunnersOn::Runner001 => {
                                 if current_batter == 1 {
-                                    app.debug_state.runner3 = Some(
+                                    app.debug_settings.debug_state.runner3 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [8]
                                         .clone(),
                                     );
                                 } else {
-                                    app.debug_state.runner3 = Some(
+                                    app.debug_settings.debug_state.runner3 = Some(
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [(current_batter - 2) as usize]
                                             .clone(),
@@ -806,12 +850,12 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter2 < 0 {
                                     batter2 += 9;
                                 }
-                                app.debug_state.runner2 = Some(
+                                app.debug_settings.debug_state.runner2 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner1 = Some(
+                                app.debug_settings.debug_state.runner1 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -826,12 +870,12 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter2 < 0 {
                                     batter2 += 9;
                                 }
-                                app.debug_state.runner3 = Some(
+                                app.debug_settings.debug_state.runner3 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner1 = Some(
+                                app.debug_settings.debug_state.runner1 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -846,12 +890,12 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter2 < 0 {
                                     batter2 += 9;
                                 }
-                                app.debug_state.runner3 = Some(
+                                app.debug_settings.debug_state.runner3 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner2 = Some(
+                                app.debug_settings.debug_state.runner2 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -870,17 +914,17 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter3 < 0 {
                                     batter3 += 9;
                                 }
-                                app.debug_state.runner3 = Some(
+                                app.debug_settings.debug_state.runner3 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter3 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner2 = Some(
+                                app.debug_settings.debug_state.runner2 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner1 = Some(
+                                app.debug_settings.debug_state.runner1 = Some(
                                     app.game_modern.as_ref().unwrap().away_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -889,18 +933,18 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                         }
                     }
                     InningTB::Bottom => {
-                        current_batter = app.debug_state.batting_team2 as i32;
-                        match app.debug_state.runners {
+                        current_batter = app.debug_settings.debug_state.batting_team2 as i32;
+                        match app.debug_settings.debug_state.runners {
                             RunnersOn::Runner000 => {}
                             RunnersOn::Runner100 => {
                                 if current_batter == 1 {
-                                    app.debug_state.runner1 = Some(
+                                    app.debug_settings.debug_state.runner1 = Some(
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [8]
                                         .clone(),
                                     );
                                 } else {
-                                    app.debug_state.runner1 = Some(
+                                    app.debug_settings.debug_state.runner1 = Some(
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [(current_batter - 2) as usize]
                                             .clone(),
@@ -909,13 +953,13 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                             }
                             RunnersOn::Runner010 => {
                                 if current_batter == 1 {
-                                    app.debug_state.runner2 = Some(
+                                    app.debug_settings.debug_state.runner2 = Some(
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [8]
                                         .clone(),
                                     );
                                 } else {
-                                    app.debug_state.runner2 = Some(
+                                    app.debug_settings.debug_state.runner2 = Some(
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [(current_batter - 2) as usize]
                                             .clone(),
@@ -924,13 +968,13 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                             }
                             RunnersOn::Runner001 => {
                                 if current_batter == 1 {
-                                    app.debug_state.runner3 = Some(
+                                    app.debug_settings.debug_state.runner3 = Some(
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [8]
                                         .clone(),
                                     );
                                 } else {
-                                    app.debug_state.runner3 = Some(
+                                    app.debug_settings.debug_state.runner3 = Some(
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [(current_batter - 2) as usize]
                                             .clone(),
@@ -946,12 +990,12 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter2 < 0 {
                                     batter2 += 9;
                                 }
-                                app.debug_state.runner2 = Some(
+                                app.debug_settings.debug_state.runner2 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner1 = Some(
+                                app.debug_settings.debug_state.runner1 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -966,12 +1010,12 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter2 < 0 {
                                     batter2 += 9;
                                 }
-                                app.debug_state.runner3 = Some(
+                                app.debug_settings.debug_state.runner3 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner1 = Some(
+                                app.debug_settings.debug_state.runner1 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -986,12 +1030,12 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter2 < 0 {
                                     batter2 += 9;
                                 }
-                                app.debug_state.runner3 = Some(
+                                app.debug_settings.debug_state.runner3 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner2 = Some(
+                                app.debug_settings.debug_state.runner2 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -1010,17 +1054,17 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                                 if batter3 < 0 {
                                     batter3 += 9;
                                 }
-                                app.debug_state.runner3 = Some(
+                                app.debug_settings.debug_state.runner3 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter3 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner2 = Some(
+                                app.debug_settings.debug_state.runner2 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter2 - 1) as usize]
                                         .clone(),
                                 );
-                                app.debug_state.runner1 = Some(
+                                app.debug_settings.debug_state.runner1 = Some(
                                     app.game_modern.as_ref().unwrap().home_active.batting_order
                                         [(batter1 - 1) as usize]
                                         .clone(),
@@ -1029,7 +1073,7 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                         }
                     }
                 }
-                app.game_state = Some(app.debug_state.clone());
+                app.game_state = Some(app.debug_settings.debug_state.clone());
             }
         });
 }
