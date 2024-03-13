@@ -777,11 +777,11 @@ pub fn pow_trait_check(game: &GameModern, state: &GameState) -> i32 {
     let modifier: i32;
     match state.inning_half {
         InningTB::Top => {
-            let player = &game.away_active.roster[state.batting_team2 as usize];
+            let player = &game.away_active.roster[state.away_state.current_batter as usize];
             modifier = player.power();
         }
         InningTB::Bottom => {
-            let player = &game.home_active.roster[state.batting_team1 as usize];
+            let player = &game.home_active.roster[state.home_state.current_batter as usize];
             modifier = player.power();
         }
     }

@@ -169,6 +169,20 @@ pub struct ActiveTeam {
     pub batting_order: Vec<Player>,
 }
 
+/// struct for tracking innings pitched, current batter, etc. for a team
+/// this might help with repeating logic for top/bottom innings
+#[derive(Clone, Debug)]
+pub struct TeamState {
+    pub current_batter: u32,
+    pub current_pitcher: Player,
+    pub innings_pitched: u32,
+    pub runs: u32,
+    pub hits: u32,
+    pub errors: u32,
+}
+// TODO: make runs/hits/errors vectors with a value for each inning
+// TODO: make fields to track temp bonuses
+
 /*==========================================
 FUNCTIONS
 ==========================================*/

@@ -174,18 +174,8 @@ pub struct GameState {
     pub runner1: Option<Player>,
     pub runner2: Option<Player>,
     pub runner3: Option<Player>,
-    pub batting_team1: u32,
-    pub batting_team2: u32,
-    pub current_pitcher_team1: Player,
-    pub current_pitcher_team2: Player,
-    pub pitched_team1: u32,
-    pub pitched_team2: u32,
-    pub runs_team1: u32,
-    pub runs_team2: u32,
-    pub hits_team1: u32,
-    pub hits_team2: u32,
-    pub errors_team1: u32,
-    pub errors_team2: u32,
+    pub home_state: TeamState,
+    pub away_state: TeamState,
     pub game_text: String,
 }
 // NOTE: home team is team 1, away team is team 2
@@ -429,11 +419,11 @@ pub fn modern_game_flow<'a>(
     // check top of the 9th at a different place
     if state.inning > 9 {
         // check score
-        if state.runs_team1 != state.runs_team2 {
+        if state.home_state.runs != state.away_state.runs {
             state.status = GameStatus::Over;
             state.game_text += &format!(
                 "\nGame!  Final score: {} - {}",
-                state.runs_team1, state.runs_team2
+                state.home_state.runs, state.away_state.runs
             );
         }
     }
@@ -484,10 +474,13 @@ pub fn modern_game_flow<'a>(
             // TODO: print score report?
             // TODO: inning ticks over one final time before game ends, need to fix
             println!("FINAL SCORE");
-            println!("HOME: {} - AWAY: {}", state.runs_team1, state.runs_team2);
+            println!(
+                "HOME: {} - AWAY: {}",
+                state.home_state.runs, state.away_state.runs
+            );
             state.game_text += &format!(
                 "\nThat's game!  Final score: {} - {}",
-                state.runs_team1, state.runs_team2
+                state.home_state.runs, state.away_state.runs
             );
         }
     }
@@ -509,23 +502,24 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let batter =
-                        game.away_active.batting_order[state.batting_team2 as usize].clone();
-                    let mut pd = state.current_pitcher_team1.pitch_die;
+                    let batter = game.away_active.batting_order
+                        [state.away_state.current_batter as usize]
+                        .clone();
+                    let mut pd = state.home_state.current_pitcher.pitch_die;
                     // NOTE: special rules for GB+
                     if state.runners == RunnersOn::Runner111 {
                         pd = change_pitch_die(pd, 1);
                     }
                     // NOTE: handedness check
-                    if state.current_pitcher_team1.handedness == batter.handedness {
+                    if state.home_state.current_pitcher.handedness == batter.handedness {
                         pd = change_pitch_die(pd, 1);
                         // TODO: make distinction between starting pitcher and reliever
                     }
                     let mut pitch_mod: i32 = 0;
-                    if state.current_pitcher_team1.strikeout() {
+                    if state.home_state.current_pitcher.strikeout() {
                         pitch_mod = -1;
                     }
-                    let control_mod = state.current_pitcher_team1.control();
+                    let control_mod = state.home_state.current_pitcher.control();
                     let pitch_result: i32;
                     if pd > 0 {
                         pitch_result = combined_roll(&mut debug, pd);
@@ -554,10 +548,10 @@ pub fn modern_inning_flow<'a>(
                         game.oddity,
                     );
                     state.game_text += &format!(" -> {:?}", swing_result);
-                    if state.batting_team2 == 8 {
-                        state.batting_team2 = 0;
+                    if state.away_state.current_batter == 8 {
+                        state.away_state.current_batter = 0;
                     } else {
-                        state.batting_team2 += 1;
+                        state.away_state.current_batter += 1;
                     }
 
                     match swing_result {
@@ -588,7 +582,7 @@ pub fn modern_inning_flow<'a>(
                             state.game_text += "\n Walk.";
                             state = runners_advance(state, &1);
                             let batter = game.away_active.batting_order
-                                [(state.batting_team2 - 2) as usize]
+                                [(state.away_state.current_batter - 2) as usize]
                                 .clone();
                             state = add_runner(state, &1, batter);
                         }
@@ -605,7 +599,7 @@ pub fn modern_inning_flow<'a>(
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = game.away_active.batting_order
-                                [(state.batting_team2 - 2) as usize]
+                                [(state.away_state.current_batter - 2) as usize]
                                 .clone();
                             state = productive_out2(state, &mss_result, batter);
                         }
@@ -627,9 +621,10 @@ pub fn modern_inning_flow<'a>(
                     // get active batter
                     // get at bat Result
                     // update score/runners/Outs
-                    let batter =
-                        game.home_active.batting_order[state.batting_team1 as usize].clone();
-                    let mut pd = state.current_pitcher_team2.pitch_die;
+                    let batter = game.home_active.batting_order
+                        [state.home_state.current_batter as usize]
+                        .clone();
+                    let mut pd = state.away_state.current_pitcher.pitch_die;
                     // NOTE: special rules for GB+
                     if state.runners == RunnersOn::Runner111 {
                         pd = change_pitch_die(pd, 1);
