@@ -174,6 +174,22 @@ pub struct BattingOrderStrings {
     pub batter9: String,
 }
 
+impl Default for BattingOrderStrings {
+    fn default() -> Self {
+        Self {
+            batter1: "".to_string(),
+            batter2: "".to_string(),
+            batter3: "".to_string(),
+            batter4: "".to_string(),
+            batter5: "".to_string(),
+            batter6: "".to_string(),
+            batter7: "".to_string(),
+            batter8: "".to_string(),
+            batter9: "".to_string(),
+        }
+    }
+}
+
 pub struct DebugSettings {
     pub debug_copied: bool, // copy game state to debug state first time window is opened
     pub debug_state: GameState,
@@ -248,26 +264,10 @@ pub struct DeadballApp<'a> {
     // game data
     pub away_team: Option<Team>,
     pub away_team_active: Option<ActiveTeam>,
-    pub away_batter1: String,
-    pub away_batter2: String,
-    pub away_batter3: String,
-    pub away_batter4: String,
-    pub away_batter5: String,
-    pub away_batter6: String,
-    pub away_batter7: String,
-    pub away_batter8: String,
-    pub away_batter9: String,
+    pub away_bo: BattingOrderStrings,
     pub home_team: Option<Team>,
     pub home_team_active: Option<ActiveTeam>,
-    pub home_batter1: String,
-    pub home_batter2: String,
-    pub home_batter3: String,
-    pub home_batter4: String,
-    pub home_batter5: String,
-    pub home_batter6: String,
-    pub home_batter7: String,
-    pub home_batter8: String,
-    pub home_batter9: String,
+    pub home_bo: BattingOrderStrings,
     pub ballpark_modern: Option<BallparkModern>,
     pub ballpark_ancient: Option<BallparkAncient>,
     pub game_modern: Option<GameModern>,
@@ -303,26 +303,10 @@ impl<'a> Default for DeadballApp<'_> {
             create_game_error: "".to_owned(),
             away_team: None,
             away_team_active: None,
-            away_batter1: "None".to_string(),
-            away_batter2: "None".to_string(),
-            away_batter3: "None".to_string(),
-            away_batter4: "None".to_string(),
-            away_batter5: "None".to_string(),
-            away_batter6: "None".to_string(),
-            away_batter7: "None".to_string(),
-            away_batter8: "None".to_string(),
-            away_batter9: "None".to_string(),
+            away_bo: BattingOrderStrings::default(),
             home_team: None,
             home_team_active: None,
-            home_batter1: "None".to_string(),
-            home_batter2: "None".to_string(),
-            home_batter3: "None".to_string(),
-            home_batter4: "None".to_string(),
-            home_batter5: "None".to_string(),
-            home_batter6: "None".to_string(),
-            home_batter7: "None".to_string(),
-            home_batter8: "None".to_string(),
-            home_batter9: "None".to_string(),
+            home_bo: BattingOrderStrings::default(),
             ballpark_modern: None,
             ballpark_ancient: None,
             game_modern: None,
@@ -1053,23 +1037,23 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
             let away_team = app.away_team.as_ref().unwrap();
             app.away_team_name = away_team.name.to_string();
             let batter1 = &app.game_modern.clone().unwrap().away_active.roster[0];
-            app.away_batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
+            app.away_bo.batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
             let batter2 = &app.game_modern.clone().unwrap().away_active.roster[1];
-            app.away_batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
+            app.away_bo.batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
             let batter3 = &app.game_modern.clone().unwrap().away_active.roster[2];
-            app.away_batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
+            app.away_bo.batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
             let batter4 = &app.game_modern.clone().unwrap().away_active.roster[3];
-            app.away_batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
+            app.away_bo.batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
             let batter5 = &app.game_modern.clone().unwrap().away_active.roster[4];
-            app.away_batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
+            app.away_bo.batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
             let batter6 = &app.game_modern.clone().unwrap().away_active.roster[5];
-            app.away_batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
+            app.away_bo.batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
             let batter7 = &app.game_modern.clone().unwrap().away_active.roster[6];
-            app.away_batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
+            app.away_bo.batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
             let batter8 = &app.game_modern.clone().unwrap().away_active.roster[7];
-            app.away_batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
+            app.away_bo.batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
             let batter9 = &app.game_modern.clone().unwrap().away_active.pitching[0];
-            app.away_batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
+            app.away_bo.batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             away_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?} ",
                 batter1.position,
@@ -1150,92 +1134,92 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         ui.horizontal(|ui| {
             if away_at_bat == 1 {
                 ui.label(RichText::new("1. ").strong());
-                ui.label(RichText::new(app.away_batter1.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter1.clone()).strong())
                     .on_hover_text(away_info1);
             // TODO: figure out a way to put baseball icon to indicate current batter
             } else {
                 ui.label("1. ");
-                ui.label(&app.away_batter1).on_hover_text(away_info1);
+                ui.label(&app.away_bo.batter1).on_hover_text(away_info1);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 2 {
                 ui.label(RichText::new("2. ").strong());
-                ui.label(RichText::new(app.away_batter2.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter2.clone()).strong())
                     .on_hover_text(away_info2);
             } else {
                 ui.label("2. ");
-                ui.label(&app.away_batter2).on_hover_text(away_info2);
+                ui.label(&app.away_bo.batter2).on_hover_text(away_info2);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 3 {
                 ui.label(RichText::new("3. ").strong());
-                ui.label(RichText::new(app.away_batter3.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter3.clone()).strong())
                     .on_hover_text(away_info3);
             } else {
                 ui.label("3. ");
-                ui.label(&app.away_batter3).on_hover_text(away_info3);
+                ui.label(&app.away_bo.batter3).on_hover_text(away_info3);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 4 {
                 ui.label(RichText::new("4. ").strong());
-                ui.label(RichText::new(app.away_batter4.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter4.clone()).strong())
                     .on_hover_text(away_info4);
             } else {
                 ui.label("4. ");
-                ui.label(&app.away_batter4).on_hover_text(away_info4);
+                ui.label(&app.away_bo.batter4).on_hover_text(away_info4);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 5 {
                 ui.label(RichText::new("5. ").strong());
-                ui.label(RichText::new(app.away_batter5.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter5.clone()).strong())
                     .on_hover_text(away_info5);
             } else {
                 ui.label("5. ");
-                ui.label(&app.away_batter5).on_hover_text(away_info5);
+                ui.label(&app.away_bo.batter5).on_hover_text(away_info5);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 6 {
                 ui.label(RichText::new("6. ").strong());
-                ui.label(RichText::new(app.away_batter6.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter6.clone()).strong())
                     .on_hover_text(away_info6);
             } else {
                 ui.label("6. ");
-                ui.label(&app.away_batter6).on_hover_text(away_info6);
+                ui.label(&app.away_bo.batter6).on_hover_text(away_info6);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 7 {
                 ui.label(RichText::new("7. ").strong());
-                ui.label(RichText::new(app.away_batter7.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter7.clone()).strong())
                     .on_hover_text(away_info7);
             } else {
                 ui.label("7. ");
-                ui.label(&app.away_batter7).on_hover_text(away_info7);
+                ui.label(&app.away_bo.batter7).on_hover_text(away_info7);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 8 {
                 ui.label(RichText::new("8. ").strong());
-                ui.label(RichText::new(app.away_batter8.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter8.clone()).strong())
                     .on_hover_text(away_info8);
             } else {
                 ui.label("8. ");
-                ui.label(&app.away_batter8).on_hover_text(away_info8);
+                ui.label(&app.away_bo.batter8).on_hover_text(away_info8);
             }
         });
         ui.horizontal(|ui| {
             if away_at_bat == 9 {
                 ui.label(RichText::new("9. ").strong());
-                ui.label(RichText::new(app.away_batter9.clone()).strong())
+                ui.label(RichText::new(app.away_bo.batter9.clone()).strong())
                     .on_hover_text(away_info9);
             } else {
                 ui.label("9. ");
-                ui.label(&app.away_batter9).on_hover_text(away_info9);
+                ui.label(&app.away_bo.batter9).on_hover_text(away_info9);
             }
         });
     });
@@ -1259,27 +1243,23 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
             app.home_team_name = home_team.name.to_string();
             // TODO: use batting_order instead?
             let batter1 = &app.game_modern.clone().unwrap().home_active.roster[0];
-            app.home_batter1 = format!(
-                "{} {}",
-                app.game_modern.clone().unwrap().home_active.roster[0].first_name,
-                app.game_modern.clone().unwrap().home_active.roster[0].last_name
-            );
+            app.home_bo.batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
             let batter2 = &app.game_modern.clone().unwrap().home_active.roster[1];
-            app.home_batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
+            app.home_bo.batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
             let batter3 = &app.game_modern.clone().unwrap().home_active.roster[2];
-            app.home_batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
+            app.home_bo.batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
             let batter4 = &app.game_modern.clone().unwrap().home_active.roster[3];
-            app.home_batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
+            app.home_bo.batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
             let batter5 = &app.game_modern.clone().unwrap().home_active.roster[4];
-            app.home_batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
+            app.home_bo.batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
             let batter6 = &app.game_modern.clone().unwrap().home_active.roster[5];
-            app.home_batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
+            app.home_bo.batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
             let batter7 = &app.game_modern.clone().unwrap().home_active.roster[6];
-            app.home_batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
+            app.home_bo.batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
             let batter8 = &app.game_modern.clone().unwrap().home_active.roster[7];
-            app.home_batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
+            app.home_bo.batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
             let batter9 = &app.game_modern.clone().unwrap().home_active.pitching[0];
-            app.home_batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
+            app.home_bo.batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             home_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?}",
                 batter1.position,
@@ -1360,91 +1340,91 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         ui.horizontal(|ui| {
             if home_at_bat == 1 {
                 ui.label(RichText::new("1. ").strong());
-                ui.label(RichText::new(app.home_batter1.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter1.clone()).strong())
                     .on_hover_text(home_info1);
             } else {
                 ui.label("1. ");
-                ui.label(&app.home_batter1).on_hover_text(home_info1);
+                ui.label(&app.home_bo.batter1).on_hover_text(home_info1);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 2 {
                 ui.label(RichText::new("2. ").strong());
-                ui.label(RichText::new(app.home_batter2.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter2.clone()).strong())
                     .on_hover_text(home_info2);
             } else {
                 ui.label("2. ");
-                ui.label(&app.home_batter2).on_hover_text(home_info2);
+                ui.label(&app.home_bo.batter2).on_hover_text(home_info2);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 3 {
                 ui.label(RichText::new("3. ").strong());
-                ui.label(RichText::new(app.home_batter3.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter3.clone()).strong())
                     .on_hover_text(home_info3);
             } else {
                 ui.label("3. ");
-                ui.label(&app.home_batter3).on_hover_text(home_info3);
+                ui.label(&app.home_bo.batter3).on_hover_text(home_info3);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 4 {
                 ui.label(RichText::new("4. ").strong());
-                ui.label(RichText::new(app.home_batter4.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter4.clone()).strong())
                     .on_hover_text(home_info4);
             } else {
                 ui.label("4. ");
-                ui.label(&app.home_batter4).on_hover_text(home_info4);
+                ui.label(&app.home_bo.batter4).on_hover_text(home_info4);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 5 {
                 ui.label(RichText::new("5. ").strong());
-                ui.label(RichText::new(app.home_batter5.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter5.clone()).strong())
                     .on_hover_text(home_info5);
             } else {
                 ui.label("5. ");
-                ui.label(&app.home_batter5).on_hover_text(home_info5);
+                ui.label(&app.home_bo.batter5).on_hover_text(home_info5);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 6 {
                 ui.label(RichText::new("6. ").strong());
-                ui.label(RichText::new(app.home_batter6.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter6.clone()).strong())
                     .on_hover_text(home_info6);
             } else {
                 ui.label("6. ");
-                ui.label(&app.home_batter6).on_hover_text(home_info6);
+                ui.label(&app.home_bo.batter6).on_hover_text(home_info6);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 7 {
                 ui.label(RichText::new("7. ").strong());
-                ui.label(RichText::new(app.home_batter7.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter7.clone()).strong())
                     .on_hover_text(home_info7);
             } else {
                 ui.label("7. ");
-                ui.label(&app.home_batter7).on_hover_text(home_info7);
+                ui.label(&app.home_bo.batter7).on_hover_text(home_info7);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 8 {
                 ui.label(RichText::new("8. ").strong());
-                ui.label(RichText::new(app.home_batter8.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter8.clone()).strong())
                     .on_hover_text(home_info8);
             } else {
                 ui.label("8. ");
-                ui.label(&app.home_batter8).on_hover_text(home_info8);
+                ui.label(&app.home_bo.batter8).on_hover_text(home_info8);
             }
         });
         ui.horizontal(|ui| {
             if home_at_bat == 9 {
                 ui.label(RichText::new("9. ").strong());
-                ui.label(RichText::new(app.home_batter9.clone()).strong())
+                ui.label(RichText::new(app.home_bo.batter9.clone()).strong())
                     .on_hover_text(home_info9);
             } else {
                 ui.label("9. ");
-                ui.label(&app.home_batter9).on_hover_text(home_info9);
+                ui.label(&app.home_bo.batter9).on_hover_text(home_info9);
             }
         });
     });
