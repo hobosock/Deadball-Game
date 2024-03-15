@@ -720,6 +720,22 @@ mod tests {
             injury_location: vec![InjuryLocation::None],
             injury_severity: vec![InjurySeverity::Uninjured],
         };
+        let home_state = TeamState {
+            current_batter: 1,
+            current_pitcher: test_player.clone(),
+            innings_pitched: 1,
+            runs: 0,
+            hits: 0,
+            errors: 0,
+        };
+        let away_state = TeamState {
+            current_batter: 1,
+            current_pitcher: test_player.clone(),
+            innings_pitched: 1,
+            runs: 0,
+            hits: 0,
+            errors: 0,
+        };
         let mut state = GameState {
             status: GameStatus::Ongoing,
             inning: 1,
@@ -729,18 +745,8 @@ mod tests {
             runner1: None,
             runner2: None,
             runner3: None,
-            batting_team1: 1,
-            batting_team2: 1,
-            current_pitcher_team1: test_player.clone(),
-            current_pitcher_team2: test_player.clone(),
-            pitched_team1: 1,
-            pitched_team2: 1,
-            runs_team1: 0,
-            runs_team2: 0,
-            hits_team1: 0,
-            hits_team2: 0,
-            errors_team1: 0,
-            errors_team2: 0,
+            home_state: home_state,
+            away_state: away_state,
             game_text: "test".to_string(),
         };
 
@@ -793,6 +799,22 @@ mod tests {
             injury_location: vec![InjuryLocation::None],
             injury_severity: vec![InjurySeverity::Uninjured],
         };
+        let home_state = TeamState {
+            current_batter: 1,
+            current_pitcher: test_player.clone(),
+            innings_pitched: 1,
+            runs: 0,
+            hits: 0,
+            errors: 0,
+        };
+        let away_state = TeamState {
+            current_batter: 1,
+            current_pitcher: test_player.clone(),
+            innings_pitched: 1,
+            runs: 0,
+            hits: 0,
+            errors: 0,
+        };
         let mut state = GameState {
             status: GameStatus::Ongoing,
             inning: 1,
@@ -802,18 +824,8 @@ mod tests {
             runner1: None,
             runner2: None,
             runner3: None,
-            batting_team1: 1,
-            batting_team2: 1,
-            current_pitcher_team1: test_player.clone(),
-            current_pitcher_team2: test_player.clone(),
-            pitched_team1: 1,
-            pitched_team2: 1,
-            runs_team1: 0,
-            runs_team2: 0,
-            hits_team1: 0,
-            hits_team2: 0,
-            errors_team1: 0,
-            errors_team2: 0,
+            home_state: home_state,
+            away_state: away_state,
             game_text: "test".to_string(),
         };
 
@@ -825,7 +837,7 @@ mod tests {
 
         state = runners_advance(state, &1);
         assert!(matches!(state.runners, RunnersOn::Runner000));
-        assert_eq!(state.runs_team1, 1);
+        assert_eq!(state.home_state.runs, 1);
 
         state.runners = RunnersOn::Runner100;
         state = runners_advance(state, &2);
@@ -833,17 +845,17 @@ mod tests {
 
         state = runners_advance(state, &2);
         assert!(matches!(state.runners, RunnersOn::Runner000));
-        assert_eq!(state.runs_team1, 2);
+        assert_eq!(state.home_state.runs, 2);
 
         state.runners = RunnersOn::Runner011;
         state = runners_advance(state, &2);
         assert!(matches!(state.runners, RunnersOn::Runner000));
-        assert_eq!(state.runs_team1, 4);
+        assert_eq!(state.home_state.runs, 4);
 
         state.runners = RunnersOn::Runner110;
         state = runners_advance(state, &3);
         assert!(matches!(state.runners, RunnersOn::Runner000));
-        assert_eq!(state.runs_team1, 6);
+        assert_eq!(state.home_state.runs, 6);
     }
 
     // add_runner test function
@@ -862,6 +874,22 @@ mod tests {
             injury_location: vec![InjuryLocation::None],
             injury_severity: vec![InjurySeverity::Uninjured],
         };
+        let home_state = TeamState {
+            current_batter: 1,
+            current_pitcher: test_player.clone(),
+            innings_pitched: 1,
+            runs: 0,
+            hits: 0,
+            errors: 0,
+        };
+        let away_state = TeamState {
+            current_batter: 1,
+            current_pitcher: test_player.clone(),
+            innings_pitched: 1,
+            runs: 0,
+            hits: 0,
+            errors: 0,
+        };
         let mut state = GameState {
             status: GameStatus::Ongoing,
             inning: 1,
@@ -871,18 +899,8 @@ mod tests {
             runner1: None,
             runner2: None,
             runner3: None,
-            batting_team1: 1,
-            batting_team2: 1,
-            current_pitcher_team1: test_player.clone(),
-            current_pitcher_team2: test_player.clone(),
-            pitched_team1: 1,
-            pitched_team2: 1,
-            runs_team1: 0,
-            runs_team2: 0,
-            hits_team1: 0,
-            hits_team2: 0,
-            errors_team1: 0,
-            errors_team2: 0,
+            home_state: home_state,
+            away_state: away_state,
             game_text: "test".to_string(),
         };
 
@@ -1157,7 +1175,7 @@ mod tests {
         state.status = GameStatus::Ongoing;
         state.runners = RunnersOn::Runner100;
         state.runner1 = Some(stealer.clone());
-        state.batting_team1 = 3;
+        state.home_state.current_batter = 3;
 
         let mut new_state =
             process_steals(StealType::Second, state.clone(), debug.clone(), &catcher);
@@ -1193,7 +1211,7 @@ mod tests {
         new_state = process_steals(StealType::Home, state.clone(), debug.clone(), &catcher);
         assert_eq!(new_state.outs, Outs::None);
         assert_eq!(new_state.runners, RunnersOn::Runner000);
-        assert_eq!(new_state.runs_team1, 1);
+        assert_eq!(new_state.home_state.runs, 1);
 
         debug.rolls = vec![1];
         state.runners = RunnersOn::Runner110;
@@ -1240,7 +1258,7 @@ mod tests {
         state.status = GameStatus::Ongoing;
         state.runners = RunnersOn::Runner100;
         state.runner1 = Some(game.home_active.batting_order[2].clone());
-        state.batting_team1 = 3;
+        state.home_state.current_batter = 3;
         batter.traits = vec![Traits::ContactHitter];
 
         // bunt_result = 2
@@ -1310,7 +1328,7 @@ mod tests {
         state.status = GameStatus::Ongoing;
         state.runners = RunnersOn::Runner100;
         state.runner1 = Some(stealer.clone());
-        state.batting_team1 = 3;
+        state.home_state.current_batter = 3;
 
         let mut new_state = hit_and_run(state.clone(), &game, &mut debug.clone(), batter.clone());
         assert_eq!(new_state.outs, Outs::None);

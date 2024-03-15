@@ -1754,10 +1754,10 @@ fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
                         state.runner3 = None;
                         match state.inning_half {
                             InningTB::Top => {
-                                state.runs_team2 += 1;
+                                state.away_state.runs += 1;
                             }
                             InningTB::Bottom => {
-                                state.runs_team1 += 1;
+                                state.home_state.runs += 1;
                             }
                         }
                     }
@@ -1767,10 +1767,10 @@ fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
                         state.runner2 = None;
                         match state.inning_half {
                             InningTB::Top => {
-                                state.runs_team2 += 1;
+                                state.away_state.runs += 1;
                             }
                             InningTB::Bottom => {
-                                state.runs_team1 += 1;
+                                state.home_state.runs += 1;
                             }
                         }
                     }
@@ -1778,8 +1778,8 @@ fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
             } else {
                 let pitcher: &Player;
                 match state.inning_half {
-                    InningTB::Top => pitcher = &state.current_pitcher_team1,
-                    InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+                    InningTB::Top => pitcher = &state.home_state.current_pitcher,
+                    InningTB::Bottom => pitcher = &state.away_state.current_pitcher,
                 }
                 // check for runner on first
                 match state.runners {
@@ -1829,8 +1829,8 @@ fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> Ga
     // the first line is the same as ProductiveOut1
     let pitcher: &Player;
     match state.inning_half {
-        InningTB::Top => pitcher = &state.current_pitcher_team1,
-        InningTB::Bottom => pitcher = &state.current_pitcher_team2,
+        InningTB::Top => pitcher = &state.home_state.current_pitcher,
+        InningTB::Bottom => pitcher = &state.away_state.current_pitcher,
     }
     match state.outs {
         Outs::Three => {}
@@ -1866,10 +1866,10 @@ fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> Ga
                         state.runner3 = None;
                         match state.inning_half {
                             InningTB::Top => {
-                                state.runs_team2 += 1;
+                                state.away_state.runs += 1;
                             }
                             InningTB::Bottom => {
-                                state.runs_team1 += 1;
+                                state.home_state.runs += 1;
                             }
                         }
                     }
@@ -1879,10 +1879,10 @@ fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> Ga
                         state.runner2 = None;
                         match state.inning_half {
                             InningTB::Top => {
-                                state.runs_team2 += 1;
+                                state.away_state.runs += 1;
                             }
                             InningTB::Bottom => {
-                                state.runs_team1 += 1;
+                                state.home_state.runs += 1;
                             }
                         }
                     }
@@ -2158,8 +2158,8 @@ pub fn process_steals(
             }
             if steal_result >= 8 {
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
                 state.game_text +=
                     &format!("\n{} {} stole home!", stealer.first_name, stealer.last_name);
@@ -2443,18 +2443,18 @@ pub fn hit_and_run(
     let control_mod: i32;
     match state.inning_half {
         InningTB::Top => {
-            pd = state.current_pitcher_team1.pitch_die;
-            if state.current_pitcher_team1.strikeout() {
+            pd = state.home_state.current_pitcher.pitch_die;
+            if state.home_state.current_pitcher.strikeout() {
                 pitch_mod = -1;
             }
-            control_mod = state.current_pitcher_team1.control();
+            control_mod = state.home_state.current_pitcher.control();
         }
         InningTB::Bottom => {
-            pd = state.current_pitcher_team2.pitch_die;
-            if state.current_pitcher_team2.strikeout() {
+            pd = state.away_state.current_pitcher.pitch_die;
+            if state.away_state.current_pitcher.strikeout() {
                 pitch_mod = -1;
             }
-            control_mod = state.current_pitcher_team2.control();
+            control_mod = state.away_state.current_pitcher.control();
         }
     }
     // NOTE: special rules for GB+
@@ -2462,7 +2462,7 @@ pub fn hit_and_run(
         pd = change_pitch_die(pd, 1);
     }
     // NOTE: handedness check
-    if state.current_pitcher_team2.handedness == batter.handedness {
+    if state.away_state.current_pitcher.handedness == batter.handedness {
         pd = change_pitch_die(pd, 1);
         // TODO: make distinction between starting pitcher and reliever
     }
@@ -2491,17 +2491,17 @@ pub fn hit_and_run(
     state.game_text += &format!(" -> {:?}", swing_result);
     match state.inning_half {
         InningTB::Top => {
-            if state.batting_team2 == 8 {
-                state.batting_team2 = 0;
+            if state.away_state.current_batter == 8 {
+                state.away_state.current_batter = 0;
             } else {
-                state.batting_team2 += 1;
+                state.away_state.current_batter += 1;
             }
         }
         InningTB::Bottom => {
-            if state.batting_team1 == 8 {
-                state.batting_team1 = 0;
+            if state.home_state.current_batter == 8 {
+                state.home_state.current_batter = 0;
             } else {
-                state.batting_team1 += 1;
+                state.home_state.current_batter += 1;
             }
         }
     }
@@ -2656,8 +2656,8 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runners = RunnersOn::Runner000;
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             }
         }
@@ -2670,8 +2670,8 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runners = RunnersOn::Runner000;
                 state.runner2 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             }
         }
@@ -2680,8 +2680,8 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runners = RunnersOn::Runner000;
                 state.runner3 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             }
         }
@@ -2697,16 +2697,16 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runner2 = None;
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             } else if advance >= 3 {
                 state.runners = RunnersOn::Runner000;
                 state.runner2 = None;
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 2,
-                    InningTB::Bottom => state.runs_team1 += 2,
+                    InningTB::Top => state.away_state.runs += 2,
+                    InningTB::Bottom => state.home_state.runs += 2,
                 }
             }
         }
@@ -2720,16 +2720,16 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runner3 = state.runner1.clone();
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             } else if advance >= 3 {
                 state.runners = RunnersOn::Runner000;
                 state.runner3 = None;
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 2,
-                    InningTB::Bottom => state.runs_team1 += 2,
+                    InningTB::Top => state.away_state.runs += 2,
+                    InningTB::Bottom => state.home_state.runs += 2,
                 }
             }
         }
@@ -2739,16 +2739,16 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runner3 = state.runner2.clone();
                 state.runner2 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             } else if advance >= 3 {
                 state.runners = RunnersOn::Runner000;
                 state.runner3 = None;
                 state.runner2 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 2,
-                    InningTB::Bottom => state.runs_team1 += 2,
+                    InningTB::Top => state.away_state.runs += 2,
+                    InningTB::Bottom => state.home_state.runs += 2,
                 }
             }
         }
@@ -2759,8 +2759,8 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runner2 = state.runner1.clone();
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 1,
-                    InningTB::Bottom => state.runs_team1 += 1,
+                    InningTB::Top => state.away_state.runs += 1,
+                    InningTB::Bottom => state.home_state.runs += 1,
                 }
             } else if advance == 2 {
                 state.runners = RunnersOn::Runner001;
@@ -2768,8 +2768,8 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runner2 = None;
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 2,
-                    InningTB::Bottom => state.runs_team1 += 2,
+                    InningTB::Top => state.away_state.runs += 2,
+                    InningTB::Bottom => state.home_state.runs += 2,
                 }
             } else if advance == 3 {
                 state.runners = RunnersOn::Runner000;
@@ -2777,8 +2777,8 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 state.runner2 = None;
                 state.runner1 = None;
                 match state.inning_half {
-                    InningTB::Top => state.runs_team2 += 3,
-                    InningTB::Bottom => state.runs_team1 += 3,
+                    InningTB::Top => state.away_state.runs += 3,
+                    InningTB::Bottom => state.home_state.runs += 3,
                 }
             }
         }

@@ -365,9 +365,27 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     InningTB::Bottom => inning_top_bottom = "v",
                 }
                 self.score.current_inning = inning_number + inning_top_bottom;
-                self.score.away_hits = self.game_state.as_ref().unwrap().hits_team2.to_string();
-                self.score.away_errors = self.game_state.as_ref().unwrap().errors_team2.to_string();
-                self.score.away_runs = self.game_state.as_ref().unwrap().runs_team2.to_string();
+                self.score.away_hits = self
+                    .game_state
+                    .as_ref()
+                    .unwrap()
+                    .away_state
+                    .hits
+                    .to_string();
+                self.score.away_errors = self
+                    .game_state
+                    .as_ref()
+                    .unwrap()
+                    .away_state
+                    .errors
+                    .to_string();
+                self.score.away_runs = self
+                    .game_state
+                    .as_ref()
+                    .unwrap()
+                    .away_state
+                    .runs
+                    .to_string();
                 let out_string: String;
                 match self.game_state.as_ref().unwrap().outs {
                     Outs::None => out_string = "0".to_string(),
@@ -376,9 +394,27 @@ impl<'a> eframe::App for DeadballApp<'_> {
                     Outs::Three => out_string = "3".to_string(),
                 }
                 self.score.current_outs = out_string;
-                self.score.home_hits = self.game_state.as_ref().unwrap().hits_team1.to_string();
-                self.score.home_errors = self.game_state.as_ref().unwrap().errors_team1.to_string();
-                self.score.home_runs = self.game_state.as_ref().unwrap().runs_team1.to_string();
+                self.score.home_hits = self
+                    .game_state
+                    .as_ref()
+                    .unwrap()
+                    .home_state
+                    .hits
+                    .to_string();
+                self.score.home_errors = self
+                    .game_state
+                    .as_ref()
+                    .unwrap()
+                    .home_state
+                    .errors
+                    .to_string();
+                self.score.home_runs = self
+                    .game_state
+                    .as_ref()
+                    .unwrap()
+                    .home_state
+                    .runs
+                    .to_string();
                 (on_first, on_second, on_third) =
                     runners_on_bool(self.game_state.clone().unwrap().runners);
             }
@@ -465,11 +501,11 @@ impl<'a> eframe::App for DeadballApp<'_> {
                 match self.game_state.as_ref().unwrap().inning_half {
                     InningTB::Top => {
                         batter = &self.game_modern.as_ref().unwrap().away_active.batting_order
-                            [self.game_state.as_ref().unwrap().batting_team2 as usize]
+                            [self.game_state.as_ref().unwrap().away_state.current_batter as usize]
                     }
                     InningTB::Bottom => {
                         batter = &self.game_modern.as_ref().unwrap().home_active.batting_order
-                            [self.game_state.as_ref().unwrap().batting_team1 as usize]
+                            [self.game_state.as_ref().unwrap().home_state.current_batter as usize]
                     }
                 }
                 ui.put(
@@ -897,14 +933,16 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             let batter: Player;
                             match app.game_state.as_ref().unwrap().inning_half {
                                 InningTB::Top => {
-                                    let bat_num = app.game_state.as_ref().unwrap().batting_team2;
+                                    let bat_num =
+                                        app.game_state.as_ref().unwrap().away_state.current_batter;
                                     batter =
                                         app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [bat_num as usize]
                                             .clone();
                                 }
                                 InningTB::Bottom => {
-                                    let bat_num = app.game_state.as_ref().unwrap().batting_team1;
+                                    let bat_num =
+                                        app.game_state.as_ref().unwrap().home_state.current_batter;
                                     batter =
                                         app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [bat_num as usize]
@@ -934,8 +972,12 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 let batter: Player;
                                 match app.game_state.as_ref().unwrap().inning_half {
                                     InningTB::Top => {
-                                        let bat_num =
-                                            app.game_state.as_ref().unwrap().batting_team2;
+                                        let bat_num = app
+                                            .game_state
+                                            .as_ref()
+                                            .unwrap()
+                                            .away_state
+                                            .current_batter;
                                         batter = app
                                             .game_modern
                                             .as_ref()
@@ -946,8 +988,12 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                             .clone();
                                     }
                                     InningTB::Bottom => {
-                                        let bat_num =
-                                            app.game_state.as_ref().unwrap().batting_team1;
+                                        let bat_num = app
+                                            .game_state
+                                            .as_ref()
+                                            .unwrap()
+                                            .home_state
+                                            .current_batter;
                                         batter = app
                                             .game_modern
                                             .as_ref()
@@ -1129,7 +1175,8 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut away_at_bat = 1;
         if app.game_state.is_some() {
-            away_at_bat = app.game_state.clone().unwrap().batting_team2 + 1; // array indexing :/
+            away_at_bat = app.game_state.clone().unwrap().away_state.current_batter + 1;
+            // array indexing :/
         }
         ui.horizontal(|ui| {
             if away_at_bat == 1 {
@@ -1335,7 +1382,8 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         }
         let mut home_at_bat = 1;
         if app.game_state.is_some() {
-            home_at_bat = app.game_state.clone().unwrap().batting_team1 + 1; // array indexing :/
+            home_at_bat = app.game_state.clone().unwrap().home_state.current_batter + 1;
+            // array indexing :/
         }
         ui.horizontal(|ui| {
             if home_at_bat == 1 {

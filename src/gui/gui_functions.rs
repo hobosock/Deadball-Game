@@ -226,43 +226,43 @@ pub fn update_debug_textedits(app: &mut DeadballApp) {
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_batting1_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.batting_team1 = inning,
+        Ok(inning) => app.debug_settings.debug_state.home_state.current_batter = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_batting2_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.batting_team2 = inning,
+        Ok(inning) => app.debug_settings.debug_state.away_state.current_batter = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_pitched1_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.pitched_team1 = inning,
+        Ok(inning) => app.debug_settings.debug_state.home_state.innings_pitched = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_pitched2_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.pitched_team2 = inning,
+        Ok(inning) => app.debug_settings.debug_state.away_state.innings_pitched = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_runs1_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.runs_team1 = inning,
+        Ok(inning) => app.debug_settings.debug_state.home_state.runs = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_runs2_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.runs_team2 = inning,
+        Ok(inning) => app.debug_settings.debug_state.away_state.runs = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_hits1_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.hits_team1 = inning,
+        Ok(inning) => app.debug_settings.debug_state.home_state.hits = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_hits2_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.hits_team2 = inning,
+        Ok(inning) => app.debug_settings.debug_state.away_state.hits = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_errors1_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.errors_team1 = inning,
+        Ok(inning) => app.debug_settings.debug_state.home_state.errors = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
     match app.debug_settings.debug_errors2_text.parse::<u32>() {
-        Ok(inning) => app.debug_settings.debug_state.errors_team2 = inning,
+        Ok(inning) => app.debug_settings.debug_state.away_state.errors = inning,
         Err(_) => {} // don't do anything if user is typing, weird characters, etc.
     }
 }

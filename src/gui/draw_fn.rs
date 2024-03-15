@@ -793,7 +793,8 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                 let current_batter: i32;
                 match app.debug_settings.debug_state.inning_half {
                     InningTB::Top => {
-                        current_batter = app.debug_settings.debug_state.batting_team2 as i32;
+                        current_batter =
+                            app.debug_settings.debug_state.away_state.current_batter as i32;
                         match app.debug_settings.debug_state.runners {
                             RunnersOn::Runner000 => {}
                             RunnersOn::Runner100 => {
@@ -933,7 +934,8 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                         }
                     }
                     InningTB::Bottom => {
-                        current_batter = app.debug_settings.debug_state.batting_team2 as i32;
+                        current_batter =
+                            app.debug_settings.debug_state.home_state.current_batter as i32;
                         match app.debug_settings.debug_state.runners {
                             RunnersOn::Runner000 => {}
                             RunnersOn::Runner100 => {
