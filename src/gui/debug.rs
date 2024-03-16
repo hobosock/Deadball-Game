@@ -33,15 +33,13 @@ pub fn debug_roll(config: &mut DebugConfig, side: i32) -> i32 {
         }
     }
 
-    return roll;
+    roll
 }
 
 pub fn combined_roll(debug: &mut DebugConfig, side: i32) -> i32 {
-    let result: i32;
     if debug.mode {
-        result = debug_roll(debug, side);
+        debug_roll(debug, side)
     } else {
-        result = roll(side);
+        roll(side)
     }
-    return result;
 }

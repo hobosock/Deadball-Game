@@ -1467,7 +1467,6 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner001;
                 state.runner3 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner100 => {
             // TODO: is it even possible to get here? after advancing, no one should be on first
@@ -1479,7 +1478,6 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner101;
                 state.runner3 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner010 => {
             // skip 2 in this case
@@ -1491,7 +1489,6 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner011;
                 state.runner3 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner001 => {
             // skip 3
@@ -1502,7 +1499,6 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner011;
                 state.runner2 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner110 => {
             // skip 1 and 2
@@ -1511,7 +1507,6 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner111;
                 state.runner3 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner101 => {
             // skip 1 and 3
@@ -1520,7 +1515,6 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner111;
                 state.runner2 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner011 => {
             // skip 2 and 3
@@ -1528,24 +1522,23 @@ pub fn add_runner<'b>(mut state: GameState, base: &u32, batter: Player) -> GameS
                 state.runners = RunnersOn::Runner111;
                 state.runner1 = Some(batter);
             }
-            return state;
         }
         RunnersOn::Runner111 => {
             // nothing to do on this one
-            return state;
         }
     }
+
+    state
 }
 
 /// function to get last digit of swing_result - used for determining which fielder makes the out
 pub fn get_swing_position(mss_result: &i32) -> i32 {
-    let last_digit = *mss_result % 10;
-    return last_digit;
+    *mss_result % 10
 }
 
 // TODO: fn default under struct definition instead?
 /// convenience function to initialize a game state struct
-pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> GameState {
+pub fn init_new_game_state(home_pitcher: Player, away_pitcher: Player) -> GameState {
     let home_state = TeamState {
         current_batter: 0,
         current_pitcher: home_pitcher,
@@ -1562,7 +1555,7 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
         hits: 0,
         errors: 0,
     };
-    let game_state = GameState {
+    GameState {
         status: GameStatus::NotStarted,
         inning: 1,
         inning_half: InningTB::Top,
@@ -1574,9 +1567,7 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
         home_state,
         away_state,
         game_text: "Game created.".to_string(),
-    };
-
-    return game_state;
+    }
 }
 
 // TODO: find a player by position in roster\
@@ -1588,7 +1579,7 @@ pub fn find_by_position(position: Position, roster: &Vec<Player>) -> Option<Play
             return Some(player.clone());
         }
     }
-    return None;
+    None
 }
 
 /// convert MSS digit to position
@@ -1619,7 +1610,8 @@ pub fn position_by_number(mut last_digit: i32) -> Position {
     } else {
         position = Position::Rightfield;
     }
-    return position;
+
+    position
 }
 
 /// convenience function to return a default GameState struct
@@ -1650,7 +1642,7 @@ pub fn new_game_state_struct() -> GameState {
         hits: 0,
         errors: 0,
     };
-    let new_state = GameState {
+    GameState {
         status: GameStatus::NotStarted,
         inning: 1,
         inning_half: InningTB::Top,
@@ -1662,9 +1654,7 @@ pub fn new_game_state_struct() -> GameState {
         home_state,
         away_state,
         game_text: "Game created.".to_string(),
-    };
-
-    return new_state;
+    }
 }
 
 /// handle PossibleError swing result
@@ -1677,17 +1667,14 @@ fn possible_error(
     // TODO: Not sure I am implementing this correctly, see page 29
     // get position
     // TODO: get player traits
-    let batter: Player;
-    match state.inning_half {
+    let batter: Player = match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[(state.away_state.current_batter - 1) as usize]
-                .clone();
+            game.away_active.batting_order[(state.away_state.current_batter - 1) as usize].clone()
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[(state.home_state.current_batter - 1) as usize]
-                .clone();
+            game.home_active.batting_order[(state.home_state.current_batter - 1) as usize].clone()
         }
-    }
+    };
     state.game_text += "\n Possible error -> ";
     let def_roll = combined_roll(debug, 12) + def_trait_check(&state.inning_half, game, position);
     state.game_text += &format!("defense roll: {}", &def_roll);
@@ -1711,7 +1698,7 @@ fn possible_error(
         state.outs = increment_out(state.outs, 1);
     }
 
-    return state;
+    state
 }
 
 /// handles ProductiveOut1 swing result
@@ -1776,11 +1763,10 @@ fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
                     }
                 }
             } else {
-                let pitcher: &Player;
-                match state.inning_half {
-                    InningTB::Top => pitcher = &state.home_state.current_pitcher,
-                    InningTB::Bottom => pitcher = &state.away_state.current_pitcher,
-                }
+                let pitcher: &Player = match state.inning_half {
+                    InningTB::Top => &state.home_state.current_pitcher,
+                    InningTB::Bottom => &state.away_state.current_pitcher,
+                };
                 // check for runner on first
                 match state.runners {
                     RunnersOn::Runner100 => {
@@ -1819,7 +1805,7 @@ fn productive_out1(mut state: GameState, mss_result: &i32) -> GameState {
         }
     }
 
-    return state;
+    state
 }
 
 /// handles ProductiveOut2 swing_results
@@ -1827,11 +1813,10 @@ fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> Ga
     // if first or outfield, runners on 2nd and 3rd advance
     // if 2B/SS/3B, runner is out and batter makes it to first
     // the first line is the same as ProductiveOut1
-    let pitcher: &Player;
-    match state.inning_half {
-        InningTB::Top => pitcher = &state.home_state.current_pitcher,
-        InningTB::Bottom => pitcher = &state.away_state.current_pitcher,
-    }
+    let pitcher: &Player = match state.inning_half {
+        InningTB::Top => &state.home_state.current_pitcher,
+        InningTB::Bottom => &state.away_state.current_pitcher,
+    };
     match state.outs {
         Outs::Three => {}
         Outs::Two => {
@@ -1941,7 +1926,7 @@ fn productive_out2(mut state: GameState, mss_result: &i32, batter: Player) -> Ga
         }
     }
 
-    return state;
+    state
 }
 
 /// process non-productive out swing results
@@ -1951,7 +1936,7 @@ fn actual_out(mut state: GameState, mss_result: &i32) -> GameState {
     // TODO: check if runner at first can advance
     // anywhere in the infield, runner at first and batter are out
     let fielder = get_swing_position(mss_result);
-    if fielder >= 3 && fielder <= 6 {
+    if (3..=6).contains(&fielder) {
         match state.outs {
             Outs::Three => {}
             Outs::Two => {
@@ -1989,7 +1974,7 @@ fn actual_out(mut state: GameState, mss_result: &i32) -> GameState {
         state.outs = increment_out(state.outs, 1);
     }
 
-    return state;
+    state
 }
 
 /// processes mega out swing results
@@ -2022,7 +2007,7 @@ fn mega_out(mut state: GameState) -> GameState {
         _ => state.outs = increment_out(state.outs, 2),
     }
 
-    return state;
+    state
 }
 
 // TODO: check catcher's defense trait
@@ -2038,7 +2023,7 @@ pub fn process_steals(
     let catcher_mod = catcher.defense();
     match steal_type {
         StealType::Second => {
-            let mut steal_mod = 0 + catcher_mod;
+            let mut steal_mod = catcher_mod;
             let stealer = state.runner1.clone().unwrap(); // TODO: error proof?
             if stealer.speedy() {
                 steal_mod = 1;
@@ -2086,7 +2071,7 @@ pub fn process_steals(
             }
         }
         StealType::Third => {
-            let mut steal_mod = 0 + catcher_mod;
+            let mut steal_mod = catcher_mod;
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
             if stealer.speedy() {
                 steal_mod = 1;
@@ -2172,7 +2157,7 @@ pub fn process_steals(
             }
         }
         StealType::Double => {
-            let mut steal_mod = 0 + catcher_mod;
+            let mut steal_mod = catcher_mod;
             // look at traits of lead runner
             let stealer = state.runner2.clone().unwrap(); // TODO: error proof?
             let stealer2 = state.runner1.clone().unwrap();
@@ -2227,7 +2212,7 @@ pub fn process_steals(
             }
         }
     }
-    return state;
+    state
 }
 
 /// process bunting
@@ -2369,7 +2354,8 @@ pub fn bunt(
             state.game_text += "\nLead runner advances, batter out.";
         }
     }
-    return state;
+
+    state
 }
 
 /// increment outs
@@ -2406,7 +2392,8 @@ pub fn increment_out(current: Outs, mut increment: u32) -> Outs {
         }
         Outs::Three => outs = Outs::Three,
     }
-    return outs;
+
+    outs
 }
 
 /// hit and run - should be RUnner100 otherwise can't do it
@@ -2466,12 +2453,11 @@ pub fn hit_and_run(
         pd = change_pitch_die(pd, 1);
         // TODO: make distinction between starting pitcher and reliever
     }
-    let pitch_result: i32;
-    if pd > 0 {
-        pitch_result = combined_roll(debug, pd);
+    let pitch_result: i32 = if pd > 0 {
+        combined_roll(debug, pd)
     } else {
-        pitch_result = -1 * combined_roll(debug, pd.abs());
-    }
+        -combined_roll(debug, pd.abs())
+    };
     state.game_text += &format!("\nPitch result: {}", &pitch_result);
     let mss_result = pitch_result + combined_roll(debug, 100);
     state.game_text += &format!("\nMSS: {}", &mss_result);
@@ -2527,17 +2513,16 @@ pub fn hit_and_run(
         }
         AtBatResults::CriticalHit => hnr = HitAndRun::Hit,
         AtBatResults::PossibleError => {
-            let defender: Option<Player>;
-            match state.inning_half {
+            let defender: Option<Player> = match state.inning_half {
                 InningTB::Top => {
                     let defender_position = position_by_number(out_type);
-                    defender = find_by_position(defender_position, &game.home_active.batting_order);
+                    find_by_position(defender_position, &game.home_active.batting_order)
                 }
                 InningTB::Bottom => {
                     let defender_position = position_by_number(out_type);
-                    defender = find_by_position(defender_position, &game.away_active.batting_order);
+                    find_by_position(defender_position, &game.away_active.batting_order)
                 }
-            }
+            };
             let mut defense_bonus = 0;
             if defender.is_some() {
                 defense_bonus += defender.unwrap().defense();
@@ -2618,7 +2603,7 @@ pub fn hit_and_run(
         }
     }
 
-    return state;
+    state
 }
 
 /// function to generate random animal on the field
@@ -2634,7 +2619,8 @@ pub fn animal(debug: &mut DebugConfig) -> Animal {
     } else {
         animal = Animal::Streaker;
     }
-    return animal;
+
+    animal
 }
 
 /// advances only runners that are "forced", used for things like walks/balks/HBB
@@ -2781,5 +2767,6 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
             }
         }
     }
-    return state;
+
+    state
 }
