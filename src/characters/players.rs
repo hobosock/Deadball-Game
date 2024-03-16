@@ -736,10 +736,10 @@ pub fn generate_player(
     let (bt, ot) = generate_batter_target(&player_type);
 
     let new_player = Player {
-        first_name: first_name,
-        last_name: last_name,
+        first_name,
+        last_name,
         nickname: "".to_string(),
-        position: position,
+        position,
         handedness: generate_handedness(&player_type),
         batter_target: bt,
         on_base_target: ot,

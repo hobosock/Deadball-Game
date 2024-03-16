@@ -799,10 +799,8 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 RunnersOn::Runner010 => steal3 = true,
                                 RunnersOn::Runner001 => {
                                     let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
-                                    if runner3.is_some() {
-                                        if runner3.unwrap().speedy() {
-                                            steal4 = true;
-                                        }
+                                    if runner3.is_some() && runner3.unwrap().speedy() {
+                                        steal4 = true;
                                     }
                                 }
                                 RunnersOn::Runner110 => {
@@ -812,26 +810,20 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 RunnersOn::Runner101 => {
                                     steal2 = true;
                                     let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
-                                    if runner3.is_some() {
-                                        if runner3.unwrap().speedy() {
-                                            steal4 = true;
-                                        }
+                                    if runner3.is_some() && runner3.unwrap().speedy() {
+                                        steal4 = true;
                                     }
                                 }
                                 RunnersOn::Runner011 => {
                                     let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
-                                    if runner3.is_some() {
-                                        if runner3.unwrap().speedy() {
-                                            steal4 = true;
-                                        }
+                                    if runner3.is_some() && runner3.unwrap().speedy() {
+                                        steal4 = true;
                                     }
                                 }
                                 RunnersOn::Runner111 => {
                                     let runner3 = app.game_state.as_ref().unwrap().runner3.clone();
-                                    if runner3.is_some() {
-                                        if runner3.unwrap().speedy() {
-                                            steal4 = true;
-                                        }
+                                    if runner3.is_some() && runner3.unwrap().speedy() {
+                                        steal4 = true;
                                     }
                                 }
                             }
@@ -854,45 +846,37 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     .unwrap();
                                 }
                             }
-                            if steal2 {
-                                if ui.button("Steal 2nd").clicked() {
-                                    app.game_state = Some(process_steals(
-                                        StealType::Second,
-                                        app.game_state.clone().unwrap(),
-                                        app.debug_settings.debug_roll_state.clone(),
-                                        &catcher,
-                                    ));
-                                }
+                            if steal2 && ui.button("Steal 2nd").clicked() {
+                                app.game_state = Some(process_steals(
+                                    StealType::Second,
+                                    app.game_state.clone().unwrap(),
+                                    app.debug_settings.debug_roll_state.clone(),
+                                    &catcher,
+                                ));
                             }
-                            if steal3 {
-                                if ui.button("Steal 3rd").clicked() {
-                                    app.game_state = Some(process_steals(
-                                        StealType::Third,
-                                        app.game_state.clone().unwrap(),
-                                        app.debug_settings.debug_roll_state.clone(),
-                                        &catcher,
-                                    ));
-                                }
+                            if steal3 && ui.button("Steal 3rd").clicked() {
+                                app.game_state = Some(process_steals(
+                                    StealType::Third,
+                                    app.game_state.clone().unwrap(),
+                                    app.debug_settings.debug_roll_state.clone(),
+                                    &catcher,
+                                ));
                             }
-                            if steal4 {
-                                if ui.button("Steal Home").clicked() {
-                                    app.game_state = Some(process_steals(
-                                        StealType::Home,
-                                        app.game_state.clone().unwrap(),
-                                        app.debug_settings.debug_roll_state.clone(),
-                                        &catcher,
-                                    ));
-                                }
+                            if steal4 && ui.button("Steal Home").clicked() {
+                                app.game_state = Some(process_steals(
+                                    StealType::Home,
+                                    app.game_state.clone().unwrap(),
+                                    app.debug_settings.debug_roll_state.clone(),
+                                    &catcher,
+                                ));
                             }
-                            if double_steal {
-                                if ui.button("Double Steal").clicked() {
-                                    app.game_state = Some(process_steals(
-                                        StealType::Double,
-                                        app.game_state.clone().unwrap(),
-                                        app.debug_settings.debug_roll_state.clone(),
-                                        &catcher,
-                                    ));
-                                }
+                            if double_steal && ui.button("Double Steal").clicked() {
+                                app.game_state = Some(process_steals(
+                                    StealType::Double,
+                                    app.game_state.clone().unwrap(),
+                                    app.debug_settings.debug_roll_state.clone(),
+                                    &catcher,
+                                ));
                             }
                             if !steal2 && !steal3 && !steal4 && !double_steal {
                                 toasts.add(Toast {

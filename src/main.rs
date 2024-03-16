@@ -17,7 +17,7 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
     let options = eframe::NativeOptions {
-        viewport: viewport,
+        viewport,
         ..Default::default()
     };
     eframe::run_native(
@@ -509,7 +509,7 @@ mod tests {
         assert!(matches!(StadiumTypeModern::Retro, modern_type));
         assert_eq!(43000i32, modern_capacity);
         assert!(matches!(Turf::Good, modern_turf));
-        assert!(matches!(Roof::PermanentRoof, modern_roof));
+        assert!(matches!(Roof::Permanent, modern_roof));
         assert!(matches!(Condition::Decrepit, modern_condition));
         assert!(matches!(vec![Quirks::ExpansiveOutfield], modern_quirks));
 
@@ -745,8 +745,8 @@ mod tests {
             runner1: None,
             runner2: None,
             runner3: None,
-            home_state: home_state,
-            away_state: away_state,
+            home_state,
+            away_state,
             game_text: "test".to_string(),
         };
 
@@ -824,8 +824,8 @@ mod tests {
             runner1: None,
             runner2: None,
             runner3: None,
-            home_state: home_state,
-            away_state: away_state,
+            home_state,
+            away_state,
             game_text: "test".to_string(),
         };
 
@@ -899,8 +899,8 @@ mod tests {
             runner1: None,
             runner2: None,
             runner3: None,
-            home_state: home_state,
-            away_state: away_state,
+            home_state,
+            away_state,
             game_text: "test".to_string(),
         };
 

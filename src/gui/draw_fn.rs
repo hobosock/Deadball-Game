@@ -561,10 +561,8 @@ pub fn draw_debug_roll_window(ctx: &Context, app: &mut DeadballApp) {
                         if let Ok(val) = app.debug_settings.debug_roll_text.parse::<i32>() {
                             app.debug_settings.debug_roll_state.rolls[0] = val;
                         }
-                    } else {
-                        if let Ok(val) = app.debug_settings.debug_roll_text.parse::<i32>() {
-                            app.debug_settings.debug_roll_state.rolls.push(val);
-                        }
+                    } else if let Ok(val) = app.debug_settings.debug_roll_text.parse::<i32>() {
+                        app.debug_settings.debug_roll_state.rolls.push(val);
                     }
                 }
                 if ui

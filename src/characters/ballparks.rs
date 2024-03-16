@@ -36,9 +36,9 @@ pub enum Turf {
 
 #[derive(Clone)]
 pub enum Roof {
-    NoRoof,
-    PermanentRoof,
-    RetractableRoof,
+    No,
+    Permanent,
+    Retractable,
     None,
 }
 
@@ -108,7 +108,7 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
     let mut condition = Condition::None;
     let mut quirks = vec![Quirks::None];
 
-    let rows: Vec<&str> = contents.split("\n").collect();
+    let rows: Vec<&str> = contents.split('\n').collect();
     for i in 0..rows.len() - 1 {
         // last line is usually just a new line character
         let rowline: Vec<&str> = rows[i].split(":").collect();
@@ -154,11 +154,11 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
             }
         } else if rowline[0].trim().eq("ROOF") {
             if rowline[1].trim().eq("No Roof") {
-                roof = Roof::NoRoof;
+                roof = Roof::No;
             } else if rowline[1].trim().eq("Permanent Roof") {
-                roof = Roof::PermanentRoof;
+                roof = Roof::Permanent;
             } else if rowline[1].trim().eq("Retractable Roof") {
-                roof = Roof::RetractableRoof;
+                roof = Roof::Retractable;
             }
         } else if rowline[0].trim().eq("CONDITION") {
             if rowline[1].trim().eq("Well Worn") {
@@ -202,18 +202,16 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
         }
     }
 
-    let park_data = BallparkModern {
-        name: name,
-        location: location,
-        park_type: park_type,
-        capacity: capacity,
-        turf: turf,
-        roof: roof,
-        condition: condition,
-        quirks: quirks,
-    };
-
-    park_data
+    BallparkModern {
+        name,
+        location,
+        park_type,
+        capacity,
+        turf,
+        roof,
+        condition,
+        quirks,
+    }
 }
 
 /// writes modern park struct to text file
@@ -251,9 +249,9 @@ pub fn write_ballpark_modern(data: &BallparkModern, filename: &str) -> Result<()
     file_text.push_str("\nROOF: ");
     match data.roof {
         Roof::None => file_text.push_str("None"),
-        Roof::NoRoof => file_text.push_str("No Roof"),
-        Roof::PermanentRoof => file_text.push_str("Permanent Roof"),
-        Roof::RetractableRoof => file_text.push_str("Retractable Roof"),
+        Roof::No => file_text.push_str("No Roof"),
+        Roof::Permanent => file_text.push_str("Permanent Roof"),
+        Roof::Retractable => file_text.push_str("Retractable Roof"),
     }
     file_text.push_str("\nCONDITION: ");
     match data.condition {
@@ -370,12 +368,12 @@ pub fn load_park_ancient(contents: String) -> BallparkAncient {
     }
 
     let park_data = BallparkAncient {
-        name: name,
-        location: location,
-        park_type: park_type,
-        capacity: capacity,
-        condition: condition,
-        quirks: quirks,
+        name,
+        location,
+        park_type,
+        capacity,
+        condition,
+        quirks,
     };
 
     park_data
@@ -533,11 +531,11 @@ pub fn generate_roof() -> Roof {
     let roof: Roof;
     // TODO: make roof impact play
     if result <= 13 {
-        roof = Roof::NoRoof;
+        roof = Roof::No;
     } else if result >= 14 && result <= 15 {
-        roof = Roof::PermanentRoof;
+        roof = Roof::Permanent;
     } else {
-        roof = Roof::RetractableRoof;
+        roof = Roof::Retractable;
     }
 
     return roof;
@@ -615,9 +613,9 @@ pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Ba
     let ballpark = BallparkAncient {
         name: generate_ballpark_name(name1, name2),
         location: generate_location(),
-        park_type: park_type,
-        capacity: capacity,
-        condition: condition,
+        park_type,
+        capacity,
+        condition,
         quirks: generate_quirks(quirk_num),
     };
     return ballpark;
@@ -679,10 +677,10 @@ pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Bal
         name: generate_ballpark_name(name1, name2),
         location: generate_location(),
         park_type: generate_modern_park_type(),
-        capacity: capacity,
-        turf: turf,
-        roof: roof,
-        condition: condition,
+        capacity,
+        turf,
+        roof,
+        condition,
         quirks: generate_quirks(quirk_num),
     };
     return ballpark;

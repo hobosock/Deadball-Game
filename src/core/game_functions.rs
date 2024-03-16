@@ -400,12 +400,12 @@ pub fn create_modern_game<'a>(
         .push(away_active.pitching[0].clone());
 
     let game = GameModern {
-        home: home,
-        away: away,
-        ballpark: ballpark,
-        home_active: home_active,
-        away_active: away_active,
-        oddity: oddity,
+        home,
+        away,
+        ballpark,
+        home_active,
+        away_active,
+        oddity,
     };
     return Ok(game);
 }
@@ -1571,8 +1571,8 @@ pub fn init_new_game_state<'a>(home_pitcher: Player, away_pitcher: Player) -> Ga
         runner1: None,
         runner2: None,
         runner3: None,
-        home_state: home_state,
-        away_state: away_state,
+        home_state,
+        away_state,
         game_text: "Game created.".to_string(),
     };
 
@@ -1659,8 +1659,8 @@ pub fn new_game_state_struct() -> GameState {
         runner1: None,
         runner2: None,
         runner3: None,
-        home_state: home_state,
-        away_state: away_state,
+        home_state,
+        away_state,
         game_text: "Game created.".to_string(),
     };
 
@@ -2545,12 +2545,10 @@ pub fn hit_and_run(
             let def_roll = combined_roll(debug, 12) + defense_bonus;
             if def_roll <= 2 {
                 hnr = HitAndRun::Hit;
+            } else if out_type <= 3 || out_type >= 7 {
+                hnr = HitAndRun::PopUpK;
             } else {
-                if out_type <= 3 || out_type >= 7 {
-                    hnr = HitAndRun::PopUpK;
-                } else {
-                    hnr = HitAndRun::Groundball;
-                }
+                hnr = HitAndRun::Groundball;
             }
         }
         AtBatResults::ProductiveOut1 => {
