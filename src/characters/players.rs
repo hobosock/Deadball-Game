@@ -127,7 +127,7 @@ impl Player {
                 _ => {}
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns player specific modifier to hit rolls (P+/P++/P-/P--)
@@ -142,7 +142,7 @@ impl Player {
                 _ => {}
             }
         }
-        return modifier;
+        modifier
     }
 
     // the rest of the traits aren't simple or symmetric enough, so implementing them differently
@@ -150,60 +150,55 @@ impl Player {
     pub fn contact_hit(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::ContactHitter => modifier = true,
-                _ => {}
+            if let Traits::ContactHitter = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns true if player has C-
     pub fn free_swing(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::FreeSwinger => modifier = true,
-                _ => {}
+            if let Traits::FreeSwinger = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns true if player has S+
     pub fn speedy(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::SpeedyRunner => modifier = true,
-                _ => {}
+            if let Traits::SpeedyRunner = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns true if player has S-
     pub fn slow(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::SlowRunner => modifier = true,
-                _ => {}
+            if let Traits::SlowRunner = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns true if player has T+
     pub fn tough(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::ToughPlayer => modifier = true,
-                _ => {}
+            if let Traits::ToughPlayer = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     // PITCHING TRAITS
@@ -211,24 +206,22 @@ impl Player {
     pub fn strikeout(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::StrikeoutArtist => modifier = true,
-                _ => {}
+            if let Traits::StrikeoutArtist = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns true if pitcher has GB+
     pub fn groundball(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::GroundballMachine => modifier = true,
-                _ => {}
+            if let Traits::GroundballMachine = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns OBT modifier if pitcher has CN+/CN-
@@ -241,19 +234,18 @@ impl Player {
                 _ => {}
             }
         }
-        return modifier;
+        modifier
     }
 
     /// returns true if pitcher has ST+
     pub fn stamina(&self) -> bool {
         let mut modifier = false;
         for player_trait in self.traits.iter() {
-            match player_trait {
-                Traits::GreatStamina => modifier = true,
-                _ => {}
+            if let Traits::GreatStamina = player_trait {
+                modifier = true
             }
         }
-        return modifier;
+        modifier
     }
 }
 
@@ -277,10 +269,10 @@ pub fn load_player(contents: String) -> Player {
     let mut read_injury_severity = vec![InjurySeverity::Uninjured];
 
     // sort data into player struct
-    let stats: Vec<&str> = contents.split("\n").collect();
+    let stats: Vec<&str> = contents.split('\n').collect();
     for i in 0..stats.len() - 1 {
         // last line is usually just a new line character
-        let statline: Vec<&str> = stats[i].split(":").collect();
+        let statline: Vec<&str> = stats[i].split(':').collect();
         if statline[0].trim().eq("First Name") {
             read_first_name = statline[1].trim().to_string();
         } else if statline[0].trim().eq("Last Name") {
@@ -429,7 +421,7 @@ pub fn load_player(contents: String) -> Player {
         }
     }
 
-    let player_data = Player {
+    Player {
         first_name: read_first_name,
         last_name: read_last_name,
         nickname: read_nickname,
@@ -441,9 +433,7 @@ pub fn load_player(contents: String) -> Player {
         traits: read_traits,
         injury_location: read_injury_location,
         injury_severity: read_injury_severity,
-    };
-
-    player_data
+    }
 }
 
 // writes a Player struct to a *.DBP file

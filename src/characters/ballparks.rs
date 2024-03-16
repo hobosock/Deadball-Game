@@ -490,9 +490,9 @@ pub fn generate_ballpark_condition(era: Era) -> Condition {
     }
     if result == 0 {
         condition = Condition::FallingApart;
-    } else if result >= 1 && result <= 6 {
+    } else if (1..=6).contains(&result) {
         condition = Condition::Decrepit;
-    } else if result >= 7 && result <= 15 {
+    } else if (7..=15).contains(&result) {
         condition = Condition::WellWorn;
     } else {
         condition = Condition::Sparkling;
@@ -509,7 +509,7 @@ pub fn generate_turf() -> Turf {
     if result <= 2 {
         turf = Turf::Ragged;
         // -1 to steal and infield defense
-    } else if result >= 3 && result <= 10 {
+    } else if (3..=10).contains(&result) {
         turf = Turf::Good;
     } else {
         turf = Turf::Artificial;
@@ -526,7 +526,7 @@ pub fn generate_roof() -> Roof {
     // TODO: make roof impact play
     if result <= 13 {
         roof = Roof::No;
-    } else if result >= 14 && result <= 15 {
+    } else if (14..=15).contains(&result) {
         roof = Roof::Permanent;
     } else {
         roof = Roof::Retractable;
@@ -546,7 +546,7 @@ pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
             let result = roll(20);
             if result <= 3 {
                 quirks.push(Quirks::CozyOutfield);
-            } else if result >= 4 && result <= 6 {
+            } else if (4..=6).contains(&result) {
                 quirks.push(Quirks::ExpansiveOutfield);
             } else if result == 7 {
                 quirks.push(Quirks::ShortLeft);
@@ -564,7 +564,7 @@ pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
                 quirks.push(Quirks::SlowInfield);
             } else if result == 14 {
                 quirks.push(Quirks::HighMound);
-            } else if result >= 15 && result <= 17 {
+            } else if (15..=17).contains(&result) {
                 quirks.push(Quirks::Beautiful);
             } else {
                 quirks.push(Quirks::Hideous);
@@ -604,15 +604,14 @@ pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Ba
     // quirk roll - match stadium type for number of rolls
 
     // build struct
-    let ballpark = BallparkAncient {
+    BallparkAncient {
         name: generate_ballpark_name(name1, name2),
         location: generate_location(),
         park_type,
         capacity,
         condition,
         quirks: generate_quirks(quirk_num),
-    };
-    ballpark
+    }
 }
 
 /// generate a modern ballpark struct
