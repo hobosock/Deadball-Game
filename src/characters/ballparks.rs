@@ -109,9 +109,9 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
     let mut quirks = vec![Quirks::None];
 
     let rows: Vec<&str> = contents.split('\n').collect();
-    for i in 0..rows.len() - 1 {
+    for row in rows.iter().take(rows.len() - 1) {
         // last line is usually just a new line character
-        let rowline: Vec<&str> = rows[i].split(":").collect();
+        let rowline: Vec<&str> = row.split(':').collect();
         if rowline[0].trim().eq("NAME") {
             name = rowline[1].trim().to_string();
         } else if rowline[0].trim().eq("LOCATION") {
@@ -171,31 +171,31 @@ pub fn load_park_modern(contents: String) -> BallparkModern {
                 condition = Condition::FallingApart;
             }
         } else if rowline[0].trim().eq("QUIRKS") {
-            let quirk_string: Vec<&str> = rowline[1].split(",").collect();
-            for i in 0..quirk_string.len() {
-                if quirk_string[i].trim().eq("Cozy Outfield") {
+            let quirk_strings: Vec<&str> = rowline[1].split(',').collect();
+            for quirk_string in quirk_strings.iter() {
+                if quirk_string.trim().eq("Cozy Outfield") {
                     quirks.push(Quirks::CozyOutfield);
-                } else if quirk_string[i].trim().eq("Expansive Outfield") {
+                } else if quirk_string.trim().eq("Expansive Outfield") {
                     quirks.push(Quirks::ExpansiveOutfield);
-                } else if quirk_string[i].trim().eq("Short Left") {
+                } else if quirk_string.trim().eq("Short Left") {
                     quirks.push(Quirks::ShortLeft);
-                } else if quirk_string[i].trim().eq("Short Right") {
+                } else if quirk_string.trim().eq("Short Right") {
                     quirks.push(Quirks::ShortRight);
-                } else if quirk_string[i].trim().eq("Odd Left") {
+                } else if quirk_string.trim().eq("Odd Left") {
                     quirks.push(Quirks::OddLeft);
-                } else if quirk_string[i].trim().eq("Odd Center") {
+                } else if quirk_string.trim().eq("Odd Center") {
                     quirks.push(Quirks::OddCenter);
-                } else if quirk_string[i].trim().eq("Odd Right") {
+                } else if quirk_string.trim().eq("Odd Right") {
                     quirks.push(Quirks::OddRight);
-                } else if quirk_string[i].trim().eq("Fast Infield") {
+                } else if quirk_string.trim().eq("Fast Infield") {
                     quirks.push(Quirks::FastInfield);
-                } else if quirk_string[i].trim().eq("Slow Infield") {
+                } else if quirk_string.trim().eq("Slow Infield") {
                     quirks.push(Quirks::SlowInfield);
-                } else if quirk_string[i].trim().eq("High Mound") {
+                } else if quirk_string.trim().eq("High Mound") {
                     quirks.push(Quirks::HighMound);
-                } else if quirk_string[i].trim().eq("Beautiful") {
+                } else if quirk_string.trim().eq("Beautiful") {
                     quirks.push(Quirks::Beautiful);
-                } else if quirk_string[i].trim().eq("Hideous") {
+                } else if quirk_string.trim().eq("Hideous") {
                     quirks.push(Quirks::Hideous);
                 }
             }
@@ -280,8 +280,7 @@ pub fn write_ballpark_modern(data: &BallparkModern, filename: &str) -> Result<()
         }
     }
 
-    let write_result = fs::write(filename, &file_text);
-    return write_result;
+    fs::write(filename, &file_text)
 }
 
 /// loads ancient era park from text file to struct
@@ -294,9 +293,9 @@ pub fn load_park_ancient(contents: String) -> BallparkAncient {
     let mut condition = Condition::None;
     let mut quirks = vec![Quirks::None];
 
-    let rows: Vec<&str> = contents.split("\n").collect();
-    for i in 0..rows.len() - 1 {
-        let rowline: Vec<&str> = rows[i].split(":").collect();
+    let rows: Vec<&str> = contents.split('\n').collect();
+    for row in rows.iter().take(rows.len() - 1) {
+        let rowline: Vec<&str> = row.split(':').collect();
         if rowline[0].trim().eq("NAME") {
             name = rowline[1].trim().to_string();
         } else if rowline[0].trim().eq("LOCATION") {
@@ -336,47 +335,45 @@ pub fn load_park_ancient(contents: String) -> BallparkAncient {
                 condition = Condition::FallingApart;
             }
         } else if rowline[0].trim().eq("QUIRKS") {
-            let quirk_string: Vec<&str> = rowline[1].split(",").collect();
-            for i in 0..quirk_string.len() {
-                if quirk_string[1].trim().eq("Cozy Outfield") {
+            let quirk_strings: Vec<&str> = rowline[1].split(',').collect();
+            for quirk_string in quirk_strings.iter() {
+                if quirk_string.trim().eq("Cozy Outfield") {
                     quirks.push(Quirks::CozyOutfield);
-                } else if quirk_string[i].trim().eq("Expansive Outfield") {
+                } else if quirk_string.trim().eq("Expansive Outfield") {
                     quirks.push(Quirks::ExpansiveOutfield);
-                } else if quirk_string[i].trim().eq("Short Left") {
+                } else if quirk_string.trim().eq("Short Left") {
                     quirks.push(Quirks::ShortLeft);
-                } else if quirk_string[i].trim().eq("Short Right") {
+                } else if quirk_string.trim().eq("Short Right") {
                     quirks.push(Quirks::ShortRight);
-                } else if quirk_string[i].trim().eq("Odd Left") {
+                } else if quirk_string.trim().eq("Odd Left") {
                     quirks.push(Quirks::OddLeft);
-                } else if quirk_string[i].trim().eq("Odd Center") {
+                } else if quirk_string.trim().eq("Odd Center") {
                     quirks.push(Quirks::OddCenter);
-                } else if quirk_string[i].trim().eq("Odd Right") {
+                } else if quirk_string.trim().eq("Odd Right") {
                     quirks.push(Quirks::OddRight);
-                } else if quirk_string[i].trim().eq("Fast Infield") {
+                } else if quirk_string.trim().eq("Fast Infield") {
                     quirks.push(Quirks::FastInfield);
-                } else if quirk_string[i].trim().eq("Slow Infield") {
+                } else if quirk_string.trim().eq("Slow Infield") {
                     quirks.push(Quirks::SlowInfield);
-                } else if quirk_string[i].trim().eq("High Mound") {
+                } else if quirk_string.trim().eq("High Mound") {
                     quirks.push(Quirks::HighMound);
-                } else if quirk_string[i].trim().eq("Beautiful") {
+                } else if quirk_string.trim().eq("Beautiful") {
                     quirks.push(Quirks::Beautiful);
-                } else if quirk_string[i].trim().eq("Hideous") {
+                } else if quirk_string.trim().eq("Hideous") {
                     quirks.push(Quirks::Hideous);
                 }
             }
         }
     }
 
-    let park_data = BallparkAncient {
+    BallparkAncient {
         name,
         location,
         park_type,
         capacity,
         condition,
         quirks,
-    };
-
-    park_data
+    }
 }
 
 /// writes ancient era ballpark struct to text file
@@ -432,8 +429,7 @@ pub fn write_ballpark_ancient(
         }
     }
 
-    let write_result = fs::write(filename, &file_text);
-    return write_result;
+    fs::write(filename, &file_text)
 }
 
 /// generate ballpark names - two words, CSV for each? some kind of name and then park type
@@ -444,8 +440,7 @@ pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> Strin
     let roll2 = roll(len2 as i32) - 1;
     let part1 = name1[roll1 as usize].clone();
     let part2 = name2[roll2 as usize].clone();
-    let name = part1 + " " + &part2;
-    return name;
+    part1 + " " + &part2
 }
 
 /// generate park type functions
@@ -462,7 +457,7 @@ pub fn generate_ancient_park_type() -> StadiumTypeAncient {
         park_type = StadiumTypeAncient::None;
     }
 
-    return park_type;
+    park_type
 }
 
 /// generate a modern park type
@@ -483,16 +478,15 @@ pub fn generate_modern_park_type() -> StadiumTypeModern {
         park_type = StadiumTypeModern::None;
     }
 
-    return park_type;
+    park_type
 }
 
 /// generate condition function
 pub fn generate_ballpark_condition(era: Era) -> Condition {
     let mut result = roll(20);
     let condition: Condition;
-    match era {
-        Era::Ancient => result -= 1,
-        _ => {}
+    if era == Era::Ancient {
+        result -= 1
     }
     if result == 0 {
         condition = Condition::FallingApart;
@@ -504,7 +498,7 @@ pub fn generate_ballpark_condition(era: Era) -> Condition {
         condition = Condition::Sparkling;
     }
 
-    return condition;
+    condition
 }
 
 /// generate turf function
@@ -522,7 +516,7 @@ pub fn generate_turf() -> Turf {
         // +1 to steal and infield defense
     }
 
-    return turf;
+    turf
 }
 
 /// generate roof function
@@ -538,7 +532,7 @@ pub fn generate_roof() -> Roof {
         roof = Roof::Retractable;
     }
 
-    return roof;
+    roof
 }
 
 /// generate ballpark quirks functions
@@ -578,7 +572,7 @@ pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
         }
     }
 
-    return quirks;
+    quirks
 }
 
 /// generate ballpark functions
@@ -618,7 +612,7 @@ pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Ba
         condition,
         quirks: generate_quirks(quirk_num),
     };
-    return ballpark;
+    ballpark
 }
 
 /// generate a modern ballpark struct
@@ -673,7 +667,7 @@ pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Bal
     // quirk roll - match stadium type for number of rolls
 
     // build struct
-    let ballpark = BallparkModern {
+    BallparkModern {
         name: generate_ballpark_name(name1, name2),
         location: generate_location(),
         park_type: generate_modern_park_type(),
@@ -682,6 +676,5 @@ pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Bal
         roof,
         condition,
         quirks: generate_quirks(quirk_num),
-    };
-    return ballpark;
+    }
 }
