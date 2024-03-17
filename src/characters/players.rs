@@ -270,9 +270,9 @@ pub fn load_player(contents: String) -> Player {
 
     // sort data into player struct
     let stats: Vec<&str> = contents.split('\n').collect();
-    for i in 0..stats.len() - 1 {
+    for stat in stats.iter().take(stats.len() - 1) {
         // last line is usually just a new line character
-        let statline: Vec<&str> = stats[i].split(':').collect();
+        let statline: Vec<&str> = stat.split(':').collect();
         if statline[0].trim().eq("First Name") {
             read_first_name = statline[1].trim().to_string();
         } else if statline[0].trim().eq("Last Name") {
@@ -336,85 +336,85 @@ pub fn load_player(contents: String) -> Player {
                 ),
             }
         } else if statline[0].trim().eq("Traits") {
-            let trait_string: Vec<&str> = statline[1].split(",").collect();
-            for i in 0..trait_string.len() {
-                if trait_string[i].trim().eq("P+") {
+            let trait_string: Vec<&str> = statline[1].split(',').collect();
+            for traits in trait_string.iter() {
+                if traits.trim().eq("P+") {
                     read_traits.push(Traits::PowerHitter);
-                } else if trait_string[i].trim().eq("P++") {
+                } else if traits.trim().eq("P++") {
                     read_traits.push(Traits::ElitePowerHitter);
-                } else if trait_string[i].trim().eq("C+") {
+                } else if traits.trim().eq("C+") {
                     read_traits.push(Traits::ContactHitter);
-                } else if trait_string[i].trim().eq("S+") {
+                } else if traits.trim().eq("S+") {
                     read_traits.push(Traits::SpeedyRunner);
-                } else if trait_string[i].trim().eq("D+") {
+                } else if traits.trim().eq("D+") {
                     read_traits.push(Traits::GreatDefender);
-                } else if trait_string[i].trim().eq("T+") {
+                } else if traits.trim().eq("T+") {
                     read_traits.push(Traits::ToughPlayer);
-                } else if trait_string[i].trim().eq("P-") {
+                } else if traits.trim().eq("P-") {
                     read_traits.push(Traits::WeakHitter);
-                } else if trait_string[i].trim().eq("P--") {
+                } else if traits.trim().eq("P--") {
                     read_traits.push(Traits::ExtraWeakHitter);
-                } else if trait_string[i].trim().eq("C-") {
+                } else if traits.trim().eq("C-") {
                     read_traits.push(Traits::FreeSwinger);
-                } else if trait_string[i].trim().eq("S-") {
+                } else if traits.trim().eq("S-") {
                     read_traits.push(Traits::SlowRunner);
-                } else if trait_string[i].trim().eq("D-") {
+                } else if traits.trim().eq("D-") {
                     read_traits.push(Traits::PoorDefender);
-                } else if trait_string[i].trim().eq("K+") {
+                } else if traits.trim().eq("K+") {
                     read_traits.push(Traits::StrikeoutArtist);
-                } else if trait_string[i].trim().eq("GB+") {
+                } else if traits.trim().eq("GB+") {
                     read_traits.push(Traits::GroundballMachine);
-                } else if trait_string[i].trim().eq("CN+") {
+                } else if traits.trim().eq("CN+") {
                     read_traits.push(Traits::ControlPitcher);
-                } else if trait_string[i].trim().eq("ST+") {
+                } else if traits.trim().eq("ST+") {
                     read_traits.push(Traits::GreatStamina);
-                } else if trait_string[i].trim().eq("CN-") {
+                } else if traits.trim().eq("CN-") {
                     read_traits.push(Traits::Wild);
                 }
             }
         } else if statline[0].trim().eq("Injury Location") {
-            let inj_loc_str: Vec<&str> = statline[1].split(",").collect();
-            for i in 0..inj_loc_str.len() {
-                if inj_loc_str[i].trim().eq("Head") {
+            let inj_loc_str: Vec<&str> = statline[1].split(',').collect();
+            for inj in inj_loc_str.iter() {
+                if inj.trim().eq("Head") {
                     read_injury_location.push(InjuryLocation::Head);
-                } else if inj_loc_str[i].trim().eq("Shoulder") {
+                } else if inj.trim().eq("Shoulder") {
                     read_injury_location.push(InjuryLocation::Shoulder);
-                } else if inj_loc_str[i].trim().eq("Elbow") {
+                } else if inj.trim().eq("Elbow") {
                     read_injury_location.push(InjuryLocation::Elbow);
-                } else if inj_loc_str[i].trim().eq("Forearm") {
+                } else if inj.trim().eq("Forearm") {
                     read_injury_location.push(InjuryLocation::Forearm);
-                } else if inj_loc_str[i].trim().eq("Wrist") {
+                } else if inj.trim().eq("Wrist") {
                     read_injury_location.push(InjuryLocation::Wrist);
-                } else if inj_loc_str[i].trim().eq("Hand") {
+                } else if inj.trim().eq("Hand") {
                     read_injury_location.push(InjuryLocation::Hand);
-                } else if inj_loc_str[i].trim().eq("Back") {
+                } else if inj.trim().eq("Back") {
                     read_injury_location.push(InjuryLocation::Back);
-                } else if inj_loc_str[i].trim().eq("Oblique") {
+                } else if inj.trim().eq("Oblique") {
                     read_injury_location.push(InjuryLocation::Oblique);
-                } else if inj_loc_str[i].trim().eq("Hip") {
+                } else if inj.trim().eq("Hip") {
                     read_injury_location.push(InjuryLocation::Hip);
-                } else if inj_loc_str[i].trim().eq("Hamstring") {
+                } else if inj.trim().eq("Hamstring") {
                     read_injury_location.push(InjuryLocation::Hamstring)
-                } else if inj_loc_str[i].trim().eq("Knee") {
+                } else if inj.trim().eq("Knee") {
                     read_injury_location.push(InjuryLocation::Knee);
-                } else if inj_loc_str[i].trim().eq("Ankle") {
+                } else if inj.trim().eq("Ankle") {
                     read_injury_location.push(InjuryLocation::Ankle);
-                } else if inj_loc_str[i].trim().eq("Foot") {
+                } else if inj.trim().eq("Foot") {
                     read_injury_location.push(InjuryLocation::Foot);
                 }
             }
         } else if statline[0].trim().eq("Injury Severity") {
-            let inj_sev_str: Vec<&str> = statline[1].split(",").collect();
-            for i in 0..inj_sev_str.len() {
-                if inj_sev_str[i].trim().eq("Catastrophic") {
+            let inj_sev_str: Vec<&str> = statline[1].split(',').collect();
+            for inj in inj_sev_str.iter() {
+                if inj.trim().eq("Catastrophic") {
                     read_injury_severity.push(InjurySeverity::Catastrophic);
-                } else if inj_sev_str[i].trim().eq("Major") {
+                } else if inj.trim().eq("Major") {
                     read_injury_severity.push(InjurySeverity::Major);
-                } else if inj_sev_str[i].trim().eq("Minor") {
+                } else if inj.trim().eq("Minor") {
                     read_injury_severity.push(InjurySeverity::Minor);
-                } else if inj_sev_str[i].trim().eq("Superficial") {
+                } else if inj.trim().eq("Superficial") {
                     read_injury_severity.push(InjurySeverity::Superficial);
-                } else if inj_sev_str[i].trim().eq("Uninjured") {
+                } else if inj.trim().eq("Uninjured") {
                     read_injury_severity.push(InjurySeverity::Uninjured);
                 }
             }
@@ -450,8 +450,8 @@ pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error>
     match data.position {
         Position::None => file_text.push_str("None"),
         Position::Bench => file_text.push_str("Bench"),
-        Position::Pitcher => file_text.push_str("P"),
-        Position::Catcher => file_text.push_str("C"),
+        Position::Pitcher => file_text.push('P'),
+        Position::Catcher => file_text.push('C'),
         Position::Firstbase => file_text.push_str("1B"),
         Position::Shortstop => file_text.push_str("SS"),
         Position::Thirdbase => file_text.push_str("3B"),
@@ -463,9 +463,9 @@ pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error>
     file_text.push_str("\nHandedness: ");
     match data.handedness {
         Handedness::None => file_text.push_str("None"),
-        Handedness::Left => file_text.push_str("L"),
-        Handedness::Right => file_text.push_str("R"),
-        Handedness::Switch => file_text.push_str("S"),
+        Handedness::Left => file_text.push('L'),
+        Handedness::Right => file_text.push('R'),
+        Handedness::Switch => file_text.push('S'),
     }
     file_text.push_str("\nBatter Target: ");
     file_text.push_str(&data.batter_target.to_string());
@@ -525,8 +525,7 @@ pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error>
         }
     }
 
-    let write_result = fs::write(filename, &file_text);
-    write_result
+    fs::write(filename, &file_text)
 }
 
 // NOTE: pretty sure this function has been replaced by the load_csv function - not deleting yet
@@ -566,7 +565,7 @@ pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (Stri
     let roll_last = roll(len_last as i32);
     let first_name = firstnames[(roll_first - 1) as usize].clone();
     let last_name = lastnames[(roll_last - 1) as usize].clone();
-    return (first_name, last_name);
+    (first_name, last_name)
 }
 
 /// generates handedness
@@ -577,7 +576,7 @@ pub fn generate_handedness(player_type: &PlayerClass) -> Handedness {
             let result = roll(10);
             if result <= 6 {
                 hand = Handedness::Right;
-            } else if result >= 7 && result <= 9 {
+            } else if (7..=9).contains(&result) {
                 hand = Handedness::Left;
             } else {
                 hand = Handedness::Switch;
@@ -587,7 +586,7 @@ pub fn generate_handedness(player_type: &PlayerClass) -> Handedness {
             let result = roll(10);
             if result <= 6 {
                 hand = Handedness::Right;
-            } else if result >= 7 && result <= 9 {
+            } else if (7..=9).contains(&result) {
                 hand = Handedness::Left;
             } else {
                 hand = Handedness::Switch;
@@ -602,25 +601,20 @@ pub fn generate_handedness(player_type: &PlayerClass) -> Handedness {
             }
         }
     }
-    return hand;
+
+    hand
 }
 
 /// generate batter target and on base target
 pub fn generate_batter_target(player_type: &PlayerClass) -> (i32, i32) {
-    let bt: i32;
-    match player_type {
-        PlayerClass::StartingHitter => {
-            bt = 15 + roll(10) + roll(10);
-        }
-        PlayerClass::PinchHitter => {
-            bt = 15 + roll(10);
-        }
-        PlayerClass::Pitchers => {
-            bt = 5 + roll(10);
-        }
-    }
+    let bt: i32 = match player_type {
+        PlayerClass::StartingHitter => 15 + roll(10) + roll(10),
+        PlayerClass::PinchHitter => 15 + roll(10),
+        PlayerClass::Pitchers => 5 + roll(10),
+    };
     let ot = bt + roll(6);
-    return (bt, ot);
+
+    (bt, ot)
 }
 
 /// generate pitch die
@@ -643,7 +637,8 @@ pub fn generate_pitch_die(player_type: &PlayerClass) -> i32 {
             pd = -8;
         }
     }
-    return pd;
+
+    pd
 }
 
 /// generate traits
