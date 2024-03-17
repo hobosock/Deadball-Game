@@ -71,22 +71,24 @@ pub fn load_csv(filename: &str, delimiter: &str) -> Result<Vec<String>, std::io:
             // separate text into vector elements and return
             let mut result: Vec<String> = raw_text.split(delimiter).map(str::to_string).collect();
             // need to check for "empty" entries
-            result.retain(|x| x.len() >= 1);
+            result.retain(|x| !x.is_empty());
             // trim whitespace, can't figure out how to do it during collection
-            for i in 0..result.len() as usize {
+            for i in 0..result.len() {
                 result[i] = result[i].trim().to_string();
             }
 
-            return Ok(result);
+            Ok(result)
         }
-        Err(err) => return Err(err),
+        Err(err) => Err(err),
     }
 }
 
 /// function to load databases when program launches
 pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
-    let mut database = DeadballDatabases::default();
-    database.loaded = true; // this way databases won't be read until again until manual reset
+    let mut database = DeadballDatabases {
+        loaded: true, // this way databases won't be read again until manual reset
+        ..Default::default()
+    };
     match load_csv("src/databases/firstname.csv", "\n") {
         Ok(a) => {
             database.first_names = a;
@@ -249,5 +251,5 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
         }
     }
 
-    return database;
+    database
 }

@@ -8,9 +8,8 @@ use crate::{
     characters::{
         ballparks::{
             generate_modern_ballpark, load_park_ancient, load_park_modern, write_ballpark_modern,
-            BallparkModern,
         },
-        players::{generate_player, write_player, Player, PlayerClass, Position},
+        players::{generate_player, write_player, PlayerClass, Position},
         teams::{generate_team, load_team, write_team, Era},
     },
     core::game_functions::{create_modern_game, GameStatus, InningTB, Outs, RunnersOn},
@@ -155,7 +154,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                     && app.ballpark_file.is_some()
                 {
                     // try to load teams and ballpark files
-                    match fs::read_to_string(&app.away_team_file.as_ref().unwrap().as_path()) {
+                    match fs::read_to_string(app.away_team_file.as_ref().unwrap().as_path()) {
                         Ok(contents) => {
                             app.away_team = Some(load_team(contents));
                         }
@@ -165,7 +164,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                                 + &format!("{:?}", err);
                         }
                     }
-                    match fs::read_to_string(&app.home_team_file.as_ref().unwrap().as_path()) {
+                    match fs::read_to_string(app.home_team_file.as_ref().unwrap().as_path()) {
                         Ok(contents) => {
                             app.home_team = Some(load_team(contents));
                         }
@@ -177,7 +176,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                     }
                     match app.create_game_era {
                         Era::Modern => {
-                            match fs::read_to_string(&app.ballpark_file.as_ref().unwrap().as_path())
+                            match fs::read_to_string(app.ballpark_file.as_ref().unwrap().as_path())
                             {
                                 Ok(contents) => {
                                     app.ballpark_modern = Some(load_park_modern(contents));
@@ -190,7 +189,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                             }
                         }
                         Era::Ancient => {
-                            match fs::read_to_string(&app.ballpark_file.as_ref().unwrap().as_path())
+                            match fs::read_to_string(app.ballpark_file.as_ref().unwrap().as_path())
                             {
                                 Ok(contents) => {
                                     app.ballpark_ancient = Some(load_park_ancient(contents));
@@ -325,12 +324,11 @@ pub fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mu
             });
             if ui.button("Create").clicked() {
                 // generate and write team
-                let name: &str;
-                if app.create_team.name_override {
-                    name = &app.create_team.name;
+                let name = if app.create_team.name_override {
+                    &app.create_team.name
                 } else {
-                    name = "New Team";
-                }
+                    "New Team"
+                };
                 let new_team = generate_team(
                     app.create_team.era.clone(),
                     8,
@@ -444,22 +442,21 @@ pub fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &
             });
             if ui.button("Create").clicked() {
                 // TODO: need to handle nicknames
-                let player: Player;
-                if app.create_player.name_override {
-                    player = generate_player(
+                let player = if app.create_player.name_override {
+                    generate_player(
                         app.create_player.class.clone(),
                         app.create_player.position.clone(),
                         &vec![app.create_player.first_name.clone()],
                         &vec![app.create_player.last_name.clone()],
-                    );
+                    )
                 } else {
-                    player = generate_player(
+                    generate_player(
                         app.create_player.class.clone(),
                         app.create_player.position.clone(),
                         &app.databases.first_names,
                         &app.databases.last_names,
-                    );
-                }
+                    )
+                };
                 match write_player(&player, &app.create_player.save_location) {
                     Ok(()) => {
                         toasts.add(Toast {
@@ -504,15 +501,14 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
                 ui.text_edit_singleline(&mut app.create_ballpark.save_location);
             });
             if ui.button("Create").clicked() {
-                let ballpark: BallparkModern;
-                if app.create_ballpark.name_override {
-                    ballpark = generate_modern_ballpark(
+                let ballpark = if app.create_ballpark.name_override {
+                    generate_modern_ballpark(
                         &vec![app.create_ballpark.name.clone()],
                         &vec!["".to_string()],
-                    );
+                    )
                 } else {
-                    ballpark = generate_modern_ballpark(&app.databases.park1, &app.databases.park2);
-                }
+                    generate_modern_ballpark(&app.databases.park1, &app.databases.park2)
+                };
                 match write_ballpark_modern(&ballpark, &app.create_ballpark.save_location) {
                     Ok(()) => {
                         toasts.add(Toast {
@@ -588,7 +584,7 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
         .open(&mut app.gui_windows.debug_window)
         .show(ctx, |ui| {
             // set debug state to current game state (if it exists)
-            if app.game_state.is_some() && app.debug_settings.debug_copied == false {
+            if app.game_state.is_some() && !app.debug_settings.debug_copied {
                 app.debug_settings.debug_state = app.game_state.clone().unwrap();
                 app.debug_settings.debug_copied = true;
                 app.debug_settings.debug_inning_text =

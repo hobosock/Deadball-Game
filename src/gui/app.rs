@@ -940,8 +940,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                     if ui.button("Hit & Run").clicked() {
                         if app.game_state.is_some() && app.game_modern.is_some() {
                             if app.game_state.as_ref().unwrap().runners == RunnersOn::Runner100 {
-                                let batter: Player;
-                                match app.game_state.as_ref().unwrap().inning_half {
+                                let batter = match app.game_state.as_ref().unwrap().inning_half {
                                     InningTB::Top => {
                                         let bat_num = app
                                             .game_state
@@ -949,14 +948,9 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                             .unwrap()
                                             .away_state
                                             .current_batter;
-                                        batter = app
-                                            .game_modern
-                                            .as_ref()
-                                            .unwrap()
-                                            .away_active
-                                            .batting_order
+                                        app.game_modern.as_ref().unwrap().away_active.batting_order
                                             [bat_num as usize]
-                                            .clone();
+                                            .clone()
                                     }
                                     InningTB::Bottom => {
                                         let bat_num = app
@@ -965,16 +959,11 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                             .unwrap()
                                             .home_state
                                             .current_batter;
-                                        batter = app
-                                            .game_modern
-                                            .as_ref()
-                                            .unwrap()
-                                            .home_active
-                                            .batting_order
+                                        app.game_modern.as_ref().unwrap().home_active.batting_order
                                             [bat_num as usize]
-                                            .clone();
+                                            .clone()
                                     }
-                                }
+                                };
                                 app.game_state = Some(hit_and_run(
                                     app.game_state.clone().unwrap(),
                                     app.game_modern.as_ref().unwrap(),
