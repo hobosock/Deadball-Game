@@ -216,10 +216,10 @@ pub fn load_team(contents: String) -> Team {
     let mut owner_personality = String::new();
 
     // sort text into relevant fields
-    let rows: Vec<&str> = contents.split("\n").collect();
-    for i in 0..rows.len() {
+    let rows: Vec<&str> = contents.split('\n').collect();
+    for row in rows.iter() {
         // last line is usually just a new line character
-        let rowline: Vec<&str> = rows[i].split(":").collect();
+        let rowline: Vec<&str> = row.split(':').collect();
         if rowline[0].trim().eq("TEAM") {
             name = rowline[1].trim().to_string();
         } else if rowline[0].trim().eq("BALLPARK") {
@@ -363,7 +363,7 @@ pub fn load_team(contents: String) -> Team {
         }
     }
 
-    let team_data = Team {
+    Team {
         name,
         ballpark,
         manager,
@@ -388,9 +388,7 @@ pub fn load_team(contents: String) -> Team {
         bench,
         pitcher,
         bullpen,
-    };
-
-    team_data
+    }
 }
 
 /// write team file *.DBT
@@ -455,8 +453,8 @@ pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
     match data.manager_position {
         Position::None => file_text.push_str("None"),
         Position::Bench => file_text.push_str("Bench"),
-        Position::Pitcher => file_text.push_str("P"),
-        Position::Catcher => file_text.push_str("C"),
+        Position::Pitcher => file_text.push('P'),
+        Position::Catcher => file_text.push('C'),
         Position::Firstbase => file_text.push_str("1B"),
         Position::Shortstop => file_text.push_str("2B"),
         Position::Thirdbase => file_text.push_str("3B"),
@@ -501,8 +499,7 @@ pub fn write_team(data: Team, filename: &str) -> Result<(), std::io::Error> {
         file_text.push_str(&data.bullpen[i]);
     }
 
-    let write_result = fs::write(filename, &file_text);
-    write_result
+    fs::write(filename, &file_text)
 }
 
 /// turns a Team struct into separate vectors for fielders/bench/pitcher/bullpen
@@ -553,22 +550,20 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
         }
     }
 
-    return (roster, bench, pitcher, bullpen);
+    (roster, bench, pitcher, bullpen)
 }
 
 /// generate manager - can borrow a lot from player gen function
 pub fn generate_manager(firstnames: &Vec<String>, lastnames: &Vec<String>) -> String {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
-    let name = first_name + &last_name;
-    return name;
+    first_name + &last_name
 }
 
 /// generate logo
 pub fn generate_logo(logos: &Vec<String>) -> String {
     let len1 = logos.len();
     let roll1 = roll(len1 as i32) - 1;
-    let logo = logos[roll1 as usize].clone();
-    return logo;
+    logos[roll1 as usize].clone()
 }
 
 /// generate location
@@ -588,7 +583,8 @@ pub fn generate_location() -> Location {
     } else {
         location = Location::None;
     }
-    return location;
+
+    location
 }
 /*
 pub fn generate_location(locations: Vec<String>) -> String {
@@ -603,8 +599,7 @@ pub fn generate_location(locations: Vec<String>) -> String {
 pub fn generate_mascot(mascots: &Vec<String>) -> String {
     let len1 = mascots.len();
     let roll1 = roll(len1 as i32) - 1;
-    let mascot = mascots[roll1 as usize].clone();
-    return mascot;
+    mascots[roll1 as usize].clone()
 }
 
 //TODO: make it impact player ages and traits?
@@ -630,7 +625,7 @@ pub fn generate_priority() -> Priority {
         priority = Priority::None;
     }
 
-    return priority;
+    priority
 }
 
 /// generate makeup - same TODO
@@ -643,13 +638,11 @@ pub fn generate_makeup() -> Makeup {
         makeup = Makeup::MostlyVeterans;
     } else if result == 3 {
         makeup = Makeup::Balanced
-    } else if result == 4 {
-        makeup = Makeup::None;
     } else {
         makeup = Makeup::None;
     }
 
-    return makeup;
+    makeup
 }
 
 /// generate fanbase
@@ -670,7 +663,7 @@ pub fn generate_fanbase() -> Fanbase {
         fanbase = Fanbase::None;
     }
 
-    return fanbase;
+    fanbase
 }
 
 /// generate manager position
@@ -698,7 +691,8 @@ pub fn generate_manager_position() -> Position {
     } else {
         position = Position::None;
     }
-    return position;
+
+    position
 }
 
 /// generate manager league
@@ -717,21 +711,20 @@ pub fn generate_league(position: &Position) -> ManagerLeague {
             }
         }
     }
-    return league;
+
+    league
 }
 
 /// generate retired - just roll
 pub fn generate_retired() -> i32 {
-    let result = roll(30);
-    return result;
+    roll(30)
 }
 
 /// generate personality
 pub fn generate_personality(personalities: &Vec<String>) -> String {
     let len1 = personalities.len();
     let result = roll(len1 as i32) - 1;
-    let personality = personalities[result as usize].clone();
-    return personality;
+    personalities[result as usize].clone()
 }
 
 /*
@@ -790,16 +783,14 @@ pub fn generate_personality() -> Personality {
 pub fn generate_motto(mottos: &Vec<String>) -> String {
     let len1 = mottos.len();
     let roll1 = roll(len1 as i32) - 1;
-    let motto = mottos[roll1 as usize].clone();
-    return motto;
+    mottos[roll1 as usize].clone()
 }
 
 /// generate owner background
 pub fn generate_background(backgrounds: &Vec<String>) -> String {
     let len1 = backgrounds.len();
     let roll1 = roll(len1 as i32) - 1;
-    let background = backgrounds[roll1 as usize].clone();
-    return background;
+    backgrounds[roll1 as usize].clone()
 }
 /*
 pub fn generate_background() -> Background {
@@ -938,7 +929,7 @@ pub fn generate_team(
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
         file_name_str.push_str(&bench_raw[i].first_name);
-        file_name_str.push_str("_");
+        file_name_str.push('_');
         file_name_str.push_str(&bench_raw[i].last_name);
         file_name_str.push_str(".dbp");
         let write_result = write_player(&bench_raw[i], &file_name_str);
@@ -978,7 +969,7 @@ pub fn generate_team(
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
         file_name_str.push_str(&bullpen_raw[i].first_name);
-        file_name_str.push_str("_");
+        file_name_str.push('_');
         file_name_str.push_str(&bullpen_raw[i].last_name);
         file_name_str.push_str(".dbp");
         let write_result = write_player(&bullpen_raw[i], &file_name_str);
@@ -1041,7 +1032,7 @@ pub fn generate_team(
     }
 
     // build team struct
-    let new_team = Team {
+    Team {
         name: name.to_string(),
         ballpark: ballpark_string, // TODO: auto generate or user define
         manager: manager_name,
@@ -1066,7 +1057,5 @@ pub fn generate_team(
         bench,
         pitcher,
         bullpen,
-    };
-
-    return new_team;
+    }
 }

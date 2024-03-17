@@ -627,7 +627,7 @@ pub fn generate_pitch_die(player_type: &PlayerClass) -> i32 {
                 pd = 12;
             } else if result == 2 || result == 3 {
                 pd = 8;
-            } else if result >= 4 && result <= 6 {
+            } else if (4..=6).contains(&result) {
                 pd = 4;
             } else {
                 pd = -4;
@@ -646,12 +646,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     let mut traits: Vec<Traits> = vec![];
     // roll for chance of 2 traits
     let chance = roll(100);
-    let num_traits: i32;
-    if chance <= 2 {
-        num_traits = 2;
-    } else {
-        num_traits = 1;
-    }
+    let num_traits: i32 = if chance <= 2 { 2 } else { 1 };
     // TODO: could clean this up so only a single none is written, but it doesn't matter that much
     // so I'm not going to worry about it right now
     for _i in 0..num_traits {
@@ -662,7 +657,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
                     traits.push(Traits::None);
                 } else if result == 5 {
                     traits.push(Traits::Wild);
-                } else if result >= 6 && result <= 14 {
+                } else if (6..=14).contains(&result) {
                     traits.push(Traits::None);
                 } else if result == 15 {
                     traits.push(Traits::StrikeoutArtist);
@@ -687,7 +682,7 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
                     traits.push(Traits::FreeSwinger);
                 } else if result == 6 {
                     traits.push(Traits::PoorDefender);
-                } else if result >= 7 && result <= 14 {
+                } else if (7..=14).contains(&result) {
                     traits.push(Traits::None);
                 } else if result == 15 {
                     traits.push(Traits::GreatDefender);
@@ -706,7 +701,8 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
             }
         }
     }
-    return traits;
+
+    traits
 }
 
 /// generates a new player in struct format
@@ -720,7 +716,7 @@ pub fn generate_player(
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     let (bt, ot) = generate_batter_target(&player_type);
 
-    let new_player = Player {
+    Player {
         first_name,
         last_name,
         nickname: "".to_string(),
@@ -732,9 +728,7 @@ pub fn generate_player(
         traits: generate_traits(&player_type),
         injury_location: vec![InjuryLocation::None],
         injury_severity: vec![InjurySeverity::Uninjured],
-    };
-
-    return new_player;
+    }
 }
 
 /// checks inning half and returns defense roll modifier for the appropriate player
@@ -754,23 +748,24 @@ pub fn def_trait_check(half: &InningTB, game: &GameModern, position: Position) -
             }
         }
     }
-    return modifier;
+
+    modifier
 }
 
 /// checks inning half and returns hit roll modifier for appropriate player
 pub fn pow_trait_check(game: &GameModern, state: &GameState) -> i32 {
-    let modifier: i32;
-    match state.inning_half {
+    let modifier: i32 = match state.inning_half {
         InningTB::Top => {
             let player = &game.away_active.roster[state.away_state.current_batter as usize];
-            modifier = player.power();
+            player.power()
         }
         InningTB::Bottom => {
             let player = &game.home_active.roster[state.home_state.current_batter as usize];
-            modifier = player.power();
+            player.power()
         }
-    }
-    return modifier;
+    };
+
+    modifier
 }
 
 /// adjust pitch die in set increments
@@ -804,6 +799,6 @@ pub fn change_pitch_die(current: i32, increment: i32) -> i32 {
     if new_die_pos > 7 {
         new_die_pos = 7;
     }
-    let new_die = die_vec[new_die_pos as usize];
-    return new_die;
+
+    die_vec[new_die_pos as usize]
 }
