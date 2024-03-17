@@ -858,9 +858,7 @@ pub fn oddity(
 pub fn crit_hit(hit_result: &i32) -> i32 {
     // based on 2E Deadball quick reference hit table
     let mut crit_result: i32 = *hit_result;
-    if *hit_result >= 1 && *hit_result <= 2 {
-        crit_result = 18;
-    } else if *hit_result >= 7 && *hit_result <= 9 {
+    if (1..=2).contains(hit_result) || (7..=9).contains(hit_result) {
         crit_result = 18;
     } else if *hit_result >= 5 && *hit_result <= 6 {
         crit_result = 15;

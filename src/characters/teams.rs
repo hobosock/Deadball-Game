@@ -903,8 +903,8 @@ pub fn generate_team(
             super::players::PlayerClass::StartingHitter,
             //&era, // uncomment when reintroducing Era
             position,
-            &firstnames,
-            &lastnames,
+            firstnames,
+            lastnames,
         ));
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
@@ -923,8 +923,8 @@ pub fn generate_team(
         bench_raw.push(generate_player(
             super::players::PlayerClass::PinchHitter,
             Position::None,
-            &firstnames,
-            &lastnames,
+            firstnames,
+            lastnames,
         ));
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
@@ -943,8 +943,8 @@ pub fn generate_team(
         pitcher_raw.push(generate_player(
             super::players::PlayerClass::Pitchers,
             Position::Pitcher,
-            &firstnames,
-            &lastnames,
+            firstnames,
+            lastnames,
         ));
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
@@ -963,8 +963,8 @@ pub fn generate_team(
         bullpen_raw.push(generate_player(
             super::players::PlayerClass::Pitchers,
             Position::Pitcher,
-            &firstnames,
-            &lastnames,
+            firstnames,
+            lastnames,
         ));
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
@@ -1048,11 +1048,11 @@ pub fn generate_team(
         manager_position,
         manager_league,
         retired: generate_retired(),
-        personality: generate_personality(&personalities),
+        personality: generate_personality(personalities),
         daring: roll(20),
         motto: generate_motto(mottos),
         owner_background: generate_background(backgrounds),
-        owner_personality: generate_personality(&personalities),
+        owner_personality: generate_personality(personalities),
         roster,
         bench,
         pitcher,

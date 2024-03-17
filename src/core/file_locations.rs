@@ -73,6 +73,7 @@ pub fn load_csv(filename: &str, delimiter: &str) -> Result<Vec<String>, std::io:
             // need to check for "empty" entries
             result.retain(|x| !x.is_empty());
             // trim whitespace, can't figure out how to do it during collection
+            #[allow(clippy::needless_range_loop)]
             for i in 0..result.len() {
                 result[i] = result[i].trim().to_string();
             }
