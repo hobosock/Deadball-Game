@@ -554,13 +554,13 @@ pub fn load_roster(team: &Team) -> (Vec<Player>, Vec<Player>, Vec<Player>, Vec<P
 }
 
 /// generate manager - can borrow a lot from player gen function
-pub fn generate_manager(firstnames: &Vec<String>, lastnames: &Vec<String>) -> String {
+pub fn generate_manager(firstnames: &[String], lastnames: &[String]) -> String {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     first_name + &last_name
 }
 
 /// generate logo
-pub fn generate_logo(logos: &Vec<String>) -> String {
+pub fn generate_logo(logos: &[String]) -> String {
     let len1 = logos.len();
     let roll1 = roll(len1 as i32) - 1;
     logos[roll1 as usize].clone()
@@ -596,7 +596,7 @@ pub fn generate_location(locations: Vec<String>) -> String {
 */
 
 /// generate mascot
-pub fn generate_mascot(mascots: &Vec<String>) -> String {
+pub fn generate_mascot(mascots: &[String]) -> String {
     let len1 = mascots.len();
     let roll1 = roll(len1 as i32) - 1;
     mascots[roll1 as usize].clone()
@@ -721,7 +721,7 @@ pub fn generate_retired() -> i32 {
 }
 
 /// generate personality
-pub fn generate_personality(personalities: &Vec<String>) -> String {
+pub fn generate_personality(personalities: &[String]) -> String {
     let len1 = personalities.len();
     let result = roll(len1 as i32) - 1;
     personalities[result as usize].clone()
@@ -780,14 +780,14 @@ pub fn generate_personality() -> Personality {
 */
 
 /// generate motto???
-pub fn generate_motto(mottos: &Vec<String>) -> String {
+pub fn generate_motto(mottos: &[String]) -> String {
     let len1 = mottos.len();
     let roll1 = roll(len1 as i32) - 1;
     mottos[roll1 as usize].clone()
 }
 
 /// generate owner background
-pub fn generate_background(backgrounds: &Vec<String>) -> String {
+pub fn generate_background(backgrounds: &[String]) -> String {
     let len1 = backgrounds.len();
     let roll1 = roll(len1 as i32) - 1;
     backgrounds[roll1 as usize].clone()
@@ -854,16 +854,16 @@ pub fn generate_team(
     pitchers_num: u32,
     bullpen_num: u32,
     name: &str,
-    firstnames: &Vec<String>,
-    lastnames: &Vec<String>,
-    logos: &Vec<String>,
-    mascots: &Vec<String>,
-    mottos: &Vec<String>,
-    personalities: &Vec<String>,
-    backgrounds: &Vec<String>,
+    firstnames: &[String],
+    lastnames: &[String],
+    logos: &[String],
+    mascots: &[String],
+    mottos: &[String],
+    personalities: &[String],
+    backgrounds: &[String],
     //locations: Vec<String>, // honestly I forget why this was here in the first place
-    name1: &Vec<String>,
-    name2: &Vec<String>,
+    name1: &[String],
+    name2: &[String],
 ) -> Team {
     // iterate over number of players
     let mut roster_raw: Vec<Player> = vec![];
@@ -909,7 +909,7 @@ pub fn generate_team(
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
         file_name_str.push_str(&roster_raw[i as usize].first_name);
-        file_name_str.push_str("_");
+        file_name_str.push('_');
         file_name_str.push_str(&roster_raw[i as usize].last_name);
         file_name_str.push_str(".dbp");
         let write_result = write_player(&roster_raw[i as usize], &file_name_str);
@@ -949,7 +949,7 @@ pub fn generate_team(
         // write player struct, if file write is successful add it to the filename struct
         let mut file_name_str = PLAYER_LOCATION.to_owned();
         file_name_str.push_str(&pitcher_raw[i].first_name);
-        file_name_str.push_str("_");
+        file_name_str.push('_');
         file_name_str.push_str(&pitcher_raw[i].last_name);
         file_name_str.push_str(".dbp");
         let write_result = write_player(&pitcher_raw[i], &file_name_str);

@@ -89,6 +89,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
         loaded: true, // this way databases won't be read again until manual reset
         ..Default::default()
     };
+    // this way databases won't be read until again until manual reset
     match load_csv("src/databases/firstname.csv", "\n") {
         Ok(a) => {
             database.first_names = a;

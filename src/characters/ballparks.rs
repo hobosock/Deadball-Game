@@ -433,7 +433,7 @@ pub fn write_ballpark_ancient(
 }
 
 /// generate ballpark names - two words, CSV for each? some kind of name and then park type
-pub fn generate_ballpark_name(name1: &Vec<String>, name2: &Vec<String>) -> String {
+pub fn generate_ballpark_name(name1: &[String], name2: &[String]) -> String {
     let len1 = name1.len();
     let len2 = name2.len();
     let roll1 = roll(len1 as i32) - 1; // NOTE: -1 for array indexing
@@ -576,7 +576,7 @@ pub fn generate_quirks(quirk_num: i32) -> Vec<Quirks> {
 }
 
 /// generate ballpark functions
-pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> BallparkAncient {
+pub fn generate_ancient_ballpark(name1: &[String], name2: &[String]) -> BallparkAncient {
     // generate info
     let park_type = generate_ancient_park_type();
     let capacity: i32;
@@ -615,7 +615,7 @@ pub fn generate_ancient_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> Ba
 }
 
 /// generate a modern ballpark struct
-pub fn generate_modern_ballpark(name1: &Vec<String>, name2: &Vec<String>) -> BallparkModern {
+pub fn generate_modern_ballpark(name1: &[String], name2: &[String]) -> BallparkModern {
     // generate info
     let park_type = generate_modern_park_type();
     let capacity: i32;

@@ -558,7 +558,7 @@ pub fn load_names() -> (Vec<String>, Vec<String>) {
 // TODO: could add mechanic for farmhand/prospect/veteran/etc.
 
 /// generates a player name
-pub fn generate_name(firstnames: &Vec<String>, lastnames: &Vec<String>) -> (String, String) {
+pub fn generate_name(firstnames: &[String], lastnames: &[String]) -> (String, String) {
     let len_first = firstnames.len();
     let len_last = lastnames.len();
     let roll_first = roll(len_first as i32);
@@ -710,8 +710,8 @@ pub fn generate_player(
     player_type: PlayerClass,
     //era: &Era,
     position: Position,
-    firstnames: &Vec<String>,
-    lastnames: &Vec<String>,
+    firstnames: &[String],
+    lastnames: &[String],
 ) -> Player {
     let (first_name, last_name) = generate_name(firstnames, lastnames);
     let (bt, ot) = generate_batter_target(&player_type);

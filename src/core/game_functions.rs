@@ -637,12 +637,11 @@ pub fn modern_inning_flow(
                         pitch_mod = -1;
                     }
                     let control_mod = state.away_state.current_pitcher.control();
-                    let pitch_result: i32;
-                    if pd > 0 {
-                        pitch_result = combined_roll(&mut debug, pd);
+                    let pitch_result = if pd > 0 {
+                        combined_roll(&mut debug, pd)
                     } else {
-                        pitch_result = -1 * combined_roll(&mut debug, pd.abs());
-                    }
+                        -combined_roll(&mut debug, pd.abs())
+                    };
                     state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
                     let mss_result = pitch_result + combined_roll(&mut debug, 100);
                     state.game_text += &format!("\nMSS: {}", &mss_result);
@@ -877,7 +876,7 @@ pub fn crit_hit(hit_result: &i32) -> i32 {
 }
 
 /// rolls on the hit table and updates game state accordingly
-pub fn hit_table<'b>(
+pub fn hit_table(
     hit_result: &i32,
     mut state: GameState,
     game: &GameModern,
@@ -1537,7 +1536,7 @@ pub fn init_new_game_state(home_pitcher: Player, away_pitcher: Player) -> GameSt
 // TODO: find a player by position in roster\
 /// Finds the player in a certain position.  Takes a reference to a roster (active team struct) and
 /// returns a copy of the desired player struct
-pub fn find_by_position(position: Position, roster: &Vec<Player>) -> Option<Player> {
+pub fn find_by_position(position: Position, roster: &[Player]) -> Option<Player> {
     for player in roster.iter() {
         if player.position == position {
             return Some(player.clone());
@@ -1585,8 +1584,8 @@ pub fn new_game_state_struct() -> GameState {
         current_pitcher: generate_player(
             PlayerClass::Pitchers,
             Position::Pitcher,
-            &vec!["Seth".to_string()],
-            &vec!["Loveall".to_string()],
+            &["Seth".to_string()],
+            &["Loveall".to_string()],
         ),
         innings_pitched: 0,
         runs: 0,
@@ -1598,8 +1597,8 @@ pub fn new_game_state_struct() -> GameState {
         current_pitcher: generate_player(
             PlayerClass::Pitchers,
             Position::Pitcher,
-            &vec!["Seth".to_string()],
-            &vec!["Loveall".to_string()],
+            &["Seth".to_string()],
+            &["Loveall".to_string()],
         ),
         innings_pitched: 0,
         runs: 0,

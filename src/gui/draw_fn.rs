@@ -446,8 +446,8 @@ pub fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &
                     generate_player(
                         app.create_player.class.clone(),
                         app.create_player.position.clone(),
-                        &vec![app.create_player.first_name.clone()],
-                        &vec![app.create_player.last_name.clone()],
+                        &[app.create_player.first_name.clone()],
+                        &[app.create_player.last_name.clone()],
                     )
                 } else {
                     generate_player(
@@ -502,10 +502,7 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
             });
             if ui.button("Create").clicked() {
                 let ballpark = if app.create_ballpark.name_override {
-                    generate_modern_ballpark(
-                        &vec![app.create_ballpark.name.clone()],
-                        &vec!["".to_string()],
-                    )
+                    generate_modern_ballpark(&[app.create_ballpark.name.clone()], &["".to_string()])
                 } else {
                     generate_modern_ballpark(&app.databases.park1, &app.databases.park2)
                 };
