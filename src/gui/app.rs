@@ -335,7 +335,9 @@ impl eframe::App for DeadballApp<'_> {
         }
 
         // app state updates
-        update_debug_textedits(self);
+        if self.game_state.is_some() {
+            update_debug_textedits(self);
+        }
         // draw other windows (if needed)
         draw_version_window(ctx, self);
         draw_about_deadball_window(ctx, self);
