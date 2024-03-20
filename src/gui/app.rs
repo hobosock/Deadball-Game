@@ -370,6 +370,8 @@ impl eframe::App for DeadballApp<'_> {
                     .unwrap()
                     .away_state
                     .hits
+                    .iter()
+                    .sum::<u32>()
                     .to_string();
                 self.score.away_errors = self
                     .game_state
@@ -377,6 +379,8 @@ impl eframe::App for DeadballApp<'_> {
                     .unwrap()
                     .away_state
                     .errors
+                    .iter()
+                    .sum::<u32>()
                     .to_string();
                 self.score.away_runs = self
                     .game_state
@@ -384,6 +388,8 @@ impl eframe::App for DeadballApp<'_> {
                     .unwrap()
                     .away_state
                     .runs
+                    .iter()
+                    .sum::<u32>()
                     .to_string();
                 let out_string: String = match self.game_state.as_ref().unwrap().outs {
                     Outs::None => "0".to_string(),
@@ -398,6 +404,8 @@ impl eframe::App for DeadballApp<'_> {
                     .unwrap()
                     .home_state
                     .hits
+                    .iter()
+                    .sum::<u32>()
                     .to_string();
                 self.score.home_errors = self
                     .game_state
@@ -405,6 +413,8 @@ impl eframe::App for DeadballApp<'_> {
                     .unwrap()
                     .home_state
                     .errors
+                    .iter()
+                    .sum::<u32>()
                     .to_string();
                 self.score.home_runs = self
                     .game_state
@@ -412,6 +422,8 @@ impl eframe::App for DeadballApp<'_> {
                     .unwrap()
                     .home_state
                     .runs
+                    .iter()
+                    .sum::<u32>()
                     .to_string();
                 (on_first, on_second, on_third) =
                     runners_on_bool(self.game_state.clone().unwrap().runners);
