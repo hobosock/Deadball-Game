@@ -599,9 +599,16 @@ pub fn modern_inning_flow(
                             state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
-                            let batter = game.away_active.batting_order
-                                [(state.away_state.current_batter - 2) as usize]
-                                .clone();
+                            let batter = if state.away_state.current_batter == 1 {
+                                game.away_active.batting_order[8].clone()
+                            } else if state.away_state.current_batter == 2 {
+                                game.away_active.batting_order[9].clone()
+                            } else {
+                                game.away_active.batting_order
+                                    // TODO: I can't remember why this is - 2???
+                                    [(state.away_state.current_batter - 2) as usize]
+                                    .clone()
+                            };
                             state = productive_out2(state, &mss_result, batter);
                         }
                         AtBatResults::Out => {
@@ -718,9 +725,15 @@ pub fn modern_inning_flow(
                             state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
-                            let batter = game.home_active.batting_order
-                                [(state.home_state.current_batter - 2) as usize]
-                                .clone();
+                            let batter = if state.home_state.current_batter == 1 {
+                                game.away_active.batting_order[8].clone()
+                            } else if state.home_state.current_batter == 2 {
+                                game.away_active.batting_order[9].clone()
+                            } else {
+                                game.home_active.batting_order
+                                    [(state.home_state.current_batter - 2) as usize]
+                                    .clone()
+                            };
                             state = productive_out2(state, &mss_result, batter);
                         }
                         AtBatResults::Out => {
