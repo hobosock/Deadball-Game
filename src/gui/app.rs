@@ -335,7 +335,8 @@ impl eframe::App for DeadballApp<'_> {
         }
 
         // app state updates
-        if self.game_state.is_some() {
+        // only do this if debug window is open anyways
+        if self.game_state.is_some() && self.gui_windows.debug_window {
             update_debug_textedits(self);
         }
         // draw other windows (if needed)
@@ -778,7 +779,6 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                         app.game_state.clone().unwrap(),
                                         app.debug_settings.debug_roll_state.clone(),
                                     ));
-                                    println!("{:?}", app.game_state);
                                 }
                                 GameStatus::Over => {
                                     toasts.add(Toast {

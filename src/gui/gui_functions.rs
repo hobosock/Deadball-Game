@@ -219,6 +219,7 @@ pub fn batter_tooltip(player: &Player) -> String {
 /// handles updating numbers stored in DeadballApp struct from user input strings
 /// this function in particular deals with debug mode related values
 pub fn update_debug_textedits(app: &mut DeadballApp) {
+    // TODO: might need to make sure debug state runs/hits/errors vectors have the same legnth as game state
     if let Ok(inning) = app.debug_settings.debug_inning_text.parse::<u32>() {
         app.debug_settings.debug_state.inning = inning;
     }
@@ -236,26 +237,26 @@ pub fn update_debug_textedits(app: &mut DeadballApp) {
     }
     if let Ok(runs) = app.debug_settings.debug_runs1_text.parse::<u32>() {
         app.debug_settings.debug_state.home_state.runs
-            [(app.game_state.as_ref().unwrap().inning - 1) as usize] = runs;
+            [(app.debug_settings.debug_state.inning - 1) as usize] = runs;
     }
     if let Ok(runs) = app.debug_settings.debug_runs2_text.parse::<u32>() {
         app.debug_settings.debug_state.away_state.runs
-            [(app.game_state.as_ref().unwrap().inning - 1) as usize] = runs;
+            [(app.debug_settings.debug_state.inning - 1) as usize] = runs;
     }
     if let Ok(hits) = app.debug_settings.debug_hits1_text.parse::<u32>() {
         app.debug_settings.debug_state.home_state.hits
-            [(app.game_state.as_ref().unwrap().inning - 1) as usize] = hits;
+            [(app.debug_settings.debug_state.inning - 1) as usize] = hits;
     }
     if let Ok(hits) = app.debug_settings.debug_hits2_text.parse::<u32>() {
         app.debug_settings.debug_state.away_state.hits
-            [(app.game_state.as_ref().unwrap().inning - 1) as usize] = hits;
+            [(app.debug_settings.debug_state.inning - 1) as usize] = hits;
     }
     if let Ok(errors) = app.debug_settings.debug_errors1_text.parse::<u32>() {
         app.debug_settings.debug_state.home_state.errors
-            [(app.game_state.as_ref().unwrap().inning - 1) as usize] = errors;
+            [(app.debug_settings.debug_state.inning - 1) as usize] = errors;
     }
     if let Ok(errors) = app.debug_settings.debug_errors2_text.parse::<u32>() {
         app.debug_settings.debug_state.away_state.errors
-            [(app.game_state.as_ref().unwrap().inning - 1) as usize] = errors;
+            [(app.debug_settings.debug_state.inning - 1) as usize] = errors;
     }
 }

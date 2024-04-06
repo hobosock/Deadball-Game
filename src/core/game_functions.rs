@@ -444,6 +444,10 @@ pub fn modern_game_flow(game: &GameModern, mut state: GameState, debug: DebugCon
                         state.runner2 = None;
                         state.runner3 = None;
                         state.game_text += "\nTop of the inning over.";
+                        // create next inning element in run/hit/error arrays
+                        state.away_state.runs.push(0);
+                        state.away_state.hits.push(0);
+                        state.away_state.errors.push(0);
                     }
                     _ => {
                         state = modern_inning_flow(game, state, debug);
@@ -459,8 +463,12 @@ pub fn modern_game_flow(game: &GameModern, mut state: GameState, debug: DebugCon
                         state.runner2 = None;
                         state.runner3 = None;
                         state.outs = Outs::None; // reset outs
-                        state.inning += 1;
                         state.game_text += "\nBottom of the inning over.";
+                        // create next inning element in run/hit/error arrays
+                        state.home_state.runs.push(0);
+                        state.home_state.hits.push(0);
+                        state.home_state.errors.push(0);
+                        state.inning += 1;
                     }
                     _ => {
                         state = modern_inning_flow(game, state, debug);
@@ -599,13 +607,15 @@ pub fn modern_inning_flow(
                             state = productive_out1(state, &mss_result);
                         }
                         AtBatResults::ProductiveOut2 => {
+                            // NOTE: in case you forget the reason for the -2 again:
+                            // -1 for arrays start at 0, -1 since current batter was already
+                            // incremented by this point
                             let batter = if state.away_state.current_batter == 1 {
-                                game.away_active.batting_order[8].clone()
+                                game.away_active.batting_order[7].clone()
                             } else if state.away_state.current_batter == 2 {
-                                game.away_active.batting_order[9].clone()
+                                game.away_active.batting_order[8].clone()
                             } else {
                                 game.away_active.batting_order
-                                    // TODO: I can't remember why this is - 2???
                                     [(state.away_state.current_batter - 2) as usize]
                                     .clone()
                             };
@@ -625,7 +635,13 @@ pub fn modern_inning_flow(
         }
         InningTB::Bottom => {
             match state.outs {
-                Outs::Three => state,
+                Outs::Three => {
+                    // create next inning element in run/hit/error arrays
+                    state.away_state.runs.push(0);
+                    state.away_state.hits.push(0);
+                    state.away_state.errors.push(0);
+                    state
+                }
                 _ => {
                     // get active batter
                     // get at bat Result
@@ -726,9 +742,9 @@ pub fn modern_inning_flow(
                         }
                         AtBatResults::ProductiveOut2 => {
                             let batter = if state.home_state.current_batter == 1 {
-                                game.away_active.batting_order[8].clone()
+                                game.away_active.batting_order[7].clone()
                             } else if state.home_state.current_batter == 2 {
-                                game.away_active.batting_order[9].clone()
+                                game.away_active.batting_order[8].clone()
                             } else {
                                 game.home_active.batting_order
                                     [(state.home_state.current_batter - 2) as usize]
