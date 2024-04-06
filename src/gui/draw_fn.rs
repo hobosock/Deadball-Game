@@ -580,6 +580,13 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Debug Mode")
         .open(&mut app.gui_windows.debug_window)
         .show(ctx, |ui| {
+            if ui.button("Print Game State").clicked() {
+                if app.game_state.is_some() {
+                    println!("{:?}", app.game_state.as_ref().unwrap());
+                } else {
+                    println!("No active game state.");
+                }
+            }
             // set debug state to current game state (if it exists)
             if app.game_state.is_some() && !app.debug_settings.debug_copied {
                 app.debug_settings.debug_state = app.game_state.clone().unwrap();
