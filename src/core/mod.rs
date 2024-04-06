@@ -13,6 +13,5 @@ pub fn roll(side: i32) -> i32 {
     if side == 1 {
         return 1;
     }
-    let roll = rand::thread_rng().gen_range(1..side);
-    roll
+    rand::thread_rng().gen_range(1..side)
 }

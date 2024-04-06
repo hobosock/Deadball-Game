@@ -10,6 +10,7 @@ use crate::{
         teams::{ActiveTeam, Era},
     },
     core::game_functions::{find_by_position, RunnersOn},
+    DeadballApp,
 };
 
 /*========================================================
@@ -113,8 +114,7 @@ FUNCTION DEFINITIONS
 /// takes Player struct as input
 pub fn get_player_name(player: &Player) -> String {
     // TODO: should this include nicknames somehow?
-    let name_str = format!("{} {}", player.first_name, player.last_name);
-    return name_str;
+    format!("{} {}", player.first_name, player.last_name)
 }
 
 /// updates the strings shown on the ballfield graphic in player positions
@@ -144,7 +144,7 @@ pub fn update_player_labels(team: &ActiveTeam) -> Vec<String> {
     let right_label = get_player_name(&rightfielder.unwrap());
     let pitcher_label = get_player_name(&pitcher);
 
-    let labels = vec![
+    vec![
         first_label,
         second_label,
         short_label,
@@ -154,8 +154,7 @@ pub fn update_player_labels(team: &ActiveTeam) -> Vec<String> {
         center_label,
         right_label,
         pitcher_label,
-    ];
-    return labels;
+    ]
 }
 
 /// returns 3 bools indicating if runners are on each base based on game state
@@ -205,7 +204,7 @@ pub fn runners_on_bool(runners: RunnersOn) -> (bool, bool, bool) {
             on_third = true;
         }
     }
-    return (on_first, on_second, on_third);
+    (on_first, on_second, on_third)
 }
 
 /// builds string for tooltip for batters and baserunners
@@ -214,5 +213,50 @@ pub fn batter_tooltip(player: &Player) -> String {
         "{} | {} | {} | {:?} | {:?}",
         player.first_name, player.nickname, player.last_name, player.handedness, player.traits
     );
-    return tooltip;
+    tooltip
+}
+
+/// handles updating numbers stored in DeadballApp struct from user input strings
+/// this function in particular deals with debug mode related values
+pub fn update_debug_textedits(app: &mut DeadballApp) {
+    // TODO: might need to make sure debug state runs/hits/errors vectors have the same legnth as game state
+    if let Ok(inning) = app.debug_settings.debug_inning_text.parse::<u32>() {
+        app.debug_settings.debug_state.inning = inning;
+    }
+    if let Ok(batter) = app.debug_settings.debug_batting1_text.parse::<u32>() {
+        app.debug_settings.debug_state.home_state.current_batter = batter;
+    }
+    if let Ok(batter) = app.debug_settings.debug_batting2_text.parse::<u32>() {
+        app.debug_settings.debug_state.away_state.current_batter = batter;
+    }
+    if let Ok(inning) = app.debug_settings.debug_pitched1_text.parse::<u32>() {
+        app.debug_settings.debug_state.home_state.innings_pitched = inning;
+    }
+    if let Ok(inning) = app.debug_settings.debug_pitched2_text.parse::<u32>() {
+        app.debug_settings.debug_state.away_state.innings_pitched = inning;
+    }
+    if let Ok(runs) = app.debug_settings.debug_runs1_text.parse::<u32>() {
+        app.debug_settings.debug_state.home_state.runs
+            [(app.debug_settings.debug_state.inning - 1) as usize] = runs;
+    }
+    if let Ok(runs) = app.debug_settings.debug_runs2_text.parse::<u32>() {
+        app.debug_settings.debug_state.away_state.runs
+            [(app.debug_settings.debug_state.inning - 1) as usize] = runs;
+    }
+    if let Ok(hits) = app.debug_settings.debug_hits1_text.parse::<u32>() {
+        app.debug_settings.debug_state.home_state.hits
+            [(app.debug_settings.debug_state.inning - 1) as usize] = hits;
+    }
+    if let Ok(hits) = app.debug_settings.debug_hits2_text.parse::<u32>() {
+        app.debug_settings.debug_state.away_state.hits
+            [(app.debug_settings.debug_state.inning - 1) as usize] = hits;
+    }
+    if let Ok(errors) = app.debug_settings.debug_errors1_text.parse::<u32>() {
+        app.debug_settings.debug_state.home_state.errors
+            [(app.debug_settings.debug_state.inning - 1) as usize] = errors;
+    }
+    if let Ok(errors) = app.debug_settings.debug_errors2_text.parse::<u32>() {
+        app.debug_settings.debug_state.away_state.errors
+            [(app.debug_settings.debug_state.inning - 1) as usize] = errors;
+    }
 }
