@@ -21,7 +21,7 @@ pub fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
         .open(&mut app.gui_windows.version_window)
         .show(ctx, |ui| {
-            ui.label("Version 0.3.3");
+            ui.label("Version 0.3.4");
         });
 }
 

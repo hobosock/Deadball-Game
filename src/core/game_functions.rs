@@ -8,6 +8,8 @@ use crate::characters::{players::*, teams::*};
 use crate::core::roll;
 use crate::gui::debug::{combined_roll, DebugConfig};
 
+use super::bo_wrap;
+
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
@@ -503,266 +505,127 @@ pub fn modern_inning_flow(
     mut state: GameState,
     mut debug: DebugConfig,
 ) -> GameState {
-    match state.inning_half {
+    let (off, os, ds) = match state.inning_half {
         InningTB::Top => {
-            // should match Bottom arm, just flip the teams - probably a better way to do this
-            match state.outs {
-                Outs::Three => state,
-                _ => {
-                    // get active batter
-                    // get at bat Result
-                    // update score/runners/Outs
-                    let batter = game.away_active.batting_order
-                        [state.away_state.current_batter as usize]
-                        .clone();
-                    let mut pd = state.home_state.current_pitcher.pitch_die;
-                    // NOTE: special rules for GB+
-                    if state.runners == RunnersOn::Runner111 {
-                        pd = change_pitch_die(pd, 1);
-                    }
-                    // NOTE: handedness check
-                    if state.home_state.current_pitcher.handedness == batter.handedness {
-                        pd = change_pitch_die(pd, 1);
-                        // TODO: make distinction between starting pitcher and reliever
-                    }
-                    let mut pitch_mod: i32 = 0;
-                    if state.home_state.current_pitcher.strikeout() {
-                        pitch_mod = -1;
-                    }
-                    let control_mod = state.home_state.current_pitcher.control();
-                    let pitch_result = if pd > 0 {
-                        combined_roll(&mut debug, pd)
-                    } else {
-                        -combined_roll(&mut debug, pd.abs())
-                    };
-                    state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    let mss_result = pitch_result + combined_roll(&mut debug, 100);
-                    let mut hit_mod: i32 = 0;
-                    if batter.free_swing() {
-                        match state.runners {
-                            RunnersOn::Runner010 => hit_mod = -3,
-                            RunnersOn::Runner001 => hit_mod = -3,
-                            RunnersOn::Runner110 => hit_mod = -3,
-                            RunnersOn::Runner101 => hit_mod = -3,
-                            RunnersOn::Runner011 => hit_mod = -3,
-                            RunnersOn::Runner111 => hit_mod = -3,
-                            _ => hit_mod = 0,
-                        }
-                    }
-                    state.game_text += &format!("\nMSS: {}", &mss_result);
-                    let swing_result = at_bat(
-                        batter.batter_target + pitch_mod + hit_mod,
-                        batter.on_base_target + control_mod + hit_mod,
-                        mss_result,
-                        game.oddity,
-                    );
-                    state.game_text += &format!(" -> {:?}", swing_result);
-                    if state.away_state.current_batter == 8 {
-                        state.away_state.current_batter = 0;
-                    } else {
-                        state.away_state.current_batter += 1;
-                    }
-
-                    match swing_result {
-                        AtBatResults::Oddity => {
-                            let oddity_result =
-                                combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
-                            state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&mut debug, &oddity_result, &pitch_result, game, state);
-                        }
-                        AtBatResults::CriticalHit => {
-                            // make hit roll, bump up a level
-                            let mut hit_result =
-                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
-                            hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state, game, &mut debug);
-                            // TODO: no DEF roll on crit_hit
-                        }
-                        AtBatResults::Hit => {
-                            // hit roll
-                            let hit_result =
-                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state, game, &mut debug);
-                        }
-                        AtBatResults::Walk => {
-                            // basically like a single, just don't update the hit values
-                            state.game_text += "\n Walk.";
-                            state = runners_advance(state, &1);
-                            let batter = game.away_active.batting_order
-                                [(state.away_state.current_batter - 2) as usize]
-                                .clone();
-                            state = add_runner(state, &1, batter);
-                        }
-                        AtBatResults::PossibleError => {
-                            state = possible_error(
-                                &mut debug,
-                                state,
-                                game,
-                                position_by_number(get_swing_position(&mss_result)),
-                            );
-                        }
-                        AtBatResults::ProductiveOut1 => {
-                            state = productive_out1(state, &mss_result);
-                        }
-                        AtBatResults::ProductiveOut2 => {
-                            // NOTE: in case you forget the reason for the -2 again:
-                            // -1 for arrays start at 0, -1 since current batter was already
-                            // incremented by this point
-                            let batter = if state.away_state.current_batter == 1 {
-                                game.away_active.batting_order[7].clone()
-                            } else if state.away_state.current_batter == 2 {
-                                game.away_active.batting_order[8].clone()
-                            } else {
-                                game.away_active.batting_order
-                                    [(state.away_state.current_batter - 2) as usize]
-                                    .clone()
-                            };
-                            state = productive_out2(state, &mss_result, batter);
-                        }
-                        AtBatResults::Out => {
-                            state = actual_out(state, &mss_result);
-                        }
-                        AtBatResults::MegaOut => {
-                            state = mega_out(state);
-                        }
-                    }
-
-                    state
-                }
-            }
+            let off = &game.away_active;
+            let ds = &mut state.home_state;
+            let os = &mut state.away_state;
+            (off, os, ds)
         }
         InningTB::Bottom => {
-            match state.outs {
-                Outs::Three => {
-                    // create next inning element in run/hit/error arrays
-                    state.away_state.runs.push(0);
-                    state.away_state.hits.push(0);
-                    state.away_state.errors.push(0);
-                    state
-                }
-                _ => {
-                    // get active batter
-                    // get at bat Result
-                    // update score/runners/Outs
-                    let batter = game.home_active.batting_order
-                        [state.home_state.current_batter as usize]
-                        .clone();
-                    let mut pd = state.away_state.current_pitcher.pitch_die;
-                    // NOTE: special rules for GB+
-                    if state.runners == RunnersOn::Runner111 {
-                        pd = change_pitch_die(pd, 1);
-                    }
-                    // NOTE: handedness check
-                    if state.away_state.current_pitcher.handedness == batter.handedness {
-                        pd = change_pitch_die(pd, 1);
-                        // TODO: make distinction between starting pitcher and reliever
-                    }
-                    let mut pitch_mod = 0;
-                    if state.away_state.current_pitcher.strikeout() {
-                        pitch_mod = -1;
-                    }
-                    let control_mod = state.away_state.current_pitcher.control();
-                    let pitch_result = if pd > 0 {
-                        combined_roll(&mut debug, pd)
-                    } else {
-                        -combined_roll(&mut debug, pd.abs())
-                    };
-                    state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
-                    let mss_result = pitch_result + combined_roll(&mut debug, 100);
-                    state.game_text += &format!("\nMSS: {}", &mss_result);
-                    let mut hit_mod: i32 = 0;
-                    if batter.free_swing() {
-                        match state.runners {
-                            RunnersOn::Runner010 => hit_mod = -3,
-                            RunnersOn::Runner001 => hit_mod = -3,
-                            RunnersOn::Runner110 => hit_mod = -3,
-                            RunnersOn::Runner101 => hit_mod = -3,
-                            RunnersOn::Runner011 => hit_mod = -3,
-                            RunnersOn::Runner111 => hit_mod = -3,
-                            _ => hit_mod = 0,
-                        }
-                    }
-                    let swing_result = at_bat(
-                        batter.batter_target + pitch_mod + hit_mod,
-                        batter.on_base_target + control_mod + hit_mod,
-                        mss_result,
-                        game.oddity,
-                    );
-                    state.game_text += &format!(" -> {:?}", swing_result);
-                    if state.home_state.current_batter == 8 {
-                        state.home_state.current_batter = 0;
-                    } else {
-                        state.home_state.current_batter += 1;
-                    }
-
-                    match swing_result {
-                        AtBatResults::Oddity => {
-                            let oddity_result =
-                                combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
-                            state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
-                            state = oddity(&mut debug, &oddity_result, &mss_result, game, state);
-                        }
-                        AtBatResults::CriticalHit => {
-                            // make hit roll, bump up a level
-                            let mut hit_result =
-                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
-                            hit_result = crit_hit(&hit_result);
-                            state = hit_table(&hit_result, state, game, &mut debug);
-                            // TODO: no DEF roll on crit_hit
-                        }
-                        AtBatResults::Hit => {
-                            // hit roll
-                            let hit_result =
-                                combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
-                            state.game_text += &format!("\nHit roll: {}", &hit_result);
-                            state = hit_table(&hit_result, state, game, &mut debug);
-                        }
-                        AtBatResults::Walk => {
-                            // basically like a single, just don't update the hit values
-                            state.game_text += "\n Walk.";
-                            state = runners_advance(state, &1);
-                            let batter = game.home_active.batting_order
-                                [(state.home_state.current_batter - 2) as usize]
-                                .clone();
-                            state = add_runner(state, &1, batter);
-                        }
-                        AtBatResults::PossibleError => {
-                            state = possible_error(
-                                &mut debug,
-                                state,
-                                game,
-                                position_by_number(get_swing_position(&mss_result)),
-                            );
-                        }
-                        AtBatResults::ProductiveOut1 => {
-                            state = productive_out1(state, &mss_result);
-                        }
-                        AtBatResults::ProductiveOut2 => {
-                            let batter = if state.home_state.current_batter == 1 {
-                                game.away_active.batting_order[7].clone()
-                            } else if state.home_state.current_batter == 2 {
-                                game.away_active.batting_order[8].clone()
-                            } else {
-                                game.home_active.batting_order
-                                    [(state.home_state.current_batter - 2) as usize]
-                                    .clone()
-                            };
-                            state = productive_out2(state, &mss_result, batter);
-                        }
-                        AtBatResults::Out => {
-                            state = actual_out(state, &mss_result);
-                        }
-                        AtBatResults::MegaOut => {
-                            state = mega_out(state);
-                        }
-                    }
-
-                    state
+            let off = &game.home_active;
+            let ds = &mut state.away_state;
+            let os = &mut state.home_state;
+            (off, os, ds)
+        }
+    };
+    match state.outs {
+        Outs::Three => state,
+        _ => {
+            // get active batter
+            // get at bat Result
+            // update score/runners/Outs
+            let batter = off.batting_order[os.current_batter as usize].clone();
+            let mut pd = ds.current_pitcher.pitch_die;
+            // NOTE: special rules for GB+
+            if state.runners == RunnersOn::Runner111 {
+                pd = change_pitch_die(pd, 1);
+            }
+            // NOTE: handedness check
+            if ds.current_pitcher.handedness == batter.handedness {
+                pd = change_pitch_die(pd, 1);
+                // TODO: make distinction between starting pitcher and reliever
+            }
+            let mut pitch_mod: i32 = 0;
+            if ds.current_pitcher.strikeout() {
+                pitch_mod = -1;
+            }
+            let control_mod = ds.current_pitcher.control();
+            let pitch_result = if pd > 0 {
+                combined_roll(&mut debug, pd)
+            } else {
+                -combined_roll(&mut debug, pd.abs())
+            };
+            state.game_text += &format!("\n\nPitch result: {}", &pitch_result);
+            let mss_result = pitch_result + combined_roll(&mut debug, 100);
+            let mut hit_mod: i32 = 0;
+            if batter.free_swing() {
+                match state.runners {
+                    RunnersOn::Runner010 => hit_mod = -3,
+                    RunnersOn::Runner001 => hit_mod = -3,
+                    RunnersOn::Runner110 => hit_mod = -3,
+                    RunnersOn::Runner101 => hit_mod = -3,
+                    RunnersOn::Runner011 => hit_mod = -3,
+                    RunnersOn::Runner111 => hit_mod = -3,
+                    _ => hit_mod = 0,
                 }
             }
+            state.game_text += &format!("\nMSS: {}", &mss_result);
+            let swing_result = at_bat(
+                batter.batter_target + pitch_mod + hit_mod,
+                batter.on_base_target + control_mod + hit_mod,
+                mss_result,
+                game.oddity,
+            );
+            state.game_text += &format!(" -> {:?}", swing_result);
+            os.current_batter = bo_wrap(os.current_batter, 1, false) as u32;
+
+            match swing_result {
+                AtBatResults::Oddity => {
+                    let oddity_result =
+                        combined_roll(&mut debug, 10) + combined_roll(&mut debug, 10);
+                    state.game_text += &format!("\n Oddity roll: {}", &oddity_result);
+                    state = oddity(&mut debug, &oddity_result, &pitch_result, game, state);
+                }
+                AtBatResults::CriticalHit => {
+                    // make hit roll, bump up a level
+                    let mut hit_result =
+                        combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
+                    state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
+                    hit_result = crit_hit(&hit_result);
+                    state = hit_table(&hit_result, state, game, &mut debug);
+                    // TODO: no DEF roll on crit_hit
+                }
+                AtBatResults::Hit => {
+                    // hit roll
+                    let hit_result = combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
+                    state.game_text += &format!("\nHit roll: {}", &hit_result);
+                    state = hit_table(&hit_result, state, game, &mut debug);
+                }
+                AtBatResults::Walk => {
+                    // basically like a single, just don't update the hit values
+                    state.game_text += "\n Walk.";
+                    let batter = off.batting_order[bo_wrap(os.current_batter, 2, true)].clone();
+                    state = runners_advance(state, &1);
+                    state = add_runner(state, &1, batter);
+                }
+                AtBatResults::PossibleError => {
+                    state = possible_error(
+                        &mut debug,
+                        state,
+                        game,
+                        position_by_number(get_swing_position(&mss_result)),
+                    );
+                }
+                AtBatResults::ProductiveOut1 => {
+                    state = productive_out1(state, &mss_result);
+                }
+                AtBatResults::ProductiveOut2 => {
+                    // NOTE: in case you forget the reason for the -2 again:
+                    // -1 for arrays start at 0, -1 since current batter was already
+                    // incremented by this point
+                    let batter = off.batting_order[bo_wrap(os.current_batter, 2, true)].clone();
+                    state = productive_out2(state, &mss_result, batter);
+                }
+                AtBatResults::Out => {
+                    state = actual_out(state, &mss_result);
+                }
+                AtBatResults::MegaOut => {
+                    state = mega_out(state);
+                }
+            }
+
+            state
         }
     }
 }
@@ -779,13 +642,15 @@ pub fn oddity(
     let batting_order: &mut u32;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[(state.away_state.current_batter - 1) as usize]
-                .clone();
+            batter = game.away_active.batting_order
+                [bo_wrap(state.away_state.current_batter, 1, true)]
+            .clone();
             batting_order = &mut state.away_state.current_batter;
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[(state.home_state.current_batter - 1) as usize]
-                .clone();
+            batter = game.home_active.batting_order
+                [bo_wrap(state.home_state.current_batter, 1, true)]
+            .clone();
             batting_order = &mut state.home_state.current_batter;
         }
     }
@@ -919,12 +784,12 @@ pub fn hit_table(
     // 4. update hit values in game state
     // get batter
     let batter = match state.inning_half {
-        InningTB::Top => {
-            game.away_active.batting_order[(state.away_state.current_batter - 1) as usize].clone()
-        }
-        InningTB::Bottom => {
-            game.home_active.batting_order[(state.home_state.current_batter - 1) as usize].clone()
-        }
+        InningTB::Top => game.away_active.batting_order
+            [bo_wrap(state.away_state.current_batter, 1, true)]
+        .clone(),
+        InningTB::Bottom => game.home_active.batting_order
+            [bo_wrap(state.away_state.current_batter, 1, true)]
+        .clone(),
     };
     if *hit_result <= 2 {
         if batter.speedy() {
@@ -974,10 +839,10 @@ pub fn hit_table(
         // out or an error
         match state.inning_half {
             InningTB::Top => {
-                state.away_state.hits[state.inning as usize] += 1;
+                state.away_state.hits[(state.inning - 1) as usize] += 1;
             }
             InningTB::Bottom => {
-                state.home_state.hits[state.inning as usize] += 1;
+                state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
         let def_roll = combined_roll(debug, 12)
@@ -1662,12 +1527,12 @@ fn possible_error(
     // get position
     // TODO: get player traits
     let batter: Player = match state.inning_half {
-        InningTB::Top => {
-            game.away_active.batting_order[(state.away_state.current_batter - 1) as usize].clone()
-        }
-        InningTB::Bottom => {
-            game.home_active.batting_order[(state.home_state.current_batter - 1) as usize].clone()
-        }
+        InningTB::Top => game.away_active.batting_order
+            [bo_wrap(state.away_state.current_batter, 1, true)]
+        .clone(),
+        InningTB::Bottom => game.home_active.batting_order
+            [bo_wrap(state.home_state.current_batter, 1, true)]
+        .clone(),
     };
     state.game_text += "\n Possible error -> ";
     let def_roll = combined_roll(debug, 12) + def_trait_check(&state.inning_half, game, position);
@@ -2471,11 +2336,8 @@ pub fn hit_and_run(
     state.game_text += &format!(" -> {:?}", swing_result);
     match state.inning_half {
         InningTB::Top => {
-            if state.away_state.current_batter == 8 {
-                state.away_state.current_batter = 0;
-            } else {
-                state.away_state.current_batter += 1;
-            }
+            state.away_state.current_batter =
+                bo_wrap(state.away_state.current_batter, 1, false) as u32;
         }
         InningTB::Bottom => {
             if state.home_state.current_batter == 8 {
@@ -2483,6 +2345,8 @@ pub fn hit_and_run(
             } else {
                 state.home_state.current_batter += 1;
             }
+            state.home_state.current_batter =
+                bo_wrap(state.home_state.current_batter, 1, false) as u32;
         }
     }
     let hnr: HitAndRun;
