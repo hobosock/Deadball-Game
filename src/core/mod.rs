@@ -15,3 +15,5 @@ pub fn roll(side: i32) -> i32 {
     }
     rand::thread_rng().gen_range(1..side)
 }
+
+// TODO: function to wrap indexing batting order (0-8)
