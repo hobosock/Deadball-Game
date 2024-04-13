@@ -8,6 +8,8 @@ use crate::characters::{players::*, teams::*};
 use crate::core::roll;
 use crate::gui::debug::{combined_roll, DebugConfig};
 
+use super::bo_wrap;
+
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
@@ -503,20 +505,18 @@ pub fn modern_inning_flow(
     mut state: GameState,
     mut debug: DebugConfig,
 ) -> GameState {
-    let (off, def, os, ds) = match state.inning_half {
+    let (off, os, ds) = match state.inning_half {
         InningTB::Top => {
-            let def = &game.home_active;
             let off = &game.away_active;
             let ds = &mut state.home_state;
             let os = &mut state.away_state;
-            (off, def, os, ds)
+            (off, os, ds)
         }
         InningTB::Bottom => {
-            let def = &game.away_active;
             let off = &game.home_active;
             let ds = &mut state.away_state;
             let os = &mut state.home_state;
-            (off, def, os, ds)
+            (off, os, ds)
         }
     };
     match state.outs {
@@ -568,11 +568,7 @@ pub fn modern_inning_flow(
                 game.oddity,
             );
             state.game_text += &format!(" -> {:?}", swing_result);
-            if os.current_batter == 8 {
-                os.current_batter = 0;
-            } else {
-                os.current_batter += 1;
-            }
+            os.current_batter = bo_wrap(os.current_batter, 1, false) as u32;
 
             match swing_result {
                 AtBatResults::Oddity => {
@@ -599,7 +595,7 @@ pub fn modern_inning_flow(
                 AtBatResults::Walk => {
                     // basically like a single, just don't update the hit values
                     state.game_text += "\n Walk.";
-                    let batter = off.batting_order[(os.current_batter - 2) as usize].clone(); // TODO:
+                    let batter = off.batting_order[bo_wrap(os.current_batter, 2, true)].clone();
                     state = runners_advance(state, &1);
                     state = add_runner(state, &1, batter);
                 }
@@ -618,13 +614,7 @@ pub fn modern_inning_flow(
                     // NOTE: in case you forget the reason for the -2 again:
                     // -1 for arrays start at 0, -1 since current batter was already
                     // incremented by this point
-                    let batter = if os.current_batter == 1 {
-                        off.batting_order[7].clone()
-                    } else if os.current_batter == 2 {
-                        off.batting_order[8].clone()
-                    } else {
-                        off.batting_order[(os.current_batter - 2) as usize].clone()
-                    };
+                    let batter = off.batting_order[bo_wrap(os.current_batter, 2, true)].clone();
                     state = productive_out2(state, &mss_result, batter);
                 }
                 AtBatResults::Out => {
@@ -847,10 +837,10 @@ pub fn hit_table(
         // out or an error
         match state.inning_half {
             InningTB::Top => {
-                state.away_state.hits[state.inning as usize] += 1;
+                state.away_state.hits[(state.inning - 1) as usize] += 1;
             }
             InningTB::Bottom => {
-                state.home_state.hits[state.inning as usize] += 1;
+                state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
         let def_roll = combined_roll(debug, 12)
