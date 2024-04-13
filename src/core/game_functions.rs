@@ -642,13 +642,15 @@ pub fn oddity(
     let batting_order: &mut u32;
     match state.inning_half {
         InningTB::Top => {
-            batter = game.away_active.batting_order[(state.away_state.current_batter - 1) as usize]
-                .clone();
+            batter = game.away_active.batting_order
+                [bo_wrap(state.away_state.current_batter, 1, true)]
+            .clone();
             batting_order = &mut state.away_state.current_batter;
         }
         InningTB::Bottom => {
-            batter = game.home_active.batting_order[(state.home_state.current_batter - 1) as usize]
-                .clone();
+            batter = game.home_active.batting_order
+                [bo_wrap(state.home_state.current_batter, 1, true)]
+            .clone();
             batting_order = &mut state.home_state.current_batter;
         }
     }
@@ -782,12 +784,12 @@ pub fn hit_table(
     // 4. update hit values in game state
     // get batter
     let batter = match state.inning_half {
-        InningTB::Top => {
-            game.away_active.batting_order[(state.away_state.current_batter - 1) as usize].clone()
-        }
-        InningTB::Bottom => {
-            game.home_active.batting_order[(state.home_state.current_batter - 1) as usize].clone()
-        }
+        InningTB::Top => game.away_active.batting_order
+            [bo_wrap(state.away_state.current_batter, 1, true)]
+        .clone(),
+        InningTB::Bottom => game.home_active.batting_order
+            [bo_wrap(state.away_state.current_batter, 1, true)]
+        .clone(),
     };
     if *hit_result <= 2 {
         if batter.speedy() {
@@ -1525,12 +1527,12 @@ fn possible_error(
     // get position
     // TODO: get player traits
     let batter: Player = match state.inning_half {
-        InningTB::Top => {
-            game.away_active.batting_order[(state.away_state.current_batter - 1) as usize].clone()
-        }
-        InningTB::Bottom => {
-            game.home_active.batting_order[(state.home_state.current_batter - 1) as usize].clone()
-        }
+        InningTB::Top => game.away_active.batting_order
+            [bo_wrap(state.away_state.current_batter, 1, true)]
+        .clone(),
+        InningTB::Bottom => game.home_active.batting_order
+            [bo_wrap(state.home_state.current_batter, 1, true)]
+        .clone(),
     };
     state.game_text += "\n Possible error -> ";
     let def_roll = combined_roll(debug, 12) + def_trait_check(&state.inning_half, game, position);
@@ -2334,11 +2336,8 @@ pub fn hit_and_run(
     state.game_text += &format!(" -> {:?}", swing_result);
     match state.inning_half {
         InningTB::Top => {
-            if state.away_state.current_batter == 8 {
-                state.away_state.current_batter = 0;
-            } else {
-                state.away_state.current_batter += 1;
-            }
+            state.away_state.current_batter =
+                bo_wrap(state.away_state.current_batter, 1, false) as u32;
         }
         InningTB::Bottom => {
             if state.home_state.current_batter == 8 {
@@ -2346,6 +2345,8 @@ pub fn hit_and_run(
             } else {
                 state.home_state.current_batter += 1;
             }
+            state.home_state.current_batter =
+                bo_wrap(state.home_state.current_batter, 1, false) as u32;
         }
     }
     let hnr: HitAndRun;
