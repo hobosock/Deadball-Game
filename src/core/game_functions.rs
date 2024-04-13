@@ -596,7 +596,7 @@ pub fn modern_inning_flow(
                     // basically like a single, just don't update the hit values
                     state.game_text += "\n Walk.";
                     let batter = off.batting_order[bo_wrap(os.current_batter, 2, true)].clone();
-                    state = runners_advance(state, &1);
+                    state = walk_advance(state);
                     state = add_runner(state, &1, batter);
                 }
                 AtBatResults::PossibleError => {
@@ -2624,6 +2624,47 @@ pub fn force_advance(mut state: GameState, advance: u32) -> GameState {
                 }
             }
         }
+    }
+
+    state
+}
+
+/// special function for walks (only force advances)
+pub fn walk_advance(mut state: GameState) -> GameState {
+    match state.runners {
+        RunnersOn::Runner100 => {
+            state.runners = RunnersOn::Runner010;
+            state.runner2 = state.runner1.clone();
+            state.runner1 = None;
+        }
+        RunnersOn::Runner110 => {
+            state.runners = RunnersOn::Runner011;
+            state.runner3 = state.runner2.clone();
+            state.runner2 = state.runner1.clone();
+            state.runner1 = None;
+            return state;
+        }
+        RunnersOn::Runner101 => {
+            // NOTE: this is different from runners_advance()
+            state.runners = RunnersOn::Runner011;
+            state.runner2 = state.runner1.clone();
+            state.runner1 = None;
+        }
+        RunnersOn::Runner111 => {
+            state.runners = RunnersOn::Runner011;
+            state.runner3 = state.runner2.clone();
+            state.runner2 = state.runner1.clone();
+            state.runner1 = None;
+            match state.inning_half {
+                InningTB::Top => {
+                    state.away_state.runs[(state.inning - 1) as usize] += 1;
+                }
+                InningTB::Bottom => {
+                    state.home_state.runs[(state.inning - 1) as usize] += 1;
+                }
+            }
+        }
+        _ => {} // no changes if no runner on 1st
     }
 
     state
