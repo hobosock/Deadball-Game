@@ -1863,7 +1863,7 @@ fn mega_out(mut state: GameState) -> GameState {
             state.runner1 = None;
             state.outs = increment_out(state.outs, 2);
         }
-        _ => state.outs = increment_out(state.outs, 2),
+        _ => state.outs = increment_out(state.outs, 1),
     }
 
     state
