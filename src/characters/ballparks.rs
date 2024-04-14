@@ -523,7 +523,7 @@ pub fn generate_turf() -> Turf {
 pub fn generate_roof() -> Roof {
     let result = roll(20);
     let roof: Roof;
-    // TODO: make roof impact play
+    // TODO: make roof impact play - TBH I can't find these rules anymore
     if result <= 13 {
         roof = Roof::No;
     } else if (14..=15).contains(&result) {

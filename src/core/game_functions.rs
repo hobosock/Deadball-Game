@@ -180,7 +180,6 @@ pub struct GameState {
     pub away_state: TeamState,
     pub game_text: String,
 }
-// NOTE: home team is team 1, away team is team 2
 
 //======== CUSTOM ERRORS =================================
 #[derive(Debug, Clone)]
@@ -277,7 +276,6 @@ pub fn create_modern_game(
         }
     }
     // initialize structs and then push
-    // TODO: I feel like load_roster function could be used here?
     let mut home_active = ActiveTeam {
         roster: vec![],
         bench: vec![],
@@ -420,12 +418,6 @@ pub fn modern_game_flow(game: &GameModern, mut state: GameState, debug: DebugCon
         // check score
         if state.home_state.runs != state.away_state.runs {
             state.status = GameStatus::Over;
-            // TODO: I think this message is redundant
-            state.game_text += &format!(
-                "\nGame!  Final score: {} - {}",
-                state.home_state.runs.iter().sum::<u32>(),
-                state.away_state.runs.iter().sum::<u32>()
-            );
         }
     }
     match state.status {
@@ -479,9 +471,8 @@ pub fn modern_game_flow(game: &GameModern, mut state: GameState, debug: DebugCon
             }
         },
         GameStatus::Over => {
-            // temporary printing of results
-            // TODO: print score report?
-            // TODO: inning ticks over one final time before game ends, need to fix
+            // TODO: score report pop up window
+            state.inning -= 1; // offsets inning tick up at end of inning flow function
             println!("FINAL SCORE");
             println!(
                 "HOME: {} - AWAY: {}",

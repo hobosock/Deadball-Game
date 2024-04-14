@@ -37,7 +37,7 @@ pub enum Handedness {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Traits {
     // hitter traits
     PowerHitter,
@@ -436,8 +436,7 @@ pub fn load_player(contents: String) -> Player {
     }
 }
 
-// writes a Player struct to a *.DBP file
-// TODO: - shouldn't this take a reference to a player struct?
+/// writes a Player struct to a *.DBP file
 pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("First Name: ");
@@ -647,8 +646,6 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     // roll for chance of 2 traits
     let chance = roll(100);
     let num_traits: i32 = if chance <= 2 { 2 } else { 1 };
-    // TODO: could clean this up so only a single none is written, but it doesn't matter that much
-    // so I'm not going to worry about it right now
     for _i in 0..num_traits {
         let result = roll(10) + roll(10);
         match player_type {
