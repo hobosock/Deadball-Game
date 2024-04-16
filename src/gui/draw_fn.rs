@@ -1077,3 +1077,66 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
             }
         });
 }
+
+/// renders the roster edit window to change lineup or current pitcher during game
+pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Edit Team")
+        .open(&mut app.gui_windows.edit_roster_window)
+        .show(ctx, |ui| {
+            if app.game_state.is_some() {
+                let team = if app.active_team_edit.is_home {
+                    &app.game_modern.as_ref().unwrap().home_active
+                } else {
+                    &app.game_modern.as_ref().unwrap().away_active
+                };
+                if app.active_team_edit.is_batter {
+                    // TODO: also display current game performance
+                    // TODO: display streak/slump
+                    ui.heading("Current Lineup");
+                    for player in team.roster.iter() {
+                        ui.label(format!(
+                            "{} {} | {:?} | {} | {} | {:?}",
+                            player.first_name,
+                            player.last_name,
+                            player.position,
+                            player.batter_target,
+                            player.on_base_target,
+                            player.handedness
+                        ));
+                    }
+                    ui.separator();
+                    ui.heading("Bench");
+                    for player in team.bench.iter() {
+                        ui.label(format!(
+                            "{} {} | {:?} | {} | {} | {:?}",
+                            player.first_name,
+                            player.last_name,
+                            player.position,
+                            player.batter_target,
+                            player.on_base_target,
+                            player.handedness
+                        ));
+                    }
+                } else {
+                    // TODO: show innings pitched, streak/slump, etc.
+                    ui.heading("On the Mound");
+                    let player = team.pitching[0].clone();
+                    ui.label(format!(
+                        "{} {} | {} | {:?}",
+                        player.first_name, player.last_name, player.pitch_die, player.handedness
+                    ));
+                    ui.separator();
+                    ui.heading("Bullpen");
+                    for player in team.bullpen.iter() {
+                        ui.label(format!(
+                            "{} {} | {} | {:?}",
+                            player.first_name,
+                            player.last_name,
+                            player.pitch_die,
+                            player.handedness
+                        ));
+                    }
+                }
+            }
+        });
+}

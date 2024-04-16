@@ -145,6 +145,8 @@ pub struct GuiWindows {
     pub debug_window: bool,
     pub debug_roll_window: bool,
     pub console_window: bool,
+    pub edit_roster_window: bool,
+    pub team_info_window: bool,
 }
 
 impl Default for GuiWindows {
@@ -157,6 +159,8 @@ impl Default for GuiWindows {
             debug_window: false,
             debug_roll_window: false,
             console_window: true,
+            edit_roster_window: false,
+            team_info_window: false,
         }
     }
 }
@@ -238,6 +242,25 @@ impl Default for DebugSettings {
     }
 }
 
+/// struct for editing lineup/current pitcher during game
+pub struct ActiveTeamEdit {
+    pub is_home: bool,
+    pub is_batter: bool,
+    pub current_select: Option<Player>,
+    pub bench_select: Option<Player>,
+}
+
+impl Default for ActiveTeamEdit {
+    fn default() -> Self {
+        Self {
+            is_home: false,
+            is_batter: false,
+            current_select: None,
+            bench_select: None,
+        }
+    }
+}
+
 pub struct DeadballApp<'a> {
     // score information
     pub score: Score,
@@ -272,6 +295,7 @@ pub struct DeadballApp<'a> {
     pub ballpark_ancient: Option<BallparkAncient>,
     pub game_modern: Option<GameModern>,
     pub game_state: Option<GameState>,
+    pub active_team_edit: ActiveTeamEdit,
     // TODO: add ancient game
     // debug settings
     pub debug_settings: DebugSettings,
@@ -311,6 +335,7 @@ impl Default for DeadballApp<'_> {
             ballpark_ancient: None,
             game_modern: None,
             game_state: None,
+            active_team_edit: ActiveTeamEdit::default(),
             debug_settings: DebugSettings::default(),
             toast_options: ToastData::default(),
             create_team: CreateTeamWindow::default(),
