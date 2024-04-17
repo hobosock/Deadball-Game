@@ -1035,12 +1035,30 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
             }
             Panel::Roster => {
                 ui.horizontal(|ui| {
-                    if ui.button("Batting Order").clicked() {
-                        println!("Batting Order button placeholder.");
-                    }
-                    if ui.button("Bullpen").clicked() {
-                        println!("Bullpen button placeholder.");
-                    }
+                    ui.menu_button("Batting Order", |ui| {
+                        if ui.button("Home").clicked() {
+                            app.active_team_edit.is_home = true;
+                            app.active_team_edit.is_batter = true;
+                            app.gui_windows.edit_roster_window = true;
+                        }
+                        if ui.button("Away").clicked() {
+                            app.active_team_edit.is_home = false;
+                            app.active_team_edit.is_batter = true;
+                            app.gui_windows.edit_roster_window = true;
+                        }
+                    });
+                    ui.menu_button("Bullpen", |ui| {
+                        if ui.button("Home").clicked() {
+                            app.active_team_edit.is_home = true;
+                            app.active_team_edit.is_batter = false;
+                            app.gui_windows.edit_roster_window = true;
+                        }
+                        if ui.button("Away").clicked() {
+                            app.active_team_edit.is_home = false;
+                            app.active_team_edit.is_batter = false;
+                            app.gui_windows.edit_roster_window = true;
+                        }
+                    });
                     if ui.button("View Team").clicked() {
                         println!("View Team button placeholder.");
                     }
