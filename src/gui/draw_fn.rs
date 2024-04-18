@@ -1093,48 +1093,74 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     // TODO: also display current game performance
                     // TODO: display streak/slump
                     ui.heading("Current Lineup");
-                    for player in team.roster.iter() {
-                        ui.label(format!(
-                            "{} {} | {:?} | {} | {} | {:?}",
-                            player.first_name,
-                            player.last_name,
-                            player.position,
-                            player.batter_target,
-                            player.on_base_target,
-                            player.handedness
-                        ));
+                    for (i, player) in team.roster.iter().enumerate() {
+                        ui.radio_value(
+                            &mut (
+                                &mut app.active_team_edit.current_select,
+                                &mut app.active_team_edit.current_num,
+                            ),
+                            (&mut Some(player.clone()), &mut Some(i)),
+                            format!(
+                                "{} {} | {:?} | {} | {} | {:?}",
+                                player.first_name,
+                                player.last_name,
+                                player.position,
+                                player.batter_target,
+                                player.on_base_target,
+                                player.handedness
+                            ),
+                        );
                     }
                     ui.separator();
                     ui.heading("Bench");
                     for player in team.bench.iter() {
-                        ui.label(format!(
-                            "{} {} | {:?} | {} | {} | {:?}",
-                            player.first_name,
-                            player.last_name,
-                            player.position,
-                            player.batter_target,
-                            player.on_base_target,
-                            player.handedness
-                        ));
+                        ui.radio_value(
+                            &mut app.active_team_edit.bench_select,
+                            Some(player.clone()),
+                            format!(
+                                "{} {} | {:?} | {} | {} | {:?}",
+                                player.first_name,
+                                player.last_name,
+                                player.position,
+                                player.batter_target,
+                                player.on_base_target,
+                                player.handedness
+                            ),
+                        );
                     }
                 } else {
                     // TODO: show innings pitched, streak/slump, etc.
                     ui.heading("On the Mound");
                     let player = team.pitching[0].clone();
-                    ui.label(format!(
-                        "{} {} | {} | {:?}",
-                        player.first_name, player.last_name, player.pitch_die, player.handedness
-                    ));
-                    ui.separator();
-                    ui.heading("Bullpen");
-                    for player in team.bullpen.iter() {
-                        ui.label(format!(
+                    ui.radio_value(
+                        &mut app.active_team_edit.current_select,
+                        Some(player.clone()),
+                        format!(
                             "{} {} | {} | {:?}",
                             player.first_name,
                             player.last_name,
                             player.pitch_die,
                             player.handedness
-                        ));
+                        ),
+                    );
+                    ui.separator();
+                    ui.heading("Bullpen");
+                    for player in team.bullpen.iter() {
+                        ui.radio_value(
+                            &mut app.active_team_edit.bench_select,
+                            Some(player.clone()),
+                            format!(
+                                "{} {} | {} | {:?}",
+                                player.first_name,
+                                player.last_name,
+                                player.pitch_die,
+                                player.handedness
+                            ),
+                        );
+                    }
+                    ui.separator();
+                    if ui.button("Swap").clicked() {
+                        // swap teams
                     }
                 }
             }

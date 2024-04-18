@@ -29,7 +29,7 @@ pub enum Position {
     None,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Handedness {
     Right,
     Left,
@@ -62,7 +62,7 @@ pub enum Traits {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InjuryLocation {
     Head,
     Shoulder,
@@ -80,7 +80,7 @@ pub enum InjuryLocation {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum InjurySeverity {
     Catastrophic,
     Major,
@@ -100,7 +100,7 @@ pub enum PlayerClass {
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Player {
     pub first_name: String,
     pub last_name: String,

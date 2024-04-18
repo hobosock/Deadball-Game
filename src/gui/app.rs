@@ -246,6 +246,8 @@ impl Default for DebugSettings {
 pub struct ActiveTeamEdit {
     pub is_home: bool,
     pub is_batter: bool,
+    pub current_num: Option<usize>,
+    pub bench_num: Option<usize>,
     pub current_select: Option<Player>,
     pub bench_select: Option<Player>,
 }
@@ -255,6 +257,8 @@ impl Default for ActiveTeamEdit {
         Self {
             is_home: false,
             is_batter: false,
+            current_num: None,
+            bench_num: None,
             current_select: None,
             bench_select: None,
         }
@@ -375,6 +379,7 @@ impl eframe::App for DeadballApp<'_> {
         draw_create_team_window(ctx, self, &mut toasts);
         draw_create_player_window(ctx, self, &mut toasts);
         draw_create_ballpark_window(ctx, self, &mut toasts);
+        draw_active_team_edit(ctx, self, &mut toasts);
 
         // main window
         draw_bottom_panel(ctx, self, &mut toasts);
