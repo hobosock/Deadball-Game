@@ -1113,10 +1113,13 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     }
                     ui.separator();
                     ui.heading("Bench");
-                    for player in team.bench.iter() {
+                    for (i, player) in team.bench.iter().enumerate() {
                         ui.radio_value(
-                            &mut app.active_team_edit.bench_select,
-                            Some(player.clone()),
+                            &mut (
+                                &mut app.active_team_edit.bench_select,
+                                &mut app.active_team_edit.bench_num,
+                            ),
+                            (&mut Some(player.clone()), &mut Some(i)),
                             format!(
                                 "{} {} | {:?} | {} | {} | {:?}",
                                 player.first_name,
@@ -1132,6 +1135,7 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     // TODO: show innings pitched, streak/slump, etc.
                     ui.heading("On the Mound");
                     let player = team.pitching[0].clone();
+                    app.active_team_edit.current_num = Some(0);
                     ui.radio_value(
                         &mut app.active_team_edit.current_select,
                         Some(player.clone()),
@@ -1145,10 +1149,13 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     );
                     ui.separator();
                     ui.heading("Bullpen");
-                    for player in team.bullpen.iter() {
+                    for (i, player) in team.bullpen.iter().enumerate() {
                         ui.radio_value(
-                            &mut app.active_team_edit.bench_select,
-                            Some(player.clone()),
+                            &mut (
+                                &mut app.active_team_edit.bench_select,
+                                &mut app.active_team_edit.bench_num,
+                            ),
+                            (&mut Some(player.clone()), &mut Some(i)),
                             format!(
                                 "{} {} | {} | {:?}",
                                 player.first_name,
@@ -1159,8 +1166,12 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                         );
                     }
                     ui.separator();
-                    if ui.button("Swap").clicked() {
-                        // swap teams
+                    if ui.button("Swap").clicked() && app.active_team_edit.bench_select.is_some() {
+                        if app.active_team_edit.is_home {
+                            app.game_modern.as_ref().unwrap().home_active.pitching[0] =
+                                app.active_team_edit.bench_select.clone().unwrap();
+                        }
+                        team.pitching[0] = app.active_team_edit.bench_select.unwrap();
                     }
                 }
             }
