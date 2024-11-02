@@ -115,6 +115,24 @@ pub struct Player {
     pub injury_severity: Vec<InjurySeverity>,
 }
 
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            first_name: "Seth".to_string(),
+            last_name: "Loveall".to_string(),
+            nickname: "White Lightning".to_string(),
+            position: Position::Shortstop,
+            handedness: Handedness::Right,
+            batter_target: 32,
+            on_base_target: 36,
+            pitch_die: 12,
+            traits: vec![Traits::PowerHitter],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![InjurySeverity::Uninjured],
+        }
+    }
+}
+
 impl Player {
     // BATTER TRAITS
     /// returns player specific modifier for defense rolls (D+/D-)

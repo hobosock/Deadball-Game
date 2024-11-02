@@ -1084,10 +1084,10 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
         .open(&mut app.gui_windows.edit_roster_window)
         .show(ctx, |ui| {
             if app.game_state.is_some() {
-                let team = if app.active_team_edit.is_home {
-                    &app.game_modern.as_ref().unwrap().home_active
+                let mut team = if app.active_team_edit.is_home {
+                    app.game_modern.clone().unwrap().home_active
                 } else {
-                    &app.game_modern.as_ref().unwrap().away_active
+                    app.game_modern.clone().unwrap().away_active
                 };
                 if app.active_team_edit.is_batter {
                     // TODO: also display current game performance
@@ -1095,11 +1095,8 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     ui.heading("Current Lineup");
                     for (i, player) in team.roster.iter().enumerate() {
                         ui.radio_value(
-                            &mut (
-                                &mut app.active_team_edit.current_select,
-                                &mut app.active_team_edit.current_num,
-                            ),
-                            (&mut Some(player.clone()), &mut Some(i)),
+                            &mut app.active_team_edit.current_num,
+                            i,
                             format!(
                                 "{} {} | {:?} | {} | {} | {:?}",
                                 player.first_name,
@@ -1115,11 +1112,8 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     ui.heading("Bench");
                     for (i, player) in team.bench.iter().enumerate() {
                         ui.radio_value(
-                            &mut (
-                                &mut app.active_team_edit.bench_select,
-                                &mut app.active_team_edit.bench_num,
-                            ),
-                            (&mut Some(player.clone()), &mut Some(i)),
+                            &mut app.active_team_edit.bench_num,
+                            i,
                             format!(
                                 "{} {} | {:?} | {} | {} | {:?}",
                                 player.first_name,
@@ -1131,14 +1125,32 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                             ),
                         );
                     }
+                    ui.separator();
+                    if ui.button("Swap").clicked() {
+                        app.active_team_edit.current_select =
+                            team.roster[app.active_team_edit.current_num].clone();
+                        let temp_player = app.active_team_edit.current_select.clone();
+                        if app.active_team_edit.is_home {
+                            app.active_team_edit.bench_select =
+                                team.bench[app.active_team_edit.bench_num].clone();
+                        }
+                        team.roster[app.active_team_edit.current_num] =
+                            app.active_team_edit.bench_select.clone();
+                        team.bench[app.active_team_edit.bench_num] = temp_player;
+                        if app.active_team_edit.is_home {
+                            app.game_modern.as_mut().unwrap().home_active = team;
+                        } else {
+                            app.game_modern.as_mut().unwrap().away_active = team;
+                        }
+                    }
                 } else {
                     // TODO: show innings pitched, streak/slump, etc.
                     ui.heading("On the Mound");
                     let player = team.pitching[0].clone();
-                    app.active_team_edit.current_num = Some(0);
+                    app.active_team_edit.current_num = 0;
                     ui.radio_value(
                         &mut app.active_team_edit.current_select,
-                        Some(player.clone()),
+                        player.clone(),
                         format!(
                             "{} {} | {} | {:?}",
                             player.first_name,
@@ -1151,11 +1163,8 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     ui.heading("Bullpen");
                     for (i, player) in team.bullpen.iter().enumerate() {
                         ui.radio_value(
-                            &mut (
-                                &mut app.active_team_edit.bench_select,
-                                &mut app.active_team_edit.bench_num,
-                            ),
-                            (&mut Some(player.clone()), &mut Some(i)),
+                            &mut app.active_team_edit.bench_num,
+                            i,
                             format!(
                                 "{} {} | {} | {:?}",
                                 player.first_name,
@@ -1166,12 +1175,19 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                         );
                     }
                     ui.separator();
-                    if ui.button("Swap").clicked() && app.active_team_edit.bench_select.is_some() {
+                    if ui.button("Swap").clicked() {
+                        let temp_player = team.pitching[0].clone();
                         if app.active_team_edit.is_home {
-                            app.game_modern.as_ref().unwrap().home_active.pitching[0] =
-                                app.active_team_edit.bench_select.clone().unwrap();
+                            app.active_team_edit.bench_select =
+                                team.bullpen[app.active_team_edit.bench_num].clone();
                         }
-                        team.pitching[0] = app.active_team_edit.bench_select.unwrap();
+                        team.pitching[0] = app.active_team_edit.bench_select.clone();
+                        team.bullpen[app.active_team_edit.bench_num] = temp_player;
+                        if app.active_team_edit.is_home {
+                            app.game_modern.as_mut().unwrap().home_active = team;
+                        } else {
+                            app.game_modern.as_mut().unwrap().away_active = team;
+                        }
                     }
                 }
             }

@@ -246,10 +246,10 @@ impl Default for DebugSettings {
 pub struct ActiveTeamEdit {
     pub is_home: bool,
     pub is_batter: bool,
-    pub current_num: Option<usize>,
-    pub bench_num: Option<usize>,
-    pub current_select: Option<Player>,
-    pub bench_select: Option<Player>,
+    pub current_num: usize,
+    pub bench_num: usize,
+    pub current_select: Player,
+    pub bench_select: Player,
 }
 
 impl Default for ActiveTeamEdit {
@@ -257,10 +257,10 @@ impl Default for ActiveTeamEdit {
         Self {
             is_home: false,
             is_batter: false,
-            current_num: None,
-            bench_num: None,
-            current_select: None,
-            bench_select: None,
+            current_num: 0,
+            bench_num: 0,
+            current_select: Player::default(),
+            bench_select: Player::default(),
         }
     }
 }
@@ -1045,11 +1045,19 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             app.active_team_edit.is_home = true;
                             app.active_team_edit.is_batter = true;
                             app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.home_team_active.as_ref().unwrap().bench
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
                         }
                         if ui.button("Away").clicked() {
                             app.active_team_edit.is_home = false;
                             app.active_team_edit.is_batter = true;
                             app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.away_team_active.as_ref().unwrap().bench
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
                         }
                     });
                     ui.menu_button("Bullpen", |ui| {
@@ -1057,11 +1065,19 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             app.active_team_edit.is_home = true;
                             app.active_team_edit.is_batter = false;
                             app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.home_team_active.as_ref().unwrap().bullpen
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
                         }
                         if ui.button("Away").clicked() {
                             app.active_team_edit.is_home = false;
                             app.active_team_edit.is_batter = false;
                             app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.away_team_active.as_ref().unwrap().bullpen
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
                         }
                     });
                     if ui.button("View Team").clicked() {
