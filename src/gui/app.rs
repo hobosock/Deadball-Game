@@ -1041,6 +1041,20 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
             }
             Panel::Roster => {
                 ui.horizontal(|ui| {
+                    ui.menu_button("Batting Order", |ui| {
+                        // only allow if game has already started
+                        if app.home_team_active.is_some()
+                            && app.away_team_active.is_some()
+                            && app.game_state.is_none()
+                        {
+                            if ui.button("Home").clicked() {
+                                // edit home team batting order
+                            }
+                            if ui.button("Away").clicked() {
+                                // edit away team batting order
+                            }
+                        }
+                    });
                     ui.menu_button("Pinch Hit", |ui| {
                         if ui.button("Home").clicked() {
                             app.active_team_edit.is_home = true;
