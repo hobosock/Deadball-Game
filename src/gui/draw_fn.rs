@@ -1130,10 +1130,8 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                         app.active_team_edit.current_select =
                             team.roster[app.active_team_edit.current_num].clone();
                         let temp_player = app.active_team_edit.current_select.clone();
-                        if app.active_team_edit.is_home {
-                            app.active_team_edit.bench_select =
-                                team.bench[app.active_team_edit.bench_num].clone();
-                        }
+                        app.active_team_edit.bench_select =
+                            team.bench[app.active_team_edit.bench_num].clone();
                         team.roster[app.active_team_edit.current_num] =
                             app.active_team_edit.bench_select.clone();
                         team.bench[app.active_team_edit.bench_num] = temp_player;
@@ -1177,10 +1175,8 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                     ui.separator();
                     if ui.button("Swap").clicked() {
                         let temp_player = team.pitching[0].clone();
-                        if app.active_team_edit.is_home {
-                            app.active_team_edit.bench_select =
-                                team.bullpen[app.active_team_edit.bench_num].clone();
-                        }
+                        app.active_team_edit.bench_select =
+                            team.bullpen[app.active_team_edit.bench_num].clone();
                         team.pitching[0] = app.active_team_edit.bench_select.clone();
                         team.bullpen[app.active_team_edit.bench_num] = temp_player;
                         if app.active_team_edit.is_home {
