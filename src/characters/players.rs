@@ -808,12 +808,7 @@ pub fn change_pitch_die(current: i32, increment: i32) -> i32 {
     let current_pos = current_pos_res.unwrap();
     let mut new_die_pos = current_pos as i32 + increment;
     // clamp position before indexing
-    if new_die_pos < 0 {
-        new_die_pos = 0;
-    }
-    if new_die_pos > 7 {
-        new_die_pos = 7;
-    }
+    new_die_pos = new_die_pos.clamp(0, 7);
 
     die_vec[new_die_pos as usize]
 }

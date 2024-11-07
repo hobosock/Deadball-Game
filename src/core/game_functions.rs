@@ -1446,12 +1446,8 @@ pub fn find_by_position(position: Position, roster: &[Player]) -> Option<Player>
 /// convert MSS digit to position
 pub fn position_by_number(mut last_digit: i32) -> Position {
     let position: Position;
-    if last_digit < 1 {
-        last_digit = 1; // NOTE: rules actually handle 0 but result is same as 1
-    }
-    if last_digit > 9 {
-        last_digit = 9;
-    }
+    // NOTE: rules actually handle 0 but result is same as 1
+    last_digit = last_digit.clamp(1, 9);
     if last_digit == 1 {
         position = Position::Pitcher;
     } else if last_digit == 2 {

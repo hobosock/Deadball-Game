@@ -21,8 +21,6 @@ use crate::{
     gui::gui_functions::{runners_on_bool, update_player_labels},
 };
 
-use std::usize;
-
 use eframe::egui::Image;
 // EXTERNAL IMPORTS
 use eframe::{
@@ -243,6 +241,7 @@ impl Default for DebugSettings {
 }
 
 /// struct for editing lineup/current pitcher during game
+#[derive(Default)]
 pub struct ActiveTeamEdit {
     pub is_home: bool,
     pub is_batter: bool,
@@ -252,6 +251,7 @@ pub struct ActiveTeamEdit {
     pub bench_select: Player,
 }
 
+/*
 impl Default for ActiveTeamEdit {
     fn default() -> Self {
         Self {
@@ -264,6 +264,7 @@ impl Default for ActiveTeamEdit {
         }
     }
 }
+*/
 
 pub struct DeadballApp<'a> {
     // score information
