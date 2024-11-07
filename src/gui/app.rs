@@ -1041,7 +1041,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
             }
             Panel::Roster => {
                 ui.horizontal(|ui| {
-                    ui.menu_button("Batting Order", |ui| {
+                    ui.menu_button("Pinch Hit", |ui| {
                         if ui.button("Home").clicked() {
                             app.active_team_edit.is_home = true;
                             app.active_team_edit.is_batter = true;
