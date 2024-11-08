@@ -1,8 +1,9 @@
 use std::fs;
 
 use eframe::egui::{self, Color32, Context, RichText};
+use egui_dnd::dnd;
 use egui_file::FileDialog;
-use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 
 use crate::{
     characters::{
@@ -209,6 +210,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                     toasts.add(Toast {
                         text: "Game created.".into(),
                         kind: ToastKind::Info,
+                        style: ToastStyle::default(),
                         options: ToastOptions::default()
                             .duration_in_seconds(3.0)
                             .show_progress(true)
@@ -222,6 +224,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Must select a *.dbt file for away team.".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -234,6 +237,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Must select a *.dbt file for home team.".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -246,6 +250,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Must select a *.dbb file for ballpark.".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -351,6 +356,7 @@ pub fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mu
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Team created!".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -361,6 +367,7 @@ pub fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mu
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: format!("Create failed: {}", e).into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -462,6 +469,7 @@ pub fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Player created!".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -472,6 +480,7 @@ pub fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: format!("Create failed: {}", e).into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -511,6 +520,7 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Ballpark created".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -521,6 +531,7 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
                         toasts.add(Toast {
                             kind: ToastKind::Error,
                             text: format!("Create failed: {}", e).into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true),
@@ -1186,6 +1197,24 @@ pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut 
                         }
                     }
                 }
+            }
+        });
+}
+
+pub fn draw_batting_order_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Adjust Batting Order")
+        .open(&mut app.gui_windows.batting_order_window)
+        .show(ctx, |ui| {
+            ui.label("Drag and drop to change batting order.");
+
+            let response = dnd(ui, "batting order").show(
+                app.batting_order_edit.batting_order.iter(),
+                |ui, item, handle, state| {
+                    ui.label(format!("{} {}", item.first_name, item.last_name));
+                },
+            );
+            if response.is_drag_finished() {
+                response.update_vec(&mut app.batting_order_edit.batting_order);
             }
         });
 }

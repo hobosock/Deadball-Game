@@ -107,6 +107,23 @@ impl Default for CreateBallparkWindow {
     }
 }
 
+/// state variables for adjusting batting order
+pub struct BattingOrderWindow {
+    pub is_visible: bool,
+    pub is_home: bool,
+    pub batting_order: Vec<Player>,
+}
+
+impl Default for BattingOrderWindow {
+    fn default() -> Self {
+        Self {
+            is_visible: false,
+            is_home: false,
+            batting_order: Vec::new(),
+        }
+    }
+}
+
 /*========================================================
 FUNCTION DEFINITIONS
 ========================================================*/

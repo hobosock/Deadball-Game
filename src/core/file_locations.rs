@@ -4,7 +4,7 @@
 
 use std::fs;
 
-use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 
 pub const TEAM_LOCATION: &str = "src/testfiles/game/teams/";
 pub const PLAYER_LOCATION: &str = "src/testfiles/game/players/";
@@ -101,6 +101,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -119,6 +120,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -137,6 +139,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -155,6 +158,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -173,6 +177,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -191,6 +196,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -209,6 +215,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -227,6 +234,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)
@@ -245,6 +253,7 @@ pub fn load_databases(toasts: &mut Toasts) -> DeadballDatabases {
             toasts.add(Toast {
                 text: e_str.into(),
                 kind: ToastKind::Info,
+                style: ToastStyle::default(),
                 options: ToastOptions::default()
                     .duration_in_seconds(5.0)
                     .show_progress(true)

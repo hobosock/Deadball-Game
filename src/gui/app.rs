@@ -8,8 +8,8 @@ use crate::characters::{players::*, teams::*};
 use crate::core::file_locations::{load_databases, DeadballDatabases};
 //use deadball::core::file_locations::*;
 use super::gui_functions::{
-    batter_tooltip, update_debug_textedits, CreateBallparkWindow, CreatePlayerWindow,
-    CreateTeamWindow, ToastData,
+    batter_tooltip, update_debug_textedits, BattingOrderWindow, CreateBallparkWindow,
+    CreatePlayerWindow, CreateTeamWindow, ToastData,
 };
 use crate::core::game_functions::{
     bunt, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
@@ -29,7 +29,7 @@ use eframe::{
 };
 use egui::{Rect, RichText};
 use egui_file::FileDialog;
-use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 use std::path::PathBuf;
 
 /*==============================================================================================
@@ -145,6 +145,7 @@ pub struct GuiWindows {
     pub console_window: bool,
     pub edit_roster_window: bool,
     pub team_info_window: bool,
+    pub batting_order_window: bool,
 }
 
 impl Default for GuiWindows {
@@ -159,6 +160,7 @@ impl Default for GuiWindows {
             console_window: true,
             edit_roster_window: false,
             team_info_window: false,
+            batting_order_window: false,
         }
     }
 }
@@ -301,6 +303,7 @@ pub struct DeadballApp<'a> {
     pub game_modern: Option<GameModern>,
     pub game_state: Option<GameState>,
     pub active_team_edit: ActiveTeamEdit,
+    pub batting_order_edit: BattingOrderWindow,
     // TODO: add ancient game
     // debug settings
     pub debug_settings: DebugSettings,
@@ -341,6 +344,7 @@ impl Default for DeadballApp<'_> {
             game_modern: None,
             game_state: None,
             active_team_edit: ActiveTeamEdit::default(),
+            batting_order_edit: BattingOrderWindow::default(),
             debug_settings: DebugSettings::default(),
             toast_options: ToastData::default(),
             create_team: CreateTeamWindow::default(),
@@ -381,6 +385,7 @@ impl eframe::App for DeadballApp<'_> {
         draw_create_player_window(ctx, self, &mut toasts);
         draw_create_ballpark_window(ctx, self, &mut toasts);
         draw_active_team_edit(ctx, self, &mut toasts);
+        draw_batting_order_window(ctx, self, &mut toasts);
 
         // main window
         draw_bottom_panel(ctx, self, &mut toasts);
@@ -723,6 +728,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "Play ball!".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -733,6 +739,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "Create a game first.".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -815,6 +822,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     toasts.add(Toast {
                                         kind: ToastKind::Info,
                                         text: "That's game!".into(),
+                                        style: ToastStyle::default(),
                                         options: ToastOptions::default()
                                             .duration_in_seconds(3.0)
                                             .show_progress(true)
@@ -917,6 +925,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "No runners on base.".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -929,6 +938,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
+                                style: ToastStyle::default(),
                                 options: ToastOptions::default()
                                     .duration_in_seconds(3.0)
                                     .show_progress(true)
@@ -943,6 +953,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "No runners on, why bunt?".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -975,6 +986,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
+                                style: ToastStyle::default(),
                                 options: ToastOptions::default()
                                     .duration_in_seconds(3.0)
                                     .show_progress(true)
@@ -1020,6 +1032,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     kind: ToastKind::Info,
                                     text: "Hit and run only available with a runner on first."
                                         .into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -1030,6 +1043,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
+                                style: ToastStyle::default(),
                                 options: ToastOptions::default()
                                     .duration_in_seconds(3.0)
                                     .show_progress(true)
@@ -1048,11 +1062,29 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             && app.game_state.is_none()
                         {
                             if ui.button("Home").clicked() {
-                                // edit home team batting order
+                                app.gui_windows.batting_order_window = true;
+                                app.batting_order_edit.is_home = true;
+                                app.batting_order_edit.batting_order =
+                                    app.home_team_active.as_ref().unwrap().batting_order.clone();
                             }
                             if ui.button("Away").clicked() {
-                                // edit away team batting order
+                                app.gui_windows.batting_order_window = true;
+                                app.batting_order_edit.is_home = false;
+                                app.batting_order_edit.batting_order =
+                                    app.away_team_active.as_ref().unwrap().batting_order.clone();
                             }
+                        } else {
+                            // TODO: this spams a bunch of toast notifications
+                            toasts.add(Toast {
+                                text: "Batting order can only be edited before the game starts!"
+                                    .into(),
+                                kind: ToastKind::Info,
+                                style: ToastStyle::default(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
                         }
                     });
                     ui.menu_button("Pinch Hit", |ui| {
