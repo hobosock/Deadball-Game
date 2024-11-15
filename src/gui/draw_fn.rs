@@ -1,8 +1,9 @@
 use std::fs;
 
 use eframe::egui::{self, Color32, Context, RichText};
+use egui_dnd::dnd;
 use egui_file::FileDialog;
-use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 
 use crate::{
     characters::{
@@ -21,7 +22,7 @@ pub fn draw_version_window(ctx: &Context, app: &mut DeadballApp) {
     egui::Window::new("Version")
         .open(&mut app.gui_windows.version_window)
         .show(ctx, |ui| {
-            ui.label("Version 0.3.5");
+            ui.label("Version 0.4.5");
         });
 }
 
@@ -209,6 +210,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                     toasts.add(Toast {
                         text: "Game created.".into(),
                         kind: ToastKind::Info,
+                        style: ToastStyle::default(),
                         options: ToastOptions::default()
                             .duration_in_seconds(3.0)
                             .show_progress(true)
@@ -222,6 +224,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Must select a *.dbt file for away team.".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -234,6 +237,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Must select a *.dbt file for home team.".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -246,6 +250,7 @@ pub fn draw_create_new_game(ctx: &Context, app: &mut DeadballApp, toasts: &mut T
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Must select a *.dbb file for ballpark.".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -351,6 +356,7 @@ pub fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mu
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Team created!".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -361,6 +367,7 @@ pub fn draw_create_team_window(ctx: &Context, app: &mut DeadballApp, toasts: &mu
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: format!("Create failed: {}", e).into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -462,6 +469,7 @@ pub fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Player created!".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -472,6 +480,7 @@ pub fn draw_create_player_window(ctx: &Context, app: &mut DeadballApp, toasts: &
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: format!("Create failed: {}", e).into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -511,6 +520,7 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
                         toasts.add(Toast {
                             kind: ToastKind::Info,
                             text: "Ballpark created".into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true)
@@ -521,6 +531,7 @@ pub fn draw_create_ballpark_window(ctx: &Context, app: &mut DeadballApp, toasts:
                         toasts.add(Toast {
                             kind: ToastKind::Error,
                             text: format!("Create failed: {}", e).into(),
+                            style: ToastStyle::default(),
                             options: ToastOptions::default()
                                 .duration_in_seconds(3.0)
                                 .show_progress(true),
@@ -1074,6 +1085,175 @@ pub fn draw_debug_window(ctx: &Context, app: &mut DeadballApp) {
                     }
                 }
                 app.game_state = Some(app.debug_settings.debug_state.clone());
+            }
+        });
+}
+
+/// renders the roster edit window to change lineup or current pitcher during game
+pub fn draw_active_team_edit(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Edit Team")
+        .open(&mut app.gui_windows.edit_roster_window)
+        .show(ctx, |ui| {
+            if app.game_state.is_some() {
+                let mut team = if app.active_team_edit.is_home {
+                    app.game_modern.clone().unwrap().home_active
+                } else {
+                    app.game_modern.clone().unwrap().away_active
+                };
+                if app.active_team_edit.is_batter {
+                    // TODO: also display current game performance
+                    // TODO: display streak/slump
+                    ui.heading("Current Lineup");
+                    for (i, player) in team.roster.iter().enumerate() {
+                        ui.radio_value(
+                            &mut app.active_team_edit.current_num,
+                            i,
+                            format!(
+                                "{} {} | {:?} | {} | {} | {:?}",
+                                player.first_name,
+                                player.last_name,
+                                player.position,
+                                player.batter_target,
+                                player.on_base_target,
+                                player.handedness
+                            ),
+                        );
+                    }
+                    ui.separator();
+                    ui.heading("Bench");
+                    for (i, player) in team.bench.iter().enumerate() {
+                        ui.radio_value(
+                            &mut app.active_team_edit.bench_num,
+                            i,
+                            format!(
+                                "{} {} | {:?} | {} | {} | {:?}",
+                                player.first_name,
+                                player.last_name,
+                                player.position,
+                                player.batter_target,
+                                player.on_base_target,
+                                player.handedness
+                            ),
+                        );
+                    }
+                    ui.separator();
+                    if ui.button("Swap").clicked() {
+                        app.active_team_edit.current_select =
+                            team.roster[app.active_team_edit.current_num].clone();
+                        let temp_player = app.active_team_edit.current_select.clone();
+                        app.active_team_edit.bench_select =
+                            team.bench[app.active_team_edit.bench_num].clone();
+                        team.roster[app.active_team_edit.current_num] =
+                            app.active_team_edit.bench_select.clone();
+                        team.bench[app.active_team_edit.bench_num] = temp_player;
+                        if app.active_team_edit.is_home {
+                            app.game_modern.as_mut().unwrap().home_active = team;
+                        } else {
+                            app.game_modern.as_mut().unwrap().away_active = team;
+                        }
+                    }
+                } else {
+                    // TODO: show innings pitched, streak/slump, etc.
+                    ui.heading("On the Mound");
+                    let player = team.pitching[0].clone();
+                    app.active_team_edit.current_num = 0;
+                    ui.radio_value(
+                        &mut app.active_team_edit.current_select,
+                        player.clone(),
+                        format!(
+                            "{} {} | {} | {:?}",
+                            player.first_name,
+                            player.last_name,
+                            player.pitch_die,
+                            player.handedness
+                        ),
+                    );
+                    ui.separator();
+                    ui.heading("Bullpen");
+                    for (i, player) in team.bullpen.iter().enumerate() {
+                        ui.radio_value(
+                            &mut app.active_team_edit.bench_num,
+                            i,
+                            format!(
+                                "{} {} | {} | {:?}",
+                                player.first_name,
+                                player.last_name,
+                                player.pitch_die,
+                                player.handedness
+                            ),
+                        );
+                    }
+                    ui.separator();
+                    if ui.button("Swap").clicked() {
+                        let temp_player = team.pitching[0].clone();
+                        app.active_team_edit.bench_select =
+                            team.bullpen[app.active_team_edit.bench_num].clone();
+                        team.pitching[0] = app.active_team_edit.bench_select.clone();
+                        team.bullpen[app.active_team_edit.bench_num] = temp_player;
+                        if app.active_team_edit.is_home {
+                            app.game_modern.as_mut().unwrap().home_active = team;
+                        } else {
+                            app.game_modern.as_mut().unwrap().away_active = team;
+                        }
+                    }
+                }
+            }
+        });
+}
+
+pub fn draw_batting_order_window(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) {
+    egui::Window::new("Adjust Batting Order")
+        .open(&mut app.gui_windows.batting_order_window)
+        .show(ctx, |ui| {
+            ui.label("Drag and drop to change batting order.");
+            ui.separator();
+
+            let response = dnd(ui, "batting order").show(
+                app.batting_order_edit.batting_order.iter(),
+                |ui, item, handle, state| {
+                    handle.ui(ui, |ui| {
+                        if state.dragged {
+                            ui.label(format!(
+                                "> {} {} [{} {}]",
+                                item.first_name,
+                                item.last_name,
+                                item.batter_target,
+                                item.on_base_target
+                            ));
+                        } else {
+                            ui.label(format!(
+                                "| {} {} [{} {}]",
+                                item.first_name,
+                                item.last_name,
+                                item.batter_target,
+                                item.on_base_target
+                            ));
+                        }
+                    });
+                },
+            );
+            if response.is_drag_finished() {
+                response.update_vec(&mut app.batting_order_edit.batting_order);
+            }
+
+            if ui.button("Finish").clicked() {
+                if app.batting_order_edit.is_home {
+                    app.game_modern.as_mut().unwrap().home_active.batting_order =
+                        app.batting_order_edit.batting_order.clone();
+                } else {
+                    app.game_modern.as_mut().unwrap().away_active.batting_order =
+                        app.batting_order_edit.batting_order.clone();
+                }
+                toasts.add(Toast {
+                    text: "Batting order changed!".into(),
+                    kind: ToastKind::Info,
+                    style: ToastStyle::default(),
+                    options: ToastOptions::default()
+                        .duration_in_seconds(5.0)
+                        .show_progress(true)
+                        .show_icon(true),
+                });
+                // TODO: close window?
             }
         });
 }

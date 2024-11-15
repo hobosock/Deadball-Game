@@ -180,7 +180,6 @@ pub struct TeamState {
     pub hits: Vec<u32>,
     pub errors: Vec<u32>,
 }
-// TODO: make runs/hits/errors vectors with a value for each inning
 // TODO: make fields to track temp bonuses
 
 /*==========================================

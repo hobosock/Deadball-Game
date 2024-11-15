@@ -14,7 +14,7 @@ use crate::core::{
 /*========================================================
 ENUM DEFINITIONS
 ========================================================*/
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Position {
     Pitcher,
     Catcher,
@@ -29,7 +29,7 @@ pub enum Position {
     None,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Handedness {
     Right,
     Left,
@@ -37,7 +37,7 @@ pub enum Handedness {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Traits {
     // hitter traits
     PowerHitter,
@@ -62,7 +62,7 @@ pub enum Traits {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum InjuryLocation {
     Head,
     Shoulder,
@@ -80,7 +80,7 @@ pub enum InjuryLocation {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum InjurySeverity {
     Catastrophic,
     Major,
@@ -100,7 +100,7 @@ pub enum PlayerClass {
 /*========================================================
 STRUCT DEFINITIONS
 ========================================================*/
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Player {
     pub first_name: String,
     pub last_name: String,
@@ -113,6 +113,24 @@ pub struct Player {
     pub traits: Vec<Traits>,
     pub injury_location: Vec<InjuryLocation>,
     pub injury_severity: Vec<InjurySeverity>,
+}
+
+impl Default for Player {
+    fn default() -> Self {
+        Self {
+            first_name: "Seth".to_string(),
+            last_name: "Loveall".to_string(),
+            nickname: "White Lightning".to_string(),
+            position: Position::Shortstop,
+            handedness: Handedness::Right,
+            batter_target: 32,
+            on_base_target: 36,
+            pitch_die: 12,
+            traits: vec![Traits::PowerHitter],
+            injury_location: vec![InjuryLocation::None],
+            injury_severity: vec![InjurySeverity::Uninjured],
+        }
+    }
 }
 
 impl Player {
@@ -436,8 +454,7 @@ pub fn load_player(contents: String) -> Player {
     }
 }
 
-// writes a Player struct to a *.DBP file
-// TODO: - shouldn't this take a reference to a player struct?
+/// writes a Player struct to a *.DBP file
 pub fn write_player(data: &Player, filename: &str) -> Result<(), std::io::Error> {
     let mut file_text = String::new();
     file_text.push_str("First Name: ");
@@ -647,8 +664,6 @@ pub fn generate_traits(player_type: &PlayerClass) -> Vec<Traits> {
     // roll for chance of 2 traits
     let chance = roll(100);
     let num_traits: i32 = if chance <= 2 { 2 } else { 1 };
-    // TODO: could clean this up so only a single none is written, but it doesn't matter that much
-    // so I'm not going to worry about it right now
     for _i in 0..num_traits {
         let result = roll(10) + roll(10);
         match player_type {
@@ -793,12 +808,7 @@ pub fn change_pitch_die(current: i32, increment: i32) -> i32 {
     let current_pos = current_pos_res.unwrap();
     let mut new_die_pos = current_pos as i32 + increment;
     // clamp position before indexing
-    if new_die_pos < 0 {
-        new_die_pos = 0;
-    }
-    if new_die_pos > 7 {
-        new_die_pos = 7;
-    }
+    new_die_pos = new_die_pos.clamp(0, 7);
 
     die_vec[new_die_pos as usize]
 }

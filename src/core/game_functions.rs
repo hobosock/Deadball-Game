@@ -180,7 +180,6 @@ pub struct GameState {
     pub away_state: TeamState,
     pub game_text: String,
 }
-// NOTE: home team is team 1, away team is team 2
 
 //======== CUSTOM ERRORS =================================
 #[derive(Debug, Clone)]
@@ -277,7 +276,6 @@ pub fn create_modern_game(
         }
     }
     // initialize structs and then push
-    // TODO: I feel like load_roster function could be used here?
     let mut home_active = ActiveTeam {
         roster: vec![],
         bench: vec![],
@@ -420,12 +418,6 @@ pub fn modern_game_flow(game: &GameModern, mut state: GameState, debug: DebugCon
         // check score
         if state.home_state.runs != state.away_state.runs {
             state.status = GameStatus::Over;
-            // TODO: I think this message is redundant
-            state.game_text += &format!(
-                "\nGame!  Final score: {} - {}",
-                state.home_state.runs.iter().sum::<u32>(),
-                state.away_state.runs.iter().sum::<u32>()
-            );
         }
     }
     match state.status {
@@ -479,9 +471,8 @@ pub fn modern_game_flow(game: &GameModern, mut state: GameState, debug: DebugCon
             }
         },
         GameStatus::Over => {
-            // temporary printing of results
-            // TODO: print score report?
-            // TODO: inning ticks over one final time before game ends, need to fix
+            // TODO: score report pop up window
+            state.inning -= 1; // offsets inning tick up at end of inning flow function
             println!("FINAL SCORE");
             println!(
                 "HOME: {} - AWAY: {}",
@@ -583,14 +574,13 @@ pub fn modern_inning_flow(
                         combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
                     state.game_text += &format!("\nCrit hit roll: {}", &hit_result);
                     hit_result = crit_hit(&hit_result);
-                    state = hit_table(&hit_result, state, game, &mut debug);
-                    // TODO: no DEF roll on crit_hit
+                    state = hit_table(&hit_result, state, game, &mut debug, true);
                 }
                 AtBatResults::Hit => {
                     // hit roll
                     let hit_result = combined_roll(&mut debug, 20) + pow_trait_check(game, &state);
                     state.game_text += &format!("\nHit roll: {}", &hit_result);
-                    state = hit_table(&hit_result, state, game, &mut debug);
+                    state = hit_table(&hit_result, state, game, &mut debug, false);
                 }
                 AtBatResults::Walk => {
                     // basically like a single, just don't update the hit values
@@ -777,6 +767,7 @@ pub fn hit_table(
     mut state: GameState,
     game: &GameModern,
     debug: &mut DebugConfig,
+    is_crit: bool,
 ) -> GameState {
     // 1. defense roll (if needed)
     // 2. advance runners
@@ -845,9 +836,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Firstbase);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Firstbase);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -864,9 +857,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Secondbase);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Secondbase);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -883,9 +878,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Thirdbase);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Thirdbase);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -902,9 +899,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Shortstop);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Shortstop);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -949,9 +948,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Leftfield);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Leftfield);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -968,9 +969,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Centerfield);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Centerfield);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -987,9 +990,11 @@ pub fn hit_table(
                 state.home_state.hits[(state.inning - 1) as usize] += 1;
             }
         }
-        let def_roll = combined_roll(debug, 12)
-            + def_trait_check(&state.inning_half, game, Position::Rightfield);
-        (state, advance, base) = defense(state, &def_roll, advance, base);
+        if !is_crit {
+            let def_roll = combined_roll(debug, 12)
+                + def_trait_check(&state.inning_half, game, Position::Rightfield);
+            (state, advance, base) = defense(state, &def_roll, advance, base);
+        }
         state = runners_advance(state, &advance);
         state = add_runner(state, &base, batter);
         return state;
@@ -1037,8 +1042,6 @@ pub fn hit_table(
         return state;
     }
 }
-
-// TODO: find position player function - finds player info based on position and inning
 
 /// defense roll function - rolls on the defense table and updates game state
 pub fn defense(
@@ -1429,7 +1432,6 @@ pub fn init_new_game_state(home_pitcher: Player, away_pitcher: Player) -> GameSt
     }
 }
 
-// TODO: find a player by position in roster\
 /// Finds the player in a certain position.  Takes a reference to a roster (active team struct) and
 /// returns a copy of the desired player struct
 pub fn find_by_position(position: Position, roster: &[Player]) -> Option<Player> {
@@ -1444,12 +1446,8 @@ pub fn find_by_position(position: Position, roster: &[Player]) -> Option<Player>
 /// convert MSS digit to position
 pub fn position_by_number(mut last_digit: i32) -> Position {
     let position: Position;
-    if last_digit < 1 {
-        last_digit = 1;
-    }
-    if last_digit > 9 {
-        last_digit = 9;
-    }
+    // NOTE: rules actually handle 0 but result is same as 1
+    last_digit = last_digit.clamp(1, 9);
     if last_digit == 1 {
         position = Position::Pitcher;
     } else if last_digit == 2 {
@@ -1521,26 +1519,37 @@ fn possible_error(
     debug: &mut DebugConfig,
     mut state: GameState,
     game: &GameModern,
-    position: Position,
+    mut position: Position,
 ) -> GameState {
-    // TODO: Not sure I am implementing this correctly, see page 29
-    // get position
-    // TODO: get player traits
-    let batter: Player = match state.inning_half {
-        InningTB::Top => game.away_active.batting_order
-            [bo_wrap(state.away_state.current_batter, 1, true)]
-        .clone(),
-        InningTB::Bottom => game.home_active.batting_order
-            [bo_wrap(state.home_state.current_batter, 1, true)]
-        .clone(),
+    if position == Position::Pitcher {
+        position = Position::Shortstop;
+    }
+    if position == Position::Catcher {
+        position = Position::Secondbase;
+    }
+    let (batter, defender) = match state.inning_half {
+        InningTB::Top => {
+            let b = game.away_active.batting_order
+                [bo_wrap(state.away_state.current_batter, 1, true)]
+            .clone();
+            let d = find_by_position(position.clone(), &game.home_active.roster).unwrap();
+            (b, d)
+        }
+        InningTB::Bottom => {
+            let b = game.home_active.batting_order
+                [bo_wrap(state.home_state.current_batter, 1, true)]
+            .clone();
+            let d = find_by_position(position.clone(), &game.away_active.roster).unwrap();
+            (b, d)
+        }
     };
     state.game_text += "\n Possible error -> ";
-    let def_roll = combined_roll(debug, 12) + def_trait_check(&state.inning_half, game, position);
+    let mut def_roll =
+        combined_roll(debug, 12) + def_trait_check(&state.inning_half, game, position);
+    def_roll += defender.defense();
     state.game_text += &format!("defense roll: {}", &def_roll);
     if def_roll <= 2 {
         state.game_text += "-> Error!";
-        // fielder makes an error
-        // TODO: these kind of match statements are redundant, clean it up
         match state.inning_half {
             InningTB::Top => {
                 state.home_state.errors[(state.inning - 1) as usize] += 1;
@@ -1869,7 +1878,6 @@ fn mega_out(mut state: GameState) -> GameState {
     state
 }
 
-// TODO: check catcher's defense trait
 /// takes a game state and processes steals of the indicated type
 /// includes rules for S+/S-
 /// (!) assumes you have checked for valid steal scenarios before calling it
@@ -2205,7 +2213,7 @@ pub fn bunt(
         // S+ -> Single, DEF 3B
         // lead runner advances, batter out
         if batter.speedy() {
-            state = hit_table(&5, state, game, &mut debug);
+            state = hit_table(&5, state, game, &mut debug, false);
             state.game_text += "\nLead runner advances, bunter races for first!";
         } else {
             state.outs = increment_out(state.outs, 1);

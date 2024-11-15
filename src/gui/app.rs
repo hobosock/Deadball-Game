@@ -8,8 +8,8 @@ use crate::characters::{players::*, teams::*};
 use crate::core::file_locations::{load_databases, DeadballDatabases};
 //use deadball::core::file_locations::*;
 use super::gui_functions::{
-    batter_tooltip, update_debug_textedits, CreateBallparkWindow, CreatePlayerWindow,
-    CreateTeamWindow, ToastData,
+    batter_tooltip, update_debug_textedits, BattingOrderWindow, CreateBallparkWindow,
+    CreatePlayerWindow, CreateTeamWindow, ToastData,
 };
 use crate::core::game_functions::{
     bunt, find_by_position, hit_and_run, init_new_game_state, modern_game_flow,
@@ -21,8 +21,6 @@ use crate::{
     gui::gui_functions::{runners_on_bool, update_player_labels},
 };
 
-use std::usize;
-
 use eframe::egui::Image;
 // EXTERNAL IMPORTS
 use eframe::{
@@ -31,7 +29,7 @@ use eframe::{
 };
 use egui::{Rect, RichText};
 use egui_file::FileDialog;
-use egui_toast::{Toast, ToastKind, ToastOptions, Toasts};
+use egui_toast::{Toast, ToastKind, ToastOptions, ToastStyle, Toasts};
 use std::path::PathBuf;
 
 /*==============================================================================================
@@ -145,6 +143,9 @@ pub struct GuiWindows {
     pub debug_window: bool,
     pub debug_roll_window: bool,
     pub console_window: bool,
+    pub edit_roster_window: bool,
+    pub team_info_window: bool,
+    pub batting_order_window: bool,
 }
 
 impl Default for GuiWindows {
@@ -157,6 +158,9 @@ impl Default for GuiWindows {
             debug_window: false,
             debug_roll_window: false,
             console_window: true,
+            edit_roster_window: false,
+            team_info_window: false,
+            batting_order_window: false,
         }
     }
 }
@@ -238,6 +242,32 @@ impl Default for DebugSettings {
     }
 }
 
+/// struct for editing lineup/current pitcher during game
+#[derive(Default)]
+pub struct ActiveTeamEdit {
+    pub is_home: bool,
+    pub is_batter: bool,
+    pub current_num: usize,
+    pub bench_num: usize,
+    pub current_select: Player,
+    pub bench_select: Player,
+}
+
+/*
+impl Default for ActiveTeamEdit {
+    fn default() -> Self {
+        Self {
+            is_home: false,
+            is_batter: false,
+            current_num: 0,
+            bench_num: 0,
+            current_select: Player::default(),
+            bench_select: Player::default(),
+        }
+    }
+}
+*/
+
 pub struct DeadballApp<'a> {
     // score information
     pub score: Score,
@@ -272,6 +302,8 @@ pub struct DeadballApp<'a> {
     pub ballpark_ancient: Option<BallparkAncient>,
     pub game_modern: Option<GameModern>,
     pub game_state: Option<GameState>,
+    pub active_team_edit: ActiveTeamEdit,
+    pub batting_order_edit: BattingOrderWindow,
     // TODO: add ancient game
     // debug settings
     pub debug_settings: DebugSettings,
@@ -311,6 +343,8 @@ impl Default for DeadballApp<'_> {
             ballpark_ancient: None,
             game_modern: None,
             game_state: None,
+            active_team_edit: ActiveTeamEdit::default(),
+            batting_order_edit: BattingOrderWindow::default(),
             debug_settings: DebugSettings::default(),
             toast_options: ToastData::default(),
             create_team: CreateTeamWindow::default(),
@@ -350,6 +384,8 @@ impl eframe::App for DeadballApp<'_> {
         draw_create_team_window(ctx, self, &mut toasts);
         draw_create_player_window(ctx, self, &mut toasts);
         draw_create_ballpark_window(ctx, self, &mut toasts);
+        draw_active_team_edit(ctx, self, &mut toasts);
+        draw_batting_order_window(ctx, self, &mut toasts);
 
         // main window
         draw_bottom_panel(ctx, self, &mut toasts);
@@ -692,6 +728,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "Play ball!".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -702,6 +739,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "Create a game first.".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -784,6 +822,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     toasts.add(Toast {
                                         kind: ToastKind::Info,
                                         text: "That's game!".into(),
+                                        style: ToastStyle::default(),
                                         options: ToastOptions::default()
                                             .duration_in_seconds(3.0)
                                             .show_progress(true)
@@ -886,6 +925,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "No runners on base.".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -898,6 +938,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
+                                style: ToastStyle::default(),
                                 options: ToastOptions::default()
                                     .duration_in_seconds(3.0)
                                     .show_progress(true)
@@ -912,6 +953,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                 toasts.add(Toast {
                                     kind: ToastKind::Info,
                                     text: "No runners on, why bunt?".into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -944,6 +986,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
+                                style: ToastStyle::default(),
                                 options: ToastOptions::default()
                                     .duration_in_seconds(3.0)
                                     .show_progress(true)
@@ -989,6 +1032,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                                     kind: ToastKind::Info,
                                     text: "Hit and run only available with a runner on first."
                                         .into(),
+                                    style: ToastStyle::default(),
                                     options: ToastOptions::default()
                                         .duration_in_seconds(3.0)
                                         .show_progress(true)
@@ -999,6 +1043,7 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                             toasts.add(Toast {
                                 kind: ToastKind::Info,
                                 text: "No active game.".into(),
+                                style: ToastStyle::default(),
                                 options: ToastOptions::default()
                                     .duration_in_seconds(3.0)
                                     .show_progress(true)
@@ -1010,12 +1055,78 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
             }
             Panel::Roster => {
                 ui.horizontal(|ui| {
-                    if ui.button("Batting Order").clicked() {
-                        println!("Batting Order button placeholder.");
-                    }
-                    if ui.button("Bullpen").clicked() {
-                        println!("Bullpen button placeholder.");
-                    }
+                    ui.menu_button("Batting Order", |ui| {
+                        // only allow if game has already started
+                        if app.home_team_active.is_some()
+                            && app.away_team_active.is_some()
+                            && app.game_state.is_none()
+                        {
+                            if ui.button("Home").clicked() {
+                                app.gui_windows.batting_order_window = true;
+                                app.batting_order_edit.is_home = true;
+                                app.batting_order_edit.batting_order =
+                                    app.home_team_active.as_ref().unwrap().batting_order.clone();
+                            }
+                            if ui.button("Away").clicked() {
+                                app.gui_windows.batting_order_window = true;
+                                app.batting_order_edit.is_home = false;
+                                app.batting_order_edit.batting_order =
+                                    app.away_team_active.as_ref().unwrap().batting_order.clone();
+                            }
+                        } else {
+                            // TODO: this spams a bunch of toast notifications
+                            toasts.add(Toast {
+                                text: "Batting order can only be edited before the game starts!"
+                                    .into(),
+                                kind: ToastKind::Info,
+                                style: ToastStyle::default(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                            });
+                        }
+                    });
+                    ui.menu_button("Pinch Hit", |ui| {
+                        if ui.button("Home").clicked() {
+                            app.active_team_edit.is_home = true;
+                            app.active_team_edit.is_batter = true;
+                            app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.home_team_active.as_ref().unwrap().bench
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
+                        }
+                        if ui.button("Away").clicked() {
+                            app.active_team_edit.is_home = false;
+                            app.active_team_edit.is_batter = true;
+                            app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.away_team_active.as_ref().unwrap().bench
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
+                        }
+                    });
+                    ui.menu_button("Bullpen", |ui| {
+                        if ui.button("Home").clicked() {
+                            app.active_team_edit.is_home = true;
+                            app.active_team_edit.is_batter = false;
+                            app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.home_team_active.as_ref().unwrap().bullpen
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
+                        }
+                        if ui.button("Away").clicked() {
+                            app.active_team_edit.is_home = false;
+                            app.active_team_edit.is_batter = false;
+                            app.gui_windows.edit_roster_window = true;
+                            app.active_team_edit.bench_select =
+                                app.away_team_active.as_ref().unwrap().bullpen
+                                    [app.active_team_edit.bench_num]
+                                    .clone();
+                        }
+                    });
                     if ui.button("View Team").clicked() {
                         println!("View Team button placeholder.");
                     }
@@ -1053,26 +1164,25 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         let mut away_info8 = "".to_string();
         let mut away_info9 = "".to_string();
         if app.away_team.is_some() {
-            // TODO: probably should switch to batting order
             let away_team = app.away_team.as_ref().unwrap();
             app.away_team_name = away_team.name.to_string();
-            let batter1 = &app.game_modern.clone().unwrap().away_active.roster[0];
+            let batter1 = &app.game_modern.as_ref().unwrap().away_active.batting_order[0];
             app.away_bo.batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
-            let batter2 = &app.game_modern.clone().unwrap().away_active.roster[1];
+            let batter2 = &app.game_modern.as_ref().unwrap().away_active.batting_order[1];
             app.away_bo.batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
-            let batter3 = &app.game_modern.clone().unwrap().away_active.roster[2];
+            let batter3 = &app.game_modern.as_ref().unwrap().away_active.batting_order[2];
             app.away_bo.batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
-            let batter4 = &app.game_modern.clone().unwrap().away_active.roster[3];
+            let batter4 = &app.game_modern.as_ref().unwrap().away_active.batting_order[3];
             app.away_bo.batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
-            let batter5 = &app.game_modern.clone().unwrap().away_active.roster[4];
+            let batter5 = &app.game_modern.as_ref().unwrap().away_active.batting_order[4];
             app.away_bo.batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
-            let batter6 = &app.game_modern.clone().unwrap().away_active.roster[5];
+            let batter6 = &app.game_modern.as_ref().unwrap().away_active.batting_order[5];
             app.away_bo.batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
-            let batter7 = &app.game_modern.clone().unwrap().away_active.roster[6];
+            let batter7 = &app.game_modern.as_ref().unwrap().away_active.batting_order[6];
             app.away_bo.batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
-            let batter8 = &app.game_modern.clone().unwrap().away_active.roster[7];
+            let batter8 = &app.game_modern.as_ref().unwrap().away_active.batting_order[7];
             app.away_bo.batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
-            let batter9 = &app.game_modern.clone().unwrap().away_active.pitching[0];
+            let batter9 = &app.game_modern.as_ref().unwrap().away_active.batting_order[8];
             app.away_bo.batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             away_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?} ",
@@ -1262,24 +1372,23 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         if app.home_team.is_some() {
             let home_team = app.home_team.as_ref().unwrap();
             app.home_team_name = home_team.name.to_string();
-            // TODO: use batting_order instead?
-            let batter1 = &app.game_modern.clone().unwrap().home_active.roster[0];
+            let batter1 = &app.game_modern.as_ref().unwrap().home_active.batting_order[0];
             app.home_bo.batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
-            let batter2 = &app.game_modern.clone().unwrap().home_active.roster[1];
+            let batter2 = &app.game_modern.as_ref().unwrap().home_active.batting_order[1];
             app.home_bo.batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
-            let batter3 = &app.game_modern.clone().unwrap().home_active.roster[2];
+            let batter3 = &app.game_modern.as_ref().unwrap().home_active.batting_order[2];
             app.home_bo.batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
-            let batter4 = &app.game_modern.clone().unwrap().home_active.roster[3];
+            let batter4 = &app.game_modern.as_ref().unwrap().home_active.batting_order[3];
             app.home_bo.batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
-            let batter5 = &app.game_modern.clone().unwrap().home_active.roster[4];
+            let batter5 = &app.game_modern.as_ref().unwrap().home_active.batting_order[4];
             app.home_bo.batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
-            let batter6 = &app.game_modern.clone().unwrap().home_active.roster[5];
+            let batter6 = &app.game_modern.as_ref().unwrap().home_active.batting_order[5];
             app.home_bo.batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
-            let batter7 = &app.game_modern.clone().unwrap().home_active.roster[6];
+            let batter7 = &app.game_modern.as_ref().unwrap().home_active.batting_order[6];
             app.home_bo.batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
-            let batter8 = &app.game_modern.clone().unwrap().home_active.roster[7];
+            let batter8 = &app.game_modern.as_ref().unwrap().home_active.batting_order[7];
             app.home_bo.batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
-            let batter9 = &app.game_modern.clone().unwrap().home_active.pitching[0];
+            let batter9 = &app.game_modern.as_ref().unwrap().home_active.batting_order[8];
             app.home_bo.batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             home_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?}",

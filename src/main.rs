@@ -25,7 +25,7 @@ fn main() -> Result<(), eframe::Error> {
         options,
         Box::new(|cc| {
             egui_extras::install_image_loaders(&cc.egui_ctx);
-            Box::<DeadballApp>::default()
+            Ok(Box::<DeadballApp>::default())
         }),
     )
     /* SEGMENT OF CODE TO GENERATE TEAMS, DON'T NEED IT EVERY TIME
