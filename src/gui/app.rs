@@ -1164,26 +1164,25 @@ fn draw_left_panel(ctx: &Context, app: &mut DeadballApp) {
         let mut away_info8 = "".to_string();
         let mut away_info9 = "".to_string();
         if app.away_team.is_some() {
-            // TODO: probably should switch to batting order
             let away_team = app.away_team.as_ref().unwrap();
             app.away_team_name = away_team.name.to_string();
-            let batter1 = &app.game_modern.clone().unwrap().away_active.roster[0];
+            let batter1 = &app.game_modern.as_ref().unwrap().away_active.batting_order[0];
             app.away_bo.batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
-            let batter2 = &app.game_modern.clone().unwrap().away_active.roster[1];
+            let batter2 = &app.game_modern.as_ref().unwrap().away_active.batting_order[1];
             app.away_bo.batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
-            let batter3 = &app.game_modern.clone().unwrap().away_active.roster[2];
+            let batter3 = &app.game_modern.as_ref().unwrap().away_active.batting_order[2];
             app.away_bo.batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
-            let batter4 = &app.game_modern.clone().unwrap().away_active.roster[3];
+            let batter4 = &app.game_modern.as_ref().unwrap().away_active.batting_order[3];
             app.away_bo.batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
-            let batter5 = &app.game_modern.clone().unwrap().away_active.roster[4];
+            let batter5 = &app.game_modern.as_ref().unwrap().away_active.batting_order[4];
             app.away_bo.batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
-            let batter6 = &app.game_modern.clone().unwrap().away_active.roster[5];
+            let batter6 = &app.game_modern.as_ref().unwrap().away_active.batting_order[5];
             app.away_bo.batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
-            let batter7 = &app.game_modern.clone().unwrap().away_active.roster[6];
+            let batter7 = &app.game_modern.as_ref().unwrap().away_active.batting_order[6];
             app.away_bo.batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
-            let batter8 = &app.game_modern.clone().unwrap().away_active.roster[7];
+            let batter8 = &app.game_modern.as_ref().unwrap().away_active.batting_order[7];
             app.away_bo.batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
-            let batter9 = &app.game_modern.clone().unwrap().away_active.pitching[0];
+            let batter9 = &app.game_modern.as_ref().unwrap().away_active.batting_order[8];
             app.away_bo.batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             away_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?} ",
@@ -1373,24 +1372,23 @@ fn draw_right_panel(ctx: &Context, app: &mut DeadballApp) {
         if app.home_team.is_some() {
             let home_team = app.home_team.as_ref().unwrap();
             app.home_team_name = home_team.name.to_string();
-            // TODO: use batting_order instead?
-            let batter1 = &app.game_modern.clone().unwrap().home_active.roster[0];
+            let batter1 = &app.game_modern.as_ref().unwrap().home_active.batting_order[0];
             app.home_bo.batter1 = format!("{} {}", &batter1.first_name, &batter1.last_name);
-            let batter2 = &app.game_modern.clone().unwrap().home_active.roster[1];
+            let batter2 = &app.game_modern.as_ref().unwrap().home_active.batting_order[1];
             app.home_bo.batter2 = format!("{} {}", &batter2.first_name, &batter2.last_name);
-            let batter3 = &app.game_modern.clone().unwrap().home_active.roster[2];
+            let batter3 = &app.game_modern.as_ref().unwrap().home_active.batting_order[2];
             app.home_bo.batter3 = format!("{} {}", &batter3.first_name, &batter3.last_name);
-            let batter4 = &app.game_modern.clone().unwrap().home_active.roster[3];
+            let batter4 = &app.game_modern.as_ref().unwrap().home_active.batting_order[3];
             app.home_bo.batter4 = format!("{} {}", &batter4.first_name, &batter4.last_name);
-            let batter5 = &app.game_modern.clone().unwrap().home_active.roster[4];
+            let batter5 = &app.game_modern.as_ref().unwrap().home_active.batting_order[4];
             app.home_bo.batter5 = format!("{} {}", &batter5.first_name, &batter5.last_name);
-            let batter6 = &app.game_modern.clone().unwrap().home_active.roster[5];
+            let batter6 = &app.game_modern.as_ref().unwrap().home_active.batting_order[5];
             app.home_bo.batter6 = format!("{} {}", &batter6.first_name, &batter6.last_name);
-            let batter7 = &app.game_modern.clone().unwrap().home_active.roster[6];
+            let batter7 = &app.game_modern.as_ref().unwrap().home_active.batting_order[6];
             app.home_bo.batter7 = format!("{} {}", &batter7.first_name, &batter7.last_name);
-            let batter8 = &app.game_modern.clone().unwrap().home_active.roster[7];
+            let batter8 = &app.game_modern.as_ref().unwrap().home_active.batting_order[7];
             app.home_bo.batter8 = format!("{} {}", &batter8.first_name, &batter8.last_name);
-            let batter9 = &app.game_modern.clone().unwrap().home_active.pitching[0];
+            let batter9 = &app.game_modern.as_ref().unwrap().home_active.batting_order[8];
             app.home_bo.batter9 = format!("{} {}", &batter9.first_name, &batter9.last_name);
             home_info1 = format!(
                 "{:?} | {:?} | {} | {} | {:?}",

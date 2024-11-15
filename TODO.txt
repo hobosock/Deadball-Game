@@ -19,3 +19,6 @@ edit batting order after creating game and before starting a game
  - app.home_active and app.away_active are some
  - app.game_state is none
  - not sure which widget works best yet
+
+play with toast settings a bit
+like maybe only generate on "just clicked" or something like that

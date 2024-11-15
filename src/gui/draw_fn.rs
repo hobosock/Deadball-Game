@@ -1206,15 +1206,54 @@ pub fn draw_batting_order_window(ctx: &Context, app: &mut DeadballApp, toasts: &
         .open(&mut app.gui_windows.batting_order_window)
         .show(ctx, |ui| {
             ui.label("Drag and drop to change batting order.");
+            ui.separator();
 
             let response = dnd(ui, "batting order").show(
                 app.batting_order_edit.batting_order.iter(),
                 |ui, item, handle, state| {
-                    ui.label(format!("{} {}", item.first_name, item.last_name));
+                    handle.ui(ui, |ui| {
+                        if state.dragged {
+                            ui.label(format!(
+                                "> {} {} [{} {}]",
+                                item.first_name,
+                                item.last_name,
+                                item.batter_target,
+                                item.on_base_target
+                            ));
+                        } else {
+                            ui.label(format!(
+                                "| {} {} [{} {}]",
+                                item.first_name,
+                                item.last_name,
+                                item.batter_target,
+                                item.on_base_target
+                            ));
+                        }
+                    });
                 },
             );
             if response.is_drag_finished() {
                 response.update_vec(&mut app.batting_order_edit.batting_order);
+            }
+
+            if ui.button("Finish").clicked() {
+                if app.batting_order_edit.is_home {
+                    app.game_modern.as_mut().unwrap().home_active.batting_order =
+                        app.batting_order_edit.batting_order.clone();
+                } else {
+                    app.game_modern.as_mut().unwrap().away_active.batting_order =
+                        app.batting_order_edit.batting_order.clone();
+                }
+                toasts.add(Toast {
+                    text: "Batting order changed!".into(),
+                    kind: ToastKind::Info,
+                    style: ToastStyle::default(),
+                    options: ToastOptions::default()
+                        .duration_in_seconds(5.0)
+                        .show_progress(true)
+                        .show_icon(true),
+                });
+                // TODO: close window?
             }
         });
 }
