@@ -1088,43 +1088,67 @@ fn draw_bottom_panel(ctx: &Context, app: &mut DeadballApp, toasts: &mut Toasts) 
                         }
                     });
                     ui.menu_button("Pinch Hit", |ui| {
-                        if ui.button("Home").clicked() {
-                            app.active_team_edit.is_home = true;
-                            app.active_team_edit.is_batter = true;
-                            app.gui_windows.edit_roster_window = true;
-                            app.active_team_edit.bench_select =
-                                app.home_team_active.as_ref().unwrap().bench
-                                    [app.active_team_edit.bench_num]
-                                    .clone();
-                        }
-                        if ui.button("Away").clicked() {
-                            app.active_team_edit.is_home = false;
-                            app.active_team_edit.is_batter = true;
-                            app.gui_windows.edit_roster_window = true;
-                            app.active_team_edit.bench_select =
-                                app.away_team_active.as_ref().unwrap().bench
-                                    [app.active_team_edit.bench_num]
-                                    .clone();
+                        if app.game_state.is_some() {
+                            if ui.button("Home").clicked() {
+                                app.active_team_edit.is_home = true;
+                                app.active_team_edit.is_batter = true;
+                                app.gui_windows.edit_roster_window = true;
+                                app.active_team_edit.bench_select =
+                                    app.home_team_active.as_ref().unwrap().bench
+                                        [app.active_team_edit.bench_num]
+                                        .clone();
+                            }
+                            if ui.button("Away").clicked() {
+                                app.active_team_edit.is_home = false;
+                                app.active_team_edit.is_batter = true;
+                                app.gui_windows.edit_roster_window = true;
+                                app.active_team_edit.bench_select =
+                                    app.away_team_active.as_ref().unwrap().bench
+                                        [app.active_team_edit.bench_num]
+                                        .clone();
+                            }
+                        } else {
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                                style: ToastStyle::default(),
+                            });
                         }
                     });
                     ui.menu_button("Bullpen", |ui| {
-                        if ui.button("Home").clicked() {
-                            app.active_team_edit.is_home = true;
-                            app.active_team_edit.is_batter = false;
-                            app.gui_windows.edit_roster_window = true;
-                            app.active_team_edit.bench_select =
-                                app.home_team_active.as_ref().unwrap().bullpen
-                                    [app.active_team_edit.bench_num]
-                                    .clone();
-                        }
-                        if ui.button("Away").clicked() {
-                            app.active_team_edit.is_home = false;
-                            app.active_team_edit.is_batter = false;
-                            app.gui_windows.edit_roster_window = true;
-                            app.active_team_edit.bench_select =
-                                app.away_team_active.as_ref().unwrap().bullpen
-                                    [app.active_team_edit.bench_num]
-                                    .clone();
+                        if app.game_state.is_some() {
+                            if ui.button("Home").clicked() {
+                                app.active_team_edit.is_home = true;
+                                app.active_team_edit.is_batter = false;
+                                app.gui_windows.edit_roster_window = true;
+                                app.active_team_edit.bench_select =
+                                    app.home_team_active.as_ref().unwrap().bullpen
+                                        [app.active_team_edit.bench_num]
+                                        .clone();
+                            }
+                            if ui.button("Away").clicked() {
+                                app.active_team_edit.is_home = false;
+                                app.active_team_edit.is_batter = false;
+                                app.gui_windows.edit_roster_window = true;
+                                app.active_team_edit.bench_select =
+                                    app.away_team_active.as_ref().unwrap().bullpen
+                                        [app.active_team_edit.bench_num]
+                                        .clone();
+                            }
+                        } else {
+                            toasts.add(Toast {
+                                kind: ToastKind::Info,
+                                text: "No active game.".into(),
+                                options: ToastOptions::default()
+                                    .duration_in_seconds(3.0)
+                                    .show_progress(true)
+                                    .show_icon(true),
+                                style: ToastStyle::default(),
+                            });
                         }
                     });
                     if ui.button("View Team").clicked() {
